@@ -8,7 +8,7 @@ from scipy.stats import t
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from docx import Document
-from docx.shared import Inches, Pt
+from docx.shared import Pt
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 import openpyxl
@@ -624,38 +624,46 @@ def run_raw_mode(uploaded_file):
                 a_levels = len(levels_a)
                 b_levels = len(levels_b)
                 
+                # Dynamic statistical computations utilizing temporary standardized column mappings
+                # to prevent Patsy parser failures on special characters
                 for param in response_cols:
-                    df_raw_data[param] = pd.to_numeric(df_raw_data[param], errors='coerce')
-                    formula = f"Q('{param}') ~ C(Q('{block_col}')) + C(Q('{factor_a_col}')) + C(Q('{factor_b_col}')) + C(Q('{factor_a_col}')):C(Q('{factor_b_col}'))"
-                    model = ols(formula, data=df_raw_data).fit()
+                    df_temp = pd.DataFrame({
+                        'rep': df_raw_data[block_col].astype(str),
+                        'factor_a': df_raw_data[factor_a_col].astype(str),
+                        'factor_b': df_raw_data[factor_b_col].astype(str),
+                        'response': pd.to_numeric(df_raw_data[param], errors='coerce')
+                    }).dropna(subset=['response'])
+                    
+                    formula = "response ~ C(rep) + C(factor_a) * C(factor_b)"
+                    model = ols(formula, data=df_temp).fit()
                     anova_table = sm.stats.anova_lm(model, typ=1)
                     
                     df_err = anova_table.loc["Residual", "df"]
                     mse = anova_table.loc["Residual", "mean_sq"]
                     
-                    p_a = anova_table.loc[f"C(Q('{factor_a_col}'))", "PR(>F)"]
-                    p_b = anova_table.loc[f"C(Q('{factor_b_col}'))", "PR(>F)"]
-                    p_ab = anova_table.loc[f"C(Q('{factor_a_col}')):C(Q('{factor_b_col}'))", "PR(>F)"]
+                    p_a = anova_table.loc["C(factor_a)", "PR(>F)"]
+                    p_b = anova_table.loc["C(factor_b)", "PR(>F)"]
+                    p_ab = anova_table.loc["C(factor_a):C(factor_b)", "PR(>F)"]
                     
-                    grand_mean = df_raw_data[param].mean()
+                    grand_mean = df_temp['response'].mean()
                     cv = (np.sqrt(mse) / grand_mean) * 100
                     t_val = t.ppf(0.975, df_err)
                     
                     # Factor A Main Effects
-                    means_a = df_raw_data.groupby(factor_a_col)[param].mean().to_dict()
+                    means_a = df_temp.groupby('factor_a')['response'].mean().to_dict()
                     sem_a = np.sqrt(mse / (r * b_levels))
                     lsd_a = t_val * np.sqrt((2 * mse) / (r * b_levels))
                     cld_a = get_cld_letters(means_a, lsd_a)
                     
                     # Factor B Main Effects
-                    means_b = df_raw_data.groupby(factor_b_col)[param].mean().to_dict()
+                    means_b = df_temp.groupby('factor_b')['response'].mean().to_dict()
                     sem_b = np.sqrt(mse / (r * a_levels))
                     lsd_b = t_val * np.sqrt((2 * mse) / (r * a_levels))
                     cld_b = get_cld_letters(means_b, lsd_b)
                     
                     # Interaction Combinations
-                    df_raw_data['Combination'] = df_raw_data[factor_a_col] + " × " + df_raw_data[factor_b_col]
-                    means_comb = df_raw_data.groupby('Combination')[param].mean().to_dict()
+                    df_temp['Combination'] = df_temp['factor_a'] + " × " + df_temp['factor_b']
+                    means_comb = df_temp.groupby('Combination')['response'].mean().to_dict()
                     lsd_comb = t_val * np.sqrt((2 * mse) / r)
                     cld_comb = get_cld_letters(means_comb, lsd_comb)
                     
