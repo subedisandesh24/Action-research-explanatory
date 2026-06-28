@@ -66,12 +66,12 @@ ACADEMIC_TEMPLATES_2Y = {
     ),
     "temp_9_progressive_upward_trend_consistent": (
         "Concerning the progressive changes in **{base_name}**, a consistent, time-dependent progressive increase trend was observed "
-        "across both seasons (as detailed in **{table_label}**). The pooled grand mean increased from `{first_gm}` at `{first_day}` to "
-        "`{last_gm}` by `{last_day}`. Highly significant treatment effects were observed at `{last_day}` in both years, with `{top_g}` "
+        "across both seasons (as detailed in **{table_label}**). The pooled grand mean increased from `{first_gm}` at `{first_day}` "
+        "to `{last_gm}` by `{last_day}`. Highly significant treatment effects were observed at `{last_day}` in both years, with `{top_g}` "
         "consistently showing the highest value on the final day, confirming a highly parallel temporal progression."
     ),
     "temp_10_progressive_downward_trend_consistent": (
-        "For **{base_name}**, a systematic progressive decline was observed across both experimental years, as summarized in **{table_label}**. "
+        "For **{base_name}**, a systematic progressive decline was observed across the storage period, as summarized in **{table_label}**. "
         "The pooled averages fell from `{first_gm}` at `{first_day}` to `{last_gm}` by `{last_day}`. Treatment differences on `{last_day}` "
         "were highly significant in both seasons ({last_p_1} and {last_p_2}), where `{top_g}` successfully minimized the rate of decline "
         "compared to `{low_g}`."
@@ -82,19 +82,19 @@ ACADEMIC_TEMPLATES_2Y = {
         "This indicates that the seasonal conditions of Year 2 were more favorable for mitigating the degradation of this trait."
     ),
     "temp_12_late_onset_divergence_both_years": (
-        "The progressive evaluation of **{base_name}** revealed a consistent late-onset treatment divergence across both seasons. "
-        "While genotype effects on `{first_day}` were nonsignificant in both years, they became highly significant by `{last_day}` "
-        "({last_p_1} and {last_p_2}) (Table **{table_label}**), with `{top_g}` establishing a statistically superior position in both years."
+        "The progressive evaluation of **{base_name}** revealed a consistent late-onset treatment divergence. "
+        "While genotype differences were nonsignificant on `{first_day}` ({first_p}), they became highly significant on `{last_day}` "
+        "({last_p}) (Table **{table_label}**), with `{top_g}` establishing a statistically superior position in both years."
     ),
     "temp_13_early_divergence_late_convergence": (
-        "For the progressive trend of **{base_name}**, early treatment differences observed on `{first_day}` converged over time, "
-        "becoming nonsignificant by `{last_day}` across both seasons (as shown in **{table_label}**). This multi-year convergence "
-        "suggests that long-term environmental exposure overrides initial genotype-specific advantages."
+        "For **{base_name}**, the initial treatment differences observed at `{first_day}` ({first_p}) converged over time, "
+        "becoming nonsignificant on `{last_day}` ({last_p}) (as shown in **{table_label}**). This indicates that long-term "
+        "environmental exposure overrides initial genotype-specific advantages."
     ),
     "temp_14_progressive_stabilization_both_years": (
         "Regarding the temporal progression of **{base_name}**, a progressive stabilization pattern was observed across both trial seasons "
         "(Table **{table_label}**). The values altered rapidly from `{first_day}` to `{mid_day}`, but plateaued by `{last_day}`, where "
-        "genotype `{top_g}` consistently maintained its statistical lead in both years."
+        "genotype `{top_g}` consistently maintained its statistical lead."
     ),
     "temp_15_storage_decay_multiyear": (
         "Decay progression for **{base_name}** escalated over the storage intervals across both years, rising from `{first_gm}` to `{last_gm}` "
@@ -399,7 +399,7 @@ def parse_summarized_table_to_results_2y(df_raw, idx_sem, idx_pval, idx_lsd, idx
                 means_str_1[g] = "0.00"
                 
         p_val_1_raw = str(df_raw.iloc[idx_pval, start_col]).strip()
-        match_p1 = re.search(r"[\d\.\-]+e?\-?\d*", p_val_1_raw)
+        match_p1 = re.search(r"[\d\.\-]+e?[\-\d]*", p_val_1_raw)
         try:
             p_val_1 = float(match_p1.group(0)) if match_p1 else (0.01 if "*" in p_val_1_raw else 0.5)
         except ValueError:
@@ -431,7 +431,7 @@ def parse_summarized_table_to_results_2y(df_raw, idx_sem, idx_pval, idx_lsd, idx
                 means_str_2[g] = "0.00"
                 
         p_val_2_raw = str(df_raw.iloc[idx_pval, start_col + 1]).strip()
-        match_p2 = re.search(r"[\d\.\-]+e?\-?\d*", p_val_2_raw)
+        match_p2 = re.search(r"[\d\.\-]+e?[\-\d]*", p_val_2_raw)
         try:
             p_val_2 = float(match_p2.group(0)) if match_p2 else (0.01 if "*" in p_val_2_raw else 0.5)
         except ValueError:
@@ -539,10 +539,6 @@ def build_multiyear_excel_output(genotype_col, params, genotypes, results_1, res
 
 # --- Corrected Border Setting Helper (Fixes tuple attribute error) ---
 def set_header_bottom_border(row_or_cells):
-    """
-    Sets the bottom border for a table row. Acccepts either a Row object
-    or a raw tuple of cell objects.
-    """
     if hasattr(row_or_cells, 'cells'):
         cells = row_or_cells.cells
     else:
@@ -590,7 +586,7 @@ def add_multiyear_table_to_docx(doc, params, genotypes, results_1, results_2, ye
     for i, p in enumerate(params):
         start_col = i * 3 + 1
         hdr_row0[start_col].merge(hdr_row0[start_col+1]).merge(hdr_row0[start_col+2])
-        hdr_row0[start_col].text = p.upper()
+        hdr_row0[start_col].text = p
         set_cell_margins(hdr_row0[start_col])
         hdr_row0[start_col].paragraphs[0].alignment = 1
         hdr_row0[start_col].paragraphs[0].runs[0].font.bold = True
@@ -686,16 +682,18 @@ def add_multiyear_table_to_docx(doc, params, genotypes, results_1, results_2, ye
         if s_idx == len(stats_keys) - 1:
             set_header_bottom_border(row_cells)
 
-# --- Web Interface and Multi-Year controller ---
+# --- Web Interface Routing and Multi-Year controller ---
 def show_module():
     st.markdown("### Multi-Year Single-Factor RCBD Analyzer")
     
-    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector")
+    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_mult")
     
     if mode == "Raw Data Mode":
         run_raw_mode()
     else:
-        run_summary_mode()
+        file_sum = st.file_uploader("Upload Summarized Multi-Year Excel Output (.xlsx)", type=["xlsx"], key="file_sum_mod_mult")
+        if file_sum is not None:
+            run_summary_mode_processing(file_sum)
 
 def run_raw_mode():
     file1 = st.file_uploader("Upload Season 1 Raw Excel Dataset (.xlsx)", type=["xlsx"], key="file1_2f_mod")
@@ -817,12 +815,11 @@ def run_raw_mode():
         except Exception as e:
             st.error(f"Analysis failed. Please check the structure of your Excel dataset: {e}")
 
-# --- Summarized Mode ---
-def run_summary_mode(uploaded_file):
+# --- Summarized Mode Processing (Multi-Year) ---
+def run_summary_mode_processing(uploaded_file):
     try:
         df_raw = pd.read_excel(uploaded_file, header=None)
         
-        # Locate table indexes based on structural labels
         idx_sem, idx_pval, idx_lsd, idx_cv, idx_gm = None, None, None, None, None
         for idx, val in enumerate(df_raw[0]):
             if pd.isna(val): continue
@@ -847,22 +844,22 @@ def run_summary_mode(uploaded_file):
                 parameters.append(p_name)
                 param_cols[p_name] = col_idx
                 
-        # Parse Genotypes
+        # Parse Genotypes (Starts at index 3 up to idx_sem - 1)
         genotypes = [str(df_raw.iloc[r, 0]).strip() for r in range(3, idx_sem)]
         
-        # Extract season labels from Row 2
+        # Extract seasonal labels from Row 2
         year1_lbl = str(df_raw.iloc[1, 1]).strip()
         year2_lbl = str(df_raw.iloc[1, 2]).strip()
         
         st.success(f"Detected Genotypes: {', '.join(genotypes)}")
         st.success(f"Detected Parameters: {', '.join(parameters)}")
         
-        group_1_name = st.text_input("First Table Title", "Physiological and Crop Growth Parameters", key="1f_sum_t1_title")
-        group_1_cols = st.multiselect("Select parameters for Table 1", parameters, default=parameters[:len(parameters)//2], key="1f_sum_t1_cols")
-        group_2_name = st.text_input("Second Table Title", "Crop Quality and Yield Parameters", key="1f_sum_t2_title")
-        group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in parameters if c not in group_1_cols], default=[c for c in parameters if c not in group_1_cols], key="1f_sum_t2_cols")
+        group_1_name = st.text_input("First Table Title", "Physiological and Crop Growth Parameters", key="1f_sum_t1_title_2y")
+        group_1_cols = st.multiselect("Select parameters for Table 1", parameters, default=parameters[:len(parameters)//2], key="1f_sum_t1_cols_2y")
+        group_2_name = st.text_input("Second Table Title", "Crop Quality and Yield Parameters", key="1f_sum_t2_title_2y")
+        group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in parameters if c not in group_1_cols], default=[c for c in parameters if c not in group_1_cols], key="1f_sum_t2_cols_2y")
         
-        if st.button("Generate Word Document Draft from Direct Output Table", key="btn_2f_sum_gen"):
+        if st.button("Generate Word Document Draft", key="btn_1f_sum_gen_2y"):
             results_data_1, results_data_2 = parse_summarized_table_to_results_2y(
                 df_raw, idx_sem, idx_pval, idx_lsd, idx_cv, idx_gm, param_cols, genotypes
             )
@@ -921,13 +918,7 @@ def run_summary_mode(uploaded_file):
                 data=bio_doc, 
                 file_name="MultiYear_Summarized_Thesis_Report.docx", 
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
-                key="btn_d_2f_sum_doc"
+                key="btn_d_2y_doc_sum"
             )
     except Exception as e:
         st.error(f"Error parsing direct result summary table: {e}")
-
-# Run App Mode Selector Logic
-def run_summary_mode():
-    file_sum = st.file_uploader("Upload Summarized Multi-Year Excel Output (.xlsx)", type=["xlsx"], key="file_sum_mod")
-    if file_sum is not None:
-        run_summary_mode(file_sum)
