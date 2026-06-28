@@ -2,14 +2,14 @@ import streamlit as st
 import sys
 import importlib
 
-# Set page configuration at the very top
+# Set page configuration must remain the first Streamlit command in the script
 st.set_page_config(
     page_title="RCBD Statistical Analysis Web Portal",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Force-reload submodules from memory to apply your edits in real-time
+# Force Streamlit to hot-reload nested submodule edits from memory
 submodules_to_reload = [
     "modules.rcbd_single_factor_1year",
     "modules.rcbd_single_factor_2year",
@@ -20,9 +20,9 @@ for mod in submodules_to_reload:
         try:
             importlib.reload(sys.modules[mod])
         except Exception as e:
-            st.warning(f"Could not hot-reload module {mod}: {e}")
+            pass  # Suppress initial reload errors before full import takes place
 
-# Safe imports from the modules directory
+# Safe directory-aware imports from the 'modules' folder
 try:
     from modules import rcbd_single_factor_1year
     from modules import rcbd_single_factor_2year
@@ -31,11 +31,11 @@ except ImportError as e:
     st.error(f"Import Error: Could not load modules. Details: {e}")
     st.stop()
 
-# --- Main Application Layout ---
+# --- Main Page Layout ---
 st.title("RCBD Statistical Analysis Web Portal")
 st.write("An analytical suite to process, format, and explain Randomized Complete Block Design (RCBD) experiments.")
 
-# Sidebar Selection - Corrected 'choices' to 'options'
+# Sidebar Selection
 design_type = st.sidebar.selectbox(
     "Select Experimental Design:",
     options=[
