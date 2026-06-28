@@ -20,7 +20,7 @@ except ImportError as e:
 st.title("RCBD Statistical Analysis Web Portal")
 st.write("An analytical suite to process, format, and explain Randomized Complete Block Design (RCBD) experiments.")
 
-# Sidebar Selection - Corrected 'choices' to 'options'
+# Sidebar Selection
 design_type = st.sidebar.selectbox(
     "Select Experimental Design:",
     options=[
@@ -39,25 +39,28 @@ st.sidebar.info(
 
 # --- Routing Controller Logic ---
 if design_type == "RCBD Single-Factor (1 Year)":
-    try:
-        rcbd_single_factor_1year.show_module()
-    except AttributeError:
+    if hasattr(rcbd_single_factor_1year, "show_module"):
+        try:
+            rcbd_single_factor_1year.show_module()
+        except Exception as e:
+            st.error(f"An error occurred in 1-Year analysis: {e}")
+    else:
         st.warning("The single-factor 1-year module has not exposed a 'show_module()' function.")
-    except Exception as e:
-        st.error(f"An error occurred in 1-Year analysis: {e}")
 
 elif design_type == "RCBD Single-Factor (2 Years)":
-    try:
-        rcbd_single_factor_2year.show_module()
-    except AttributeError:
+    if hasattr(rcbd_single_factor_2year, "show_module"):
+        try:
+            rcbd_single_factor_2year.show_module()
+        except Exception as e:
+            st.error(f"An error occurred in 2-Year analysis: {e}")
+    else:
         st.warning("The single-factor 2-year module has not exposed a 'show_module()' function.")
-    except Exception as e:
-        st.error(f"An error occurred in 2-Year analysis: {e}")
 
 elif design_type == "RCBD Two-Factor (Factorial)":
-    try:
-        rcbd_two_factor.show_module()
-    except AttributeError:
+    if hasattr(rcbd_two_factor, "show_module"):
+        try:
+            rcbd_two_factor.show_module()
+        except Exception as e:
+            st.error(f"An error occurred in Two-Factor analysis: {e}")
+    else:
         st.warning("The two-factor module has not exposed a 'show_module()' function.")
-    except Exception as e:
-        st.error(f"An error occurred in Two-Factor analysis: {e}")
