@@ -44,7 +44,13 @@ TEMPLATES_SIGNIFICANT_INTERACTION = [
     "A highly **significant** `{p_interaction}` interaction was observed between `{factor_a}` and `{factor_b}` for **{parameter}**. Evaluating the treatment combinations revealed that `{combination_top}` was the optimal combination, remaining statistically at par with `{at_par_comb}`. This combination was significantly superior to the other groups, whereas `{combination_low}` represented the absolute minimum value recorded, indicating the severity of the untreated or control conditions."
 ]
 
-# --- Cell Margins & Border Styling ---
+# --- Helper Functions for Style and Parsing ---
+def get_signif_code_python(p):
+    if pd.isna(p): return "ns"
+    if p < 0.01: return "**"
+    elif p < 0.05: return "*"
+    else: return "ns"
+
 def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement('w:tcMar')
@@ -650,20 +656,20 @@ def run_raw_mode(uploaded_file):
                     t_val = t.ppf(0.975, df_err)
                     
                     # Factor A Main Effects
-                    means_a = df_temp.groupby('factor_a')['response'].mean().to_dict()
+                    means_a = df_raw_data.groupby(factor_a_col)[param].mean().to_dict()
                     sem_a = np.sqrt(mse / (r * b_levels))
                     lsd_a = t_val * np.sqrt((2 * mse) / (r * b_levels))
                     cld_a = get_cld_letters(means_a, lsd_a)
                     
                     # Factor B Main Effects
-                    means_b = df_temp.groupby('factor_b')['response'].mean().to_dict()
+                    means_b = df_raw_data.groupby(factor_b_col)[param].mean().to_dict()
                     sem_b = np.sqrt(mse / (r * a_levels))
                     lsd_b = t_val * np.sqrt((2 * mse) / (r * a_levels))
                     cld_b = get_cld_letters(means_b, lsd_b)
                     
                     # Interaction Combinations
-                    df_temp['Combination'] = df_temp['factor_a'] + " × " + df_temp['factor_b']
-                    means_comb = df_temp.groupby('Combination')['response'].mean().to_dict()
+                    df_raw_data['Combination'] = df_raw_data[factor_a_col] + " × " + df_raw_data[factor_b_col]
+                    means_comb = df_raw_data.groupby('Combination')[param].mean().to_dict()
                     lsd_comb = t_val * np.sqrt((2 * mse) / r)
                     cld_comb = get_cld_letters(means_comb, lsd_comb)
                     
@@ -779,6 +785,7 @@ def run_raw_mode(uploaded_file):
                         if sig_b_text == "nonsignificant":
                             at_par_b_str = "all evaluated levels"
                             
+                        comb_top_let = p_data["cld_comb"].get(comb_top_name, "")
                         at_par_comb_list = []
                         for combo, val in sorted_comb[1:]:
                             let = p_data["cld_comb"].get(combo, "")
