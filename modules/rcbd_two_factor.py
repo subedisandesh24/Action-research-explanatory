@@ -148,7 +148,6 @@ def group_parameters(params):
             day_num = int(match.group(1))
             day_str = match.group(0)
             
-            # Extract parent category name and strip hanging punctuation
             base = pattern.sub("", p)
             base = re.sub(r"\s*[\(\)\-\,\s]+\s*at\s*$", "", base, flags=re.IGNORECASE)
             base = re.sub(r"\s*[\(\)\-\,\s]+\s*$", "", base)
@@ -490,7 +489,7 @@ def run_summary_mode(uploaded_file):
                     
                     at_par_a_list = []
                     for val, let, lvl in a_means[1:]:
-                        if top_let_a and let and any(char in top_let_a for char in let):
+                        if top_let_a, let and any(char in top_let_a for char in let):
                             at_par_a_list.append(f"{lvl} ({val:.2f}^{let})")
                     at_par_a_str = ", ".join(at_par_a_list) if at_par_a_list else "no other treatment levels"
                     
@@ -656,20 +655,20 @@ def run_raw_mode(uploaded_file):
                     t_val = t.ppf(0.975, df_err)
                     
                     # Factor A Main Effects
-                    means_a = df_raw_data.groupby(factor_a_col)[param].mean().to_dict()
+                    means_a = df_temp.groupby('factor_a')['response'].mean().to_dict()
                     sem_a = np.sqrt(mse / (r * b_levels))
                     lsd_a = t_val * np.sqrt((2 * mse) / (r * b_levels))
                     cld_a = get_cld_letters(means_a, lsd_a)
                     
                     # Factor B Main Effects
-                    means_b = df_raw_data.groupby(factor_b_col)[param].mean().to_dict()
+                    means_b = df_temp.groupby('factor_b')['response'].mean().to_dict()
                     sem_b = np.sqrt(mse / (r * a_levels))
                     lsd_b = t_val * np.sqrt((2 * mse) / (r * a_levels))
                     cld_b = get_cld_letters(means_b, lsd_b)
                     
                     # Interaction Combinations
-                    df_raw_data['Combination'] = df_raw_data[factor_a_col] + " × " + df_raw_data[factor_b_col]
-                    means_comb = df_raw_data.groupby('Combination')[param].mean().to_dict()
+                    df_temp['Combination'] = df_temp['factor_a'] + " × " + df_temp['factor_b']
+                    means_comb = df_temp.groupby('Combination')['response'].mean().to_dict()
                     lsd_comb = t_val * np.sqrt((2 * mse) / r)
                     cld_comb = get_cld_letters(means_comb, lsd_comb)
                     
@@ -856,3 +855,15 @@ def run_raw_mode(uploaded_file):
                 )
     except Exception as e:
         st.error(f"Error executing raw combined Two-Factor analysis: {e}")
+
+# --- Main Streamlit Function ---
+def show_module():
+    st.markdown("### RCBD Two-Factor Factorial Analyzer")
+    mode = st.radio("Choose Input Mode", ["Summarized Table Mode", "Raw Data Mode"], key="2f_mode")
+    uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f")
+
+    if uploaded_file is not None:
+        if mode == "Summarized Table Mode":
+            run_summary_mode(uploaded_file)
+        else:
+            run_raw_mode(uploaded_file)
