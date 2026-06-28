@@ -15,113 +15,156 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side
 
 # ==============================================================================
-# DATABASE OF 20 HIGH-STANDARD SINGLE-YEAR ACADEMIC DISCUSSION TEMPLATES
+# DATABASE OF 20 VERBOSE, HIGH-STANDARD ACADEMIC DISCUSSION TEMPLATES
 # ==============================================================================
 ACADEMIC_TEMPLATES_1Y = {
     "temp_1_sig_yield": (
-        "The evaluation of **{parameter}** demonstrated that genotypes exerted a highly significant influence "
-        "({p_val}) on this trait, as presented in **{table_label}**. The highest mean performance was recorded "
-        "under `{top_g}` ({top_val}^{top_let}), which was statistically at par with {at_par}. This highlights "
-        "the substantial genetic variation present among the evaluated treatments."
+        "The statistical evaluation of **{parameter}** revealed that genotypes exerted a highly significant influence "
+        "({p_val}) on this trait, as presented in **{table_label}**. Genotype `{top_g}` recorded the maximum average value "
+        "of {top_val}^{top_let}, establishing its performance in the premier statistical group, which was statistically at par with {at_par}. "
+        "This pronounced variation highlights the presence of substantial genetic diversity and phenotypic plasticity among the evaluated germplasm "
+        "under these environmental conditions. The superiority of `{top_g}` suggests an optimized metabolic efficiency, robust cellular "
+        "development, or enhanced assimilation rate, making it a promising candidate for targeted breeding and selection programs. "
+        "Conversely, the lower boundary was defined by the lowest-performing genotypes, which demonstrated significantly depressed performance, "
+        "thereby validating the wide genetic spectrum captured in this trial."
     ),
     "temp_2_sig_quality": (
-        "With respect to **{parameter}**, a significant treatment effect was observed ({p_val}) (as shown in "
-        "**{table_label}**). Genotype `{top_g}` ({top_val}^{top_let}) proved statistically superior, sharing "
-        "statistical parity only with {at_par}. This variation suggests that structural retention and tissue quality "
-        "were uniquely preserved under this genotype."
+        "With respect to **{parameter}**, a significant genotype treatment effect was observed ({p_val}) (as shown in "
+        "**{table_label}**). Genotype `{top_g}` ({top_val}^{top_let}) proved statistically superior, sharing statistical parity only with {at_par}. "
+        "This variation suggests that structural retention, tissue quality, and cellular integrity were uniquely preserved under this genotype. "
+        "The lower-performing treatments fell into distinctly inferior statistical groups, illustrating the severity of standard tissue degradation "
+        "when not buffered by the superior genetic characteristics of `{top_g}`. This suggests that `{top_g}` possesses a highly efficient "
+        "physiological or biochemical system for maintaining post-harvest or structural quality throughout the growth cycle, "
+        "rendering it highly suitable for value-added industrial applications."
     ),
     "temp_3_strict_superiority": (
-        "For the parameter **{parameter}**, the treatment factor induced a highly significant response ({p_val}). "
-        "Genotype `{top_g}` recorded `{top_val}^{top_let}`, establishing clear statistical superiority over all "
-        "other treatments (as summarized in **{table_label}**). The closest competitor was `{second_g}` (`{second_val}`), "
-        "indicating that `{top_g}` possesses a highly efficient phenotypic expression for this trait."
+        "For the parameter **{parameter}**, the treatment factor induced a highly significant response ({p_val}). Genotype `{top_g}` "
+        "recorded `{top_val}^{top_let}`, establishing clear statistical superiority over all other treatments (as summarized in "
+        "**{table_label}**). The closest competitor was `{second_g}` (`{second_val}`), indicating that `{top_g}` possesses a highly "
+        "unqiue and efficient phenotypic expression for this trait. This unique performance indicates that the physiological pathways "
+        "governing `{parameter}` are exceptionally active or well-conserved in `{top_g}`. The lack of any statistical parity (at-par grouping) "
+        "further emphasizes the distinct superiority of `{top_g}` as a premium candidate for mono-cropping or specific cultivation regimes."
     ),
     "temp_4_homogeneous": (
-        "The statistical analysis of **{parameter}** revealed a nonsignificant treatment effect ({p_val}), as detailed "
-        "in **{table_label}**. The treatment means remained highly stable around the grand mean of `{grand_mean}`, "
-        "suggesting that the evaluated genotypes possess comparable physiological and chemical stability for this trait."
+        "The statistical analysis of **{parameter}** revealed a strictly nonsignificant treatment effect ({p_val}), as detailed "
+        "in **{table_label}**. The observed treatment means fluctuated within an exceptionally narrow, statistically negligible margin "
+        "around the grand mean of `{grand_mean}`. This complete lack of statistical divergence implies that all evaluated genotypes "
+        "possess comparable physiological stability and highly buffered chemical pathways for this specific trait. The uniform response "
+        "across the entire germplasm collection suggests that **{parameter}** is a highly conserved phenotypic trait within this species, "
+        "exhibiting low sensitivity to genetic variability or block-level environmental gradients under the current trial setup."
     ),
     "temp_5_marginal_sig": (
         "The trait **{parameter}** was significantly influenced by genotype variations ({p_val}) (as shown in **{table_label}**). "
         "Genotype `{top_g}` led the performance with `{top_val}^{top_let}`, and shared statistical letters with {at_par}. "
-        "The lower baseline limit was defined by `{low_g}` (`{low_val}`), indicating a moderate range of phenotypic expression."
+        "The lower baseline limit was defined by `{low_g}` (`{low_val}`), indicating a moderate range of phenotypic expression. This marginal "
+        "significance indicates that while genetic differences are present, they are heavily influenced by micro-climatic or soil heterogeneity, "
+        "suggesting that stable expression of `{parameter}` may require optimal environmental management in conjunction with genetic selection."
     ),
     "temp_6_precision_verification": (
         "Regarding **{parameter}**, the analysis of variance revealed a significant treatment effect ({p_val}). The overall "
         "precision of the trial was verified by a low Coefficient of Variation (CV) of `{cv}%` and a Standard Error of "
         "the Mean (SEm) of `{sem}` (Table **{table_label}**), demonstrating that background spatial noise was managed under "
-        "the block partitions."
+        "the block partitions. This low CV percentage indicates that the randomized complete block design (RCBD) was highly effective in "
+        "minimizing experimental error, thus ensuring that the recorded variations in `{parameter}` are strictly treatment-driven rather "
+        "than artifacts of soil or environmental gradient fluctuations."
     ),
     "temp_7_broad_parity": (
-        "For **{parameter}**, the genotype effect was significant ({p_val}) (as summarized in **{table_label}**). "
-        "Genotype `{top_g}` ({top_val}^{top_let}) occupied the top statistical tier but did not differ significantly "
-        "from a broad range of genotypes, including {at_par}. This suggests a wide genetic buffer for this trait."
+        "For **{parameter}**, the genotype effect was significant ({p_val}) (as summarized in **{table_label}**). Genotype `{top_g}` "
+        "({top_val}^{top_let}) occupied the top statistical tier but did not differ significantly from a broad range of genotypes, including "
+        "{at_par}. This suggests a wide genetic buffer for this trait, indicating that multiple germplasms are functionally equivalent for "
+        "`{parameter}`. This broad parity offers agricultural managers and breeders a high degree of flexibility, allowing them to select "
+        "any genotype within this leading statistical group based on secondary agronomic traits like pest resistance or drought tolerance."
     ),
     "temp_8_extreme_contrast": (
         "The response of **{parameter}** was highly dependent on the treatment genotypes ({p_val}) (Table **{table_label}**). "
         "A sharp contrast was observed between the leading genotype `{top_g}` ({top_val}^{top_let}) and the lowest-performing "
-        "genotype `{low_g}` ({low_val}), representing a highly pronounced phenotypic difference."
+        "genotype `{low_g}` ({low_val}), representing a highly pronounced phenotypic difference. This extreme divergence underscores "
+        "the vast genetic distance separating these two accessions. Such a wide gap represents an ideal resource for parent selection in "
+        "hybridization programs designed to map QTLs or study the physiological mechanisms regulating `{parameter}`."
     ),
     "temp_9_progressive_upward_trend": (
-        "Concerning the progressive changes in **{base_name}**, a distinct time-dependent upward trend was observed, "
-        "as summarized in **{table_label}**. The grand mean of the trial increased from `{first_gm}` at `{first_day}` "
-        "to `{last_gm}` by `{last_day}`. The genotype effect was `{first_sig}` early on, but developed into a highly "
-        "significant (`{last_sig}`) effect by `{last_day}`, with `{top_g}` leading at `{top_val}^{top_let}`."
+        "Concerning the progressive changes in **{base_name}** over time, a highly defined, time-dependent upward trend was observed across "
+        "the evaluation timeline, as summarized in **{table_label}**. The grand mean of the trial increased systematically from `{first_gm}` "
+        "at `{first_day}` and progressively rose to `{last_gm}` by `{last_day}`. The genotype effect was `{first_sig}` early on, but developed "
+        "into a highly significant (`{last_sig}`) effect by the final evaluation stage (`{last_day}`). At `{last_day}`, genotype `{top_g}` "
+        "attained the maximum average value of `{top_val}^{top_let}`, proving to be statistically superior or at par only with {at_par}. "
+        "This upward trajectory is physiologically linked to progressive moisture loss, cumulative transpiration, or senescent cellular "
+        "degradation, though the rate of increase was heavily modulated and restricted by the superior structural traits of `{top_g}`."
     ),
     "temp_10_progressive_decline_trend": (
-        "For **{base_name}**, a systematic, progressive decline was observed across the storage period, as detailed in "
-        "**{table_label}**. The pooled averages fell from `{first_gm}` at `{first_day}` to `{last_gm}` by `{last_day}`. "
-        "Highly significant genotype differences ({last_p}) were recorded on `{last_day}`, with `{top_g}` ({top_val}^{top_let}) "
-        "demonstrating optimal structural retention compared to `{low_g}`."
+        "For the temporal progression of **{base_name}**, a systematic, progressive decline was observed across the storage and evaluation "
+        "period, as detailed in **{table_label}**. The grand mean fell from `{first_gm}` at `{first_day}` and progressively dropped to "
+        "`{last_gm}` by `{last_day}`. Highly significant genotype differences ({last_p}) were recorded on `{last_day}`, with `{top_g}` "
+        "({top_val}^{top_let}) demonstrating optimal structural retention or tissue quality maintenance compared to `{low_g}`. This decline "
+        "is typical of post-harvest cellular respiration, enzymatic cell wall degradation, and pectin depolymerization. However, the significantly "
+        "lower rate of decline in `{top_g}` highlights its superior cell wall density or membrane stability, making it an elite candidate."
     ),
     "temp_11_late_onset_divergence": (
-        "The progressive evaluation of **{base_name}** revealed a late-onset treatment divergence. While genotype "
-        "differences were nonsignificant on `{first_day}` ({first_p}), they became highly significant on `{last_day}` "
-        "({last_p}) (as presented in **{table_label}**), where `{top_g}` ({top_val}^{top_let}) established its statistical lead."
+        "The progressive evaluation of **{base_name}** revealed a late-onset treatment divergence. While genotype differences were "
+        "completely nonsignificant on `{first_day}` ({first_p}), they became highly significant on `{last_day}` ({last_p}) (as presented "
+        "in **{table_label}**), where `{top_g}` ({top_val}^{top_let}) established its statistical lead. This pattern suggests that in the "
+        "initial phases, environmental or baseline physiological factors dominated, masking genetic differences. As the trial progressed "
+        "and accumulative physiological stress increased, the genetic buffering capabilities of `{top_g}` became apparent, allowing it "
+        "to significantly outperform the rest."
     ),
     "temp_12_early_onset_convergence": (
         "For **{base_name}**, the initial treatment differences observed at `{first_day}` ({first_p}) converged over time, "
         "becoming nonsignificant on `{last_day}` ({last_p}) (as shown in **{table_label}**). This indicates that long-term "
-        "exposure or storage leveled out genotype-specific variations."
+        "exposure, senescent decline, or storage conditions eventually leveled out genotype-specific variations. This convergence suggests "
+        "that while genotype selection is highly critical for short-term preservation or early-stage harvesting, its significance "
+        "decreases under extended storage, where general biochemical breakdown pathways become uniform across all evaluated materials."
     ),
     "temp_13_uniform_trend": (
-        "Although **{base_name}** changed progressively from `{first_gm}` to `{last_gm}` over the course of the trial (Table "
-        "**{table_label}**), the genotype main effect remained consistently nonsignificant ({last_p}) across all intervals, "
-        "confirming highly uniform behavioral patterns."
+        "Although **{base_name}** changed progressively from `{first_gm}` to `{last_gm}` over the course of the trial (Table **{table_label}**), "
+        "the genotype main effect remained consistently nonsignificant ({last_p}) across all intervals, confirming highly uniform behavioral "
+        "patterns. This suggests that the physiological mechanisms driving the progression of `{base_name}` are highly conserved and "
+        "unaffected by the genetic variations present in this germplasm collection. Consequently, efforts to optimize this specific parameter "
+        "should focus on environmental and post-harvest management rather than genotype selection."
     ),
     "temp_14_stabilization_trend": (
-        "Regarding **{base_name}**, a progressive stabilization pattern was observed in the latter half of the trial, "
-        "as shown in **{table_label}**. The values changed sharply from `{first_day}` to `{mid_day}`, but stabilized by "
-        "`{last_day}`, where genotype `{top_g}` ({top_val}^{top_let}) maintained its statistical lead."
+        "Regarding the temporal progression of **{base_name}**, a progressive stabilization pattern was observed in the latter half of the "
+        "trial, as shown in **{table_label}**. The values changed sharply from `{first_day}` to `{mid_day}`, but stabilized by `{last_day}`, "
+        "where genotype `{top_g}` ({top_val}^{top_let}) maintained its statistical lead. This stabilization indicates that the physiological "
+        "processes regulating `{base_name}` reached an equilibrium, with `{top_g}` maintaining a superior baseline, proving its long-term "
+        "physiological stability under the experimental conditions."
     ),
     "temp_15_decay_progression": (
-        "Decay progression for **{base_name}** rose over the evaluation intervals, escalating from `{first_gm}` to `{last_gm}` "
-        "(Table **{table_label}**). Genotypes significantly influenced decay development by `{last_day}` ({last_p}), with "
-        "`{top_g}` successfully suppressing decay loss ({top_val}^{top_let}) compared to the control `{low_g}`."
+        "Decay progression for **{base_name}** rose over the evaluation intervals, escalating from `{first_gm}` to `{last_gm}` (Table "
+        "**{table_label}**). Genotypes significantly influenced decay development by `{last_day}` ({last_p}), with `{top_g}` successfully "
+        "suppressing decay loss ({top_val}^{top_let}) compared to the control `{low_g}`. This decay suppression is heavily linked to "
+        "enhanced cell wall thickness, cuticular wax density, or the accumulation of defensive phenolic compounds in `{top_g}`. Selecting "
+        "this genotype can significantly reduce post-harvest losses caused by microbial decay."
     ),
     "temp_16_performance_tier": (
-        "The post-hoc grouping for **{parameter}** clearly differentiated the genotypes into distinct performance tiers, "
-        "as detailed in **{table_label}**. Genotype `{top_g}` ({top_val}^{top_let}) led the elite tier, making it a promising "
-        "candidate for future breeding or selection programs."
+        "The post-hoc grouping for **{parameter}** clearly differentiated the genotypes into distinct performance tiers, as detailed in "
+        "**{table_label}**. Genotype `{top_g}` ({top_val}^{top_let}) led the elite tier, making it a promising candidate for future breeding "
+        "or selection programs. The clear separation into statistical tiers indicates a high degree of genetic variation, which "
+        "can be exploited to select parental lines for hybridization, ensuring the successful transmission of high `{parameter}` traits "
+        "to offspring."
     ),
     "temp_17_stress_conservation": (
         "Under the trial conditions, **{parameter}** was preserved best under genotype `{top_g}` ({top_val}^{top_let}) (Table "
-        "**{table_label}**), demonstrating superior cellular buffering or metabolic stability. This genotype was statistically "
-        "at par with {at_par}."
+        "**{table_label}**), demonstrating superior cellular buffering or metabolic stability. This genotype was statistically at par "
+        "with {at_par}. The high preservation of `{parameter}` under stress highlights the presence of robust physiological "
+        "mechanisms, such as enhanced osmotic adjustment, antioxidant enzyme activity, or cell wall reinforcement, in `{top_g}`."
     ),
     "temp_18_buffered_expression": (
-        "Trait expression for **{parameter}** was highly stable, with nonsignificant genotype effects ({p_val}), as detailed "
-        "in **{table_label}**. The minimal variance among treatments is supported by a very low CV of `{cv}%`, proving "
-        "that this trait is highly buffered against genetic differences."
+        "Trait expression for **{parameter}** was highly stable, with nonsignificant genotype effects ({p_val}), as detailed in "
+        "**{table_label}**. The minimal variance among treatments is supported by a very low CV of `{cv}%`, proving that this trait "
+        "is highly buffered against genetic differences. This high stability suggests that `{parameter}` is a reliable baseline trait "
+        "that remains unaffected by genetic background, making it suitable for quality standardization."
     ),
     "temp_19_biochemical_nutrient": (
         "Genotype `{top_g}` ({top_val}^{top_let}) exhibited the highest levels of **{parameter}** (as shown in **{table_label}**), "
-        "indicating a highly active metabolic pathway for this compound. It shared statistical parity only with {at_par}."
+        "indicating a highly active metabolic pathway or synthesis rate. It shared statistical parity only with {at_par}. This biochemical "
+        "superiority suggests that `{top_g}` possesses enhanced nutritional value or active compound accumulation, making it highly valuable "
+        "for functional food development or target health applications."
     ),
     "temp_20_comprehensive_candidate": (
-        "In conclusion, genotype `{top_g}` proved to be the most promising candidate for the optimization of **{parameter}** "
-        "(as presented in **{table_label}**). It combined high statistical performance ({top_val}^{top_let}) with strong "
-        "experimental precision, establishing its superiority."
+        "In conclusion, genotype `{top_g}` proved to be the most promising candidate for the optimization of **{parameter}** (as presented "
+        "in **{table_label}**). It combined high statistical performance ({top_val}^{top_let}) with strong experimental precision, "
+        "establishing its overall superiority. This comprehensive performance validates `{top_g}` as a highly reliable line for agronomic "
+        "and commercial cultivation under the target environment, offering a solid foundation for sustainable crop improvement."
     )
 }
 
@@ -382,11 +425,11 @@ def run_anova_1factor(df, block_col, genotype_col, param):
 # --- Summarized Parser for 1-Year ---
 def parse_summarized_table_to_results_1y(df_raw, idx_sem, idx_pval, idx_lsd, idx_cv, idx_gm, param_cols, genotypes):
     results_data = {}
-    for p, start_col in param_cols.items():
+    for p, col_idx in param_cols.items():
         means = {}
         means_str = {}
         for r_idx, g in enumerate(genotypes, start=1):
-            cell_val = df_raw.iloc[r_idx, start_col]
+            cell_val = df_raw.iloc[r_idx, col_idx]
             num, let = parse_dmrt_value(cell_val)
             try:
                 val = float(num)
@@ -396,7 +439,7 @@ def parse_summarized_table_to_results_1y(df_raw, idx_sem, idx_pval, idx_lsd, idx
                 means[g] = 0.0
                 means_str[g] = "0.00"
                 
-        p_val_raw = str(df_raw.iloc[idx_pval, start_col]).strip()
+        p_val_raw = str(df_raw.iloc[idx_pval, col_idx]).strip()
         match_p = re.search(r"[\d\.\-]+e?[\d\-]*", p_val_raw)
         try:
             p_val = float(match_p.group(0)) if match_p else (0.01 if "*" in p_val_raw else 0.5)
@@ -406,12 +449,12 @@ def parse_summarized_table_to_results_1y(df_raw, idx_sem, idx_pval, idx_lsd, idx
         results_data[p] = {
             "means": means,
             "means_str": means_str,
-            "sem": df_raw.iloc[idx_sem, start_col],
+            "sem": df_raw.iloc[idx_sem, col_idx],
             "p_val": p_val,
             "p_text": p_val_raw,
-            "lsd": df_raw.iloc[idx_lsd, start_col],
-            "cv": df_raw.iloc[idx_cv, start_col],
-            "gm": float(re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_gm, start_col])).group(0)) if re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_gm, start_col])) else 0.0
+            "lsd": df_raw.iloc[idx_lsd, col_idx],
+            "cv": df_raw.iloc[idx_cv, col_idx],
+            "gm": float(re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_gm, col_idx])).group(0)) if re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_gm, col_idx])) else 0.0
         }
     return results_data
 
@@ -468,10 +511,14 @@ def build_single_year_excel(genotype_col, params, genotypes, results_data):
 
 # --- Corrected Border Setting Helper (Fixes tuple attribute error) ---
 def set_header_bottom_border(row_or_cells):
+    """
+    Sets the bottom border for a table row. Accepts either a Row object
+    or a raw tuple of cell objects.
+    """
     if hasattr(row_or_cells, 'cells'):
         cells = row_or_cells.cells
     else:
-        cells = row_or_cells  # Already cell tuple
+        cells = row_or_cells  # Passed cell tuple
     for cell in cells:
         tcPr = cell._tc.get_or_add_tcPr()
         borders = parse_xml(
