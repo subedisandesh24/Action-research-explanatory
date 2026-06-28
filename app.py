@@ -11,7 +11,7 @@ st.set_page_config(
 st.sidebar.title("Design Navigation")
 analysis_option = st.sidebar.selectbox(
     "Select Experimental Design Type:",
-    choices=[
+    options=[
         "RCBD Single Factor (1 Year)",
         "RCBD Single Factor (2 Years / Pooled)",
         "RCBD Two Factor"
