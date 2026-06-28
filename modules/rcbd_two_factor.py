@@ -148,6 +148,7 @@ def group_parameters(params):
             day_num = int(match.group(1))
             day_str = match.group(0)
             
+            # Extract parent category name and strip hanging punctuation
             base = pattern.sub("", p)
             base = re.sub(r"\s*[\(\)\-\,\s]+\s*at\s*$", "", base, flags=re.IGNORECASE)
             base = re.sub(r"\s*[\(\)\-\,\s]+\s*$", "", base)
@@ -395,6 +396,18 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
     r_gm = add_styled_data_row("Grand mean", gm_dict)
     set_header_bottom_border(r_gm)
 
+# --- Main Streamlit Function ---
+def show_module():
+    st.markdown("### RCBD Two-Factor Factorial Analyzer")
+    mode = st.radio("Choose Input Mode", ["Summarized Table Mode", "Raw Data Mode"], key="2f_mode")
+    uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f")
+
+    if uploaded_file is not None:
+        if mode == "Summarized Table Mode":
+            run_summary_mode(uploaded_file)
+        else:
+            run_raw_mode(uploaded_file)
+
 # --- Summarized Table Mode ---
 def run_summary_mode(uploaded_file):
     try:
@@ -489,7 +502,7 @@ def run_summary_mode(uploaded_file):
                     
                     at_par_a_list = []
                     for val, let, lvl in a_means[1:]:
-                        if top_let_a, let and any(char in top_let_a for char in let):
+                        if top_let_a and let and any(char in top_let_a for char in let):
                             at_par_a_list.append(f"{lvl} ({val:.2f}^{let})")
                     at_par_a_str = ", ".join(at_par_a_list) if at_par_a_list else "no other treatment levels"
                     
@@ -601,6 +614,7 @@ def run_raw_mode(uploaded_file):
         
         cols = df_raw_data.columns.tolist()
         
+        # Following the standard R-script data sequence
         block_col = st.selectbox("Select Block/Replication Column", cols, index=0, key="raw_2y_bk_f_mod")
         factor_a_col = st.selectbox("Select Factor A Column", cols, index=1, key="raw_2f_fa_mod")
         factor_b_col = st.selectbox("Select Factor B Column", cols, index=2, key="raw_2f_fb_mod")
@@ -855,15 +869,3 @@ def run_raw_mode(uploaded_file):
                 )
     except Exception as e:
         st.error(f"Error executing raw combined Two-Factor analysis: {e}")
-
-# --- Main Streamlit Function ---
-def show_module():
-    st.markdown("### RCBD Two-Factor Factorial Analyzer")
-    mode = st.radio("Choose Input Mode", ["Summarized Table Mode", "Raw Data Mode"], key="2f_mode")
-    uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f")
-
-    if uploaded_file is not None:
-        if mode == "Summarized Table Mode":
-            run_summary_mode(uploaded_file)
-        else:
-            run_raw_mode(uploaded_file)
