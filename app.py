@@ -20,10 +20,10 @@ except ImportError as e:
 st.title("RCBD Statistical Analysis Web Portal")
 st.write("An analytical suite to process, format, and explain Randomized Complete Block Design (RCBD) experiments.")
 
-# Sidebar Selection - mirroring the choices in your R Shiny app
+# Sidebar Selection - Corrected 'choices' to 'options'
 design_type = st.sidebar.selectbox(
     "Select Experimental Design:",
-    choices=[
+    options=[
         "RCBD Single-Factor (1 Year)",
         "RCBD Single-Factor (2 Years)",
         "RCBD Two-Factor (Factorial)"
