@@ -8,82 +8,205 @@ from scipy.stats import t
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from docx import Document
-from docx.shared import Inches, Pt
+from docx.shared import Pt
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
+import openpyxl
+from openpyxl.styles import Font, Alignment, Border, Side
 
-# --- 15 Significant and 5 Nonsignificant Templates ---
-SIGNIFICANT_TEMPLATES = [
-    "The analysis of variance for **{parameter}** revealed a `{significance}` `{p_value}` treatment effect during the trial. The maximum value was registered by `{top_geno}` (`{top_val}^{top_let}`), which was statistically at par with `{at_par_genotypes}`, whereas `{low_geno}` (`{low_val}^{low_let}`) marked the lowest performance.",
-    "Regarding **{parameter}**, `{significance}` `{p_value}` phenotypic differentiation was observed among the evaluated `{treatment_plural}`. Genotype `{top_geno}` (`{top_val}^{top_let}`) dominated the ranking, sharing statistical parity with `{at_par_genotypes}`. On the other end of the performance spectrum, `{low_geno}` (`{low_val}^{low_let}`) occupied the lowest statistical tier, demonstrating a pronounced gap compared to the top-performing group.",
-    "A `{significance}` `{p_value}` genotypic influence was noted on the agronomic performance of **{parameter}**. `{top_geno}` achieved the apex value of `{top_val}^{top_let}`, remaining statistically equivalent to `{at_par_genotypes}`, while `{low_geno}` (`{low_val}^{low_let}`) was significantly inferior.",
-    "The performance hierarchy for **{parameter}** proved to be `{significance}` `{p_value}` across the germplasm. `{top_geno}` (`{top_val}^{top_let}`) stood at the peak of the statistical distribution, showing no significant difference from `{at_par_genotypes}`. This group of high-performing entries outclassed `{low_geno}` (`{low_val}^{low_let}`), which represented the lower limit of performance relative to the grand mean of `{grand_mean}`.",
-    "Mean separation of **{parameter}** data revealed `{significance}` `{p_value}` variation among the evaluated `{treatment_plural}`. The upper boundary was occupied by `{top_geno}` (`{top_val}^{top_let}`), which co-occupied the top statistical tier along with `{at_par_genotypes}`. In contrast, `{low_geno}` (`{low_val}^{low_let}`) was isolated at the minimum threshold, indicating a significant reduction in trait expression.",
-    "The evaluated `{treatment_plural}` clustered into distinct performance tiers for **{parameter}**, exhibiting a `{significance}` `{p_value}` variance. The highest cluster was led by `{top_geno}` (`{top_val}^{top_let}`), showing statistical parity with `{at_par_genotypes}`. This superior group maintained a substantial margin over the lowest-ranked `{treatment_singular}`, `{low_geno}` (`{low_val}^{low_let}`).",
-    "Trait characterization for **{parameter}** indicated a `{significance}` `{p_value}` treatment influence during the trial. `{top_geno}` (`{top_val}^{top_let}`) emerged as the outstanding performer, remaining statistically at par with `{at_par_genotypes}`. The lowest phenotypic expression was observed in `{low_geno}` (`{low_val}^{low_let}`), which failed to cross the general grand mean of `{grand_mean}`.",
-    "Regarding **{parameter}**, the treatments exhibited a `{significance}` `{p_value}` response pattern. Genotype `{top_geno}` (`{top_val}^{top_let}`) registered the maximum mean value, showing statistical parity with `{at_par_genotypes}`. This group of high-performing treatments displayed a significant advantage over `{low_geno}` (`{low_val}^{low_let}`), which represented the absolute minimum in this trial.",
-    "The statistical analysis of **{parameter}** showed `{significance}` `{p_value}` stratification among the evaluated `{treatment_plural}`. The highest performing bracket was defined by `{top_geno}` (`{top_val}^{top_let}`), which was statistically equivalent to `{at_par_genotypes}`. The baseline of this parameter was occupied by `{low_geno}` (`{low_val}^{low_let}`), highlighting a significant gap between the extremes.",
-    "ANOVA results for **{parameter}** were verified as `{significance}` `{p_value}`. DMRT grouping assigned the supreme letter '{top_let}' to `{top_geno}` (`{top_val}^{top_let}`), which shared statistical letters with `{at_par_genotypes}`. The lowest performer, `{low_geno}` (`{low_val}^{low_let}`), was significantly outclassed by this leading group.",
-    "For **{parameter}**, the genotypic effect was `{significance}` `{p_value}`. `{top_geno}` (`{top_val}^{top_let}`) established the upper vigor threshold, remaining statistically at par with `{at_par_genotypes}`. On the other hand, `{low_geno}` (`{low_val}^{low_let}`) represented the minimum limit of performance, demonstrating a significant drop.",
-    "The magnitude of **{parameter}** manifestation was `{significance}` `{p_value}` across the evaluated `{treatment_plural}`. The highest value was observed in `{top_geno}` (`{top_val}^{top_let}`), which was statistically at par with `{at_par_genotypes}`. The lowest performance was restricted to `{low_geno}` (`{low_val}^{low_let}`), which fell significantly short of the trial's grand mean of `{grand_mean}`.",
-    "A `{significance}` `{p_value}` treatment influence was recorded on **{parameter}** during the cropping cycle. `{top_geno}` (`{top_val}^{top_let}`) outperformed `{low_geno}` (`{low_val}^{low_let}`) by a statistically significant margin, with `{top_geno}` remaining statistically at par with `{at_par_genotypes}`.",
-    "The evaluated `{treatment_plural}` displayed `{significance}` `{p_value}` differences in phenotypic vigor for **{parameter}**. Genotype `{top_geno}` (`{top_val}^{top_let}`) led the rankings, showing no significant difference from `{at_par_genotypes}`. The baseline response was recorded in `{low_geno}` (`{low_val}^{low_let}`), which marked the lowest limit of performance.",
-    "The performance profile for **{parameter}** proved to be `{significance}` `{p_value}`. `{top_geno}` (`{top_val}^{top_let}`) stood out as the leading treatment, showing statistical parity with `{at_par_genotypes}`. Compared to this superior group, `{low_geno}` (`{low_val}^{low_let}`) exhibited a significant reduction in value."
-]
+# --- Parameter Grouping Engine for Time-Series/Trend-Line Analysis ---
+def group_parameters(params):
+    """
+    Groups parameters measured over multiple days/intervals (e.g., PLWD2, PLWD4 -> PLWD)
+    to allow unified trend-line explanations under a single topic.
+    """
+    pattern = re.compile(r"(.*?)(\d+)\s*(dat|das|days|day|d)?$", re.IGNORECASE)
+    groups = {}
+    for p in params:
+        match = pattern.search(p.strip())
+        if match:
+            base = match.group(1).strip()
+            base = re.sub(r"[\s\-\_\(\)]+$", "", base).strip().capitalize()
+            day_num = int(match.group(2))
+            day_str = f"Day {day_num}"
+            if not base:
+                base = "Parameter"
+            if base not in groups:
+                groups[base] = []
+            groups[base].append((p, day_num, day_str))
+        else:
+            base = p.strip().capitalize()
+            if base not in groups:
+                groups[base] = []
+            groups[base].append((p, 0, ""))
+            
+    for base in groups:
+        groups[base].sort(key=lambda x: x[1])
+    return groups
 
-NONSIGNIFICANT_TEMPLATES = [
-    "For **{parameter}**, the genotypic influence was found to be **nonsignificant** `{p_value}`. No statistical differences were detected among the evaluated `{treatment_plural}`, indicating that all treatments performed statistically at par under the experimental conditions, with the mean values remaining relatively close to the trial's grand mean of `{grand_mean}`.",
-    "Regarding **{parameter}**, the treatment effect was **nonsignificant** `{p_value}`, demonstrating highly stable and uniform trait expression across the germplasm. All evaluated `{treatment_plural}` remained statistically equivalent, with no individual treatment separating out as superior or inferior.",
-    "Statistical analysis of **{parameter}** confirmed that treatment effects were **nonsignificant** `{p_value}`. This indicates that all tested `{treatment_plural}` co-occupied the same statistical tier and possessed equivalent performance potential under the single-year trial environment.",
-    "The agronomic response for **{parameter}** exhibited a **nonsignificant** `{p_value}` trend during the cropping cycle. No phenotypic stratification occurred among the `{treatment_plural}`, leaving all entries statistically at par with a flat distribution of values around the grand mean of `{grand_mean}`.",
-    "Analysis of variance for **{parameter}** yielded a **nonsignificant** `{p_value}` result, pointing to highly homogenous data. All evaluated `{treatment_plural}` behaved identically from a statistical standpoint, with no significant differences observed between the highest and lowest recorded values."
-]
-
-# --- Formatting Helpers ---
-def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
-    tcPr = cell._tc.get_or_add_tcPr()
-    tcMar = OxmlElement('w:tcMar')
-    for m, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
-        node = OxmlElement(f'w:{m}')
-        node.set(qn('w:w'), str(val))
-        node.set(qn('w:type'), 'dxa')
-        tcMar.append(node)
-    tcPr.append(tcMar)
-
-def set_table_borders(table):
-    tblPr = table._tbl.tblPr
-    borders = parse_xml(
-        '<w:tblBorders %s>'
-        '<w:top w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-        '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-        '<w:left w:val="none"/>'
-        '<w:right w:val="none"/>'
-        '<w:insideH w:val="none"/>'
-        '<w:insideV w:val="none"/>'
-        '</w:tblBorders>' % nsdecls('w')
+# --- Dynamic Academic Explanation Generators for Single Factor ---
+def generate_single_trend_explanation(base_name, items, results_data, table_label):
+    """
+    Generates a publication-grade paragraph explaining the temporal trend of a group of variables
+    (e.g., weight loss over 10 days) for single factor design under one topic.
+    """
+    first_item = items[0]
+    last_item = items[-1]
+    
+    first_param, _, first_day_str = first_item
+    last_param, _, last_day_str = last_item
+    
+    p_first = results_data[first_param]
+    p_last = results_data[last_param]
+    
+    first_gm = p_first["gm"]
+    last_gm = p_last["gm"]
+    
+    direction = "progressive increase" if last_gm >= first_gm else "progressive decrease"
+    trend_verb = "increased" if last_gm >= first_gm else "decreased"
+    
+    sig_first_text = "statistically significant" if p_first["p_val"] < 0.05 else "nonsignificant"
+    sig_last_text = "significant" if p_last["p_val"] < 0.05 else "nonsignificant"
+    
+    sorted_last = sorted(p_last["means"].items(), key=lambda x: x[1], reverse=True)
+    top_last, top_val_last = sorted_last[0]
+    low_last, low_val_last = sorted_last[-1]
+    top_let_last = p_last["means_str"][top_last].replace(f"{top_val_last:.2f}", "")
+    
+    at_par_last_list = []
+    for genotype, val in sorted_last[1:]:
+        let = p_last["means_str"][genotype].replace(f"{val:.2f}", "")
+        if top_let_last and let and any(char in top_let_last for char in let):
+            at_par_last_list.append(f"{genotype} ({val:.2f}^{let})")
+    at_par_last_str = f"statistically at par with {', '.join(at_par_last_list)}" if at_par_last_list else "distinctly superior to other genotypes"
+    
+    para = (
+        f"With respect to **{base_name}**, the values displayed a continuous {direction} trend "
+        f"as storage/duration progressed (as detailed in **{table_label}**). The grand mean {trend_verb} from "
+        f"{first_gm:.2f} at {first_day_str} to {last_gm:.2f} by {last_day_str}. "
+        f"The treatment factor exerted a {sig_first_text} effect at the initial observation point, which evolved into "
+        f"a highly {sig_last_text} factor by the final evaluation stage ({last_day_str}). At {last_day_str}, the highest "
+        f"mean was recorded under `{top_last}` ({top_val_last:.2f}^{top_let_last}), which was {at_par_last_str}. "
+        f"Conversely, the minimum performance baseline was observed in `{low_last}` ({low_val_last:.2f})."
     )
-    tblPr.append(borders)
+    return para
 
-def set_header_bottom_border(row):
-    for cell in row.cells:
-        tcPr = cell._tc.get_or_add_tcPr()
-        borders = parse_xml(
-            '<w:tcBorders %s>'
-            '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-            '</w:tcBorders>' % nsdecls('w')
+def generate_multiyear_trend_explanation(base_name, items, results_data_1, results_data_2, year1_label, year2_label, table_label):
+    """
+    Generates an academic paragraph explaining a time-series parameter across two consecutive seasons.
+    """
+    first_item = items[0]
+    last_item = items[-1]
+    first_param, _, first_day_str = first_item
+    last_param, _, last_day_str = last_item
+    
+    p_last_1 = results_data_1[last_param]
+    p_last_2 = results_data_2[last_param]
+    
+    first_gm = (results_data_1[first_param]["gm"] + results_data_2[first_param]["gm"]) / 2
+    last_gm = (p_last_1["gm"] + p_last_2["gm"]) / 2
+    direction = "progressive increase" if last_gm >= first_gm else "progressive decrease"
+    trend_verb = "increased" if last_gm >= first_gm else "decreased"
+    
+    sig_1 = "significant" if p_last_1["p_val"] < 0.05 else "nonsignificant"
+    sig_2 = "significant" if p_last_2["p_val"] < 0.05 else "nonsignificant"
+    
+    sorted_1 = sorted(p_last_1["means"].items(), key=lambda x: x[1], reverse=True)
+    top_1, top_val_1 = sorted_1[0]
+    top_let_1 = p_last_1["means_str"][top_1].replace(f"{top_val_1:.2f}", "")
+    
+    sorted_2 = sorted(p_last_2["means"].items(), key=lambda x: x[1], reverse=True)
+    top_2, top_val_2 = sorted_2[0]
+    top_let_2 = p_last_2["means_str"][top_2].replace(f"{top_val_2:.2f}", "")
+    
+    para = (
+        f"Evaluating the temporal development of **{base_name}** across two consecutive seasons "
+        f"({year1_label} and {year2_label}) revealed a highly consistent, time-dependent {direction} "
+        f"profile (as shown in **{table_label}**). The overall pooled grand mean {trend_verb} from {first_gm:.2f} at {first_day_str} "
+        f"to {last_gm:.2f} by the final interval ({last_day_str}). In the first season ({year1_label}), treatment effects at "
+        f"{last_day_str} were highly {sig_1}, with `{top_1}` establishing the highest value of {top_val_1:.2f}^{top_let_1}. "
+        f"This pattern was closely mirrored in the second season ({year2_label}), where treatment effects at {last_day_str} "
+        f"remained highly {sig_2}, with `{top_2}` occupying the leading statistical group ({top_val_2:.2f}^{top_let_2})."
+    )
+    return para
+
+def generate_single_explanation(param_name, p_data, table_label):
+    """
+    Generates Q1-standard paragraph explaining single-interval parameters (e.g., Shelf Life, pH).
+    """
+    p_val = p_data["p_val"]
+    sig_text = "significant" if p_val < 0.05 else "nonsignificant"
+    p_not = f"(p < 0.05)" if p_val < 0.05 else "(p > 0.05)"
+    if p_val < 0.01: p_not = "(p < 0.01)"
+    
+    sorted_means = sorted(p_data["means"].items(), key=lambda x: x[1], reverse=True)
+    top_g, top_val_g = sorted_means[0]
+    low_g, low_val_g = sorted_means[-1]
+    top_let_g = p_data["means_str"][top_g].replace(f"{top_val_g:.2f}", "")
+    
+    at_par_list = []
+    for genotype, val in sorted_means[1:]:
+        let = p_data["means_str"][genotype].replace(f"{val:.2f}", "")
+        if top_let_g and let and any(char in top_let_g for char in let):
+            at_par_list.append(f"{genotype} ({val:.2f}^{let})")
+    at_par_str = f"statistically at par with {', '.join(at_par_list)}" if at_par_list else "distinctly superior to alternative genotypes"
+    
+    if p_val > 0.05:
+        para = (
+            f"The statistical analysis regarding **{param_name}** indicated a **nonsignificant** "
+            f"treatment effect {p_not} (as summarized in **{table_label}**). The genotype values remained "
+            f"highly stable and uniform, clustering closely around the grand mean of {p_data['gm']:.2f}. "
+            f"This suggests that the trial treatments did not induce phenotypic stratification for this specific trait."
         )
-        tcPr.append(borders)
+    else:
+        para = (
+            f"Statistical evaluation of the **{param_name}** data revealed a highly **significant** "
+            f"treatment effect {p_not} (as shown in **{table_label}**). Genotype `{top_g}` registered "
+            f"the maximum value of {top_val_g:.2f}^{top_let_g}, which was {at_par_str}. "
+            f"Conversely, the minimum performance value was restricted to genotype `{low_g}` ({low_val_g:.2f}). "
+            f"The trial was characterized by a Coefficient of Variation (CV) of {p_data['cv']:.2f}%."
+        )
+    return para
 
-def parse_dmrt_value(val):
-    if pd.isna(val):
-        return "", ""
-    val_str = str(val).strip()
-    match = re.match(r"^([\d\.\-]+)\s*([a-z]+)?$", val_str)
-    if match:
-        num = match.group(1)
-        letters = match.group(2) if match.group(2) else ""
-        return num, letters
-    return val_str, ""
+def generate_multiyear_explanation(param_name, p_data_1, p_data_2, year1_label, year2_label, table_label):
+    """
+    Generates an explanation paragraph comparing a single-interval parameter across two consecutive years.
+    """
+    sig_1 = "significant" if p_data_1["p_val"] < 0.05 else "nonsignificant"
+    sig_2 = "significant" if p_data_2["p_val"] < 0.05 else "nonsignificant"
+    
+    sorted_1 = sorted(p_data_1["means"].items(), key=lambda x: x[1], reverse=True)
+    top_1, top_val_1 = sorted_1[0]
+    top_let_1 = p_data_1["means_str"][top_1].replace(f"{top_val_1:.2f}", "")
+    
+    sorted_2 = sorted(p_data_2["means"].items(), key=lambda x: x[1], reverse=True)
+    top_2, top_val_2 = sorted_2[0]
+    top_let_2 = p_data_2["means_str"][top_2].replace(f"{top_val_2:.2f}", "")
+    
+    pooled_gm = (p_data_1["gm"] + p_data_2["gm"]) / 2
+    
+    para = (
+        f"Evaluation of **{param_name}** across consecutive seasons revealed that genotype effects "
+        f"were highly {sig_1} during {year1_label} and highly {sig_2} during {year2_label} "
+        f"(as presented in **{table_label}**). In {year1_label}, `{top_1}` achieved the maximum value of "
+        f"{top_val_1:.2f}^{top_let_1}, while in {year2_label}, `{top_2}` maintained its superior performance "
+        f"with {top_val_2:.2f}^{top_let_2}. Across both seasons, the pooled grand mean settled at {pooled_gm:.2f}, "
+        f"demonstrating a reliable and repeatable response pattern under varying environmental environments."
+    )
+    return para
+
+# --- Statistical Computation Engine ---
+def get_signif_code_val(p):
+    if is_nan_val(p): return "ns"
+    if p < 0.001: return "***"
+    elif p < 0.01: return "**"
+    elif p < 0.05: return "*"
+    elif p < 0.1: return "."
+    else: return "ns"
+
+def is_nan_val(val):
+    try: return np.isnan(float(val))
+    except: return False
 
 def get_cld_letters(means_dict, lsd):
     sorted_means = sorted(means_dict.items(), key=lambda x: x[1], reverse=True)
@@ -126,344 +249,531 @@ def get_cld_letters(means_dict, lsd):
             
     return treatment_letters
 
-# --- Main Module UI/Execution Entry ---
-def show_module():
-    st.markdown("### RCBD Single Factor - One Year Analysis")
-    mode = st.radio("Choose Input Mode", ["Summarized Table Mode", "Raw Data Mode"])
+def run_anova_1factor(df, block_col, genotype_col, param):
+    df_temp = pd.DataFrame({
+        'rep': df[block_col].astype(str),
+        'genotype': df[genotype_col].astype(str),
+        'response': pd.to_numeric(df[param], errors='coerce')
+    }).dropna(subset=['response'])
+    
+    model = ols("response ~ C(rep) + C(genotype)", data=df_temp).fit()
+    anova_table = sm.stats.anova_lm(model, typ=1)
+    
+    df_err = anova_table.loc["Residual", "df"]
+    mse = anova_table.loc["Residual", "mean_sq"]
+    p_val = anova_table.loc["C(genotype)", "PR(>F)"]
+    
+    grand_mean = df_temp['response'].mean()
+    cv = (np.sqrt(mse) / grand_mean) * 100
+    
+    r = df_temp['rep'].nunique()
+    t_val = t.ppf(0.975, df_err)
+    
+    means = df_temp.groupby('genotype')['response'].mean().to_dict()
+    sem = np.sqrt(mse / r)
+    lsd = t_val * np.sqrt((2 * mse) / r)
+    
+    cld = get_cld_letters(means, lsd)
+    sig_code = get_signif_code_val(p_val)
+    p_text = f"{p_val:.4f}{sig_code}" if p_val >= 0.0001 else f"0.0000{sig_code}"
+    
+    means_str = {}
+    for g, val in means.items():
+        let = cld[g] if p_val < 0.05 else ""
+        means_str[g] = f"{val:.2f}{let}"
+        
+    return {
+        "means": means,
+        "means_str": means_str,
+        "sem": round(sem, 2),
+        "p_val": p_val,
+        "p_text": p_text,
+        "lsd": round(lsd, 2),
+        "cv": round(cv, 2),
+        "gm": round(grand_mean, 2)
+    }
 
-    uploaded_file = st.file_uploader("Upload Excel File", type=["xlsx"], key="file_uploader_1y")
-
-    if uploaded_file is not None:
-        if mode == "Summarized Table Mode":
-            run_summary_mode(uploaded_file)
-        else:
-            run_raw_mode(uploaded_file)
-
-# --- Execution Core for Summary Table ---
-def run_summary_mode(uploaded_file):
-    try:
-        df_raw = pd.read_excel(uploaded_file, header=None)
-        anchor_row_idx = None
-        anchor_keywords = ["genotype", "treatment", "variety", "fertilizer", "sowing", "pesticide", "spacing", "cultivar", "treatments"]
+# --- Styled Excel Builders ---
+def build_single_year_excel(genotype_col, params, genotypes, results_data):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Analysis Output"
+    
+    font_bold = Font(name="Arial", size=10, bold=True)
+    font_regular = Font(name="Arial", size=10)
+    align_left = Alignment(horizontal="left", vertical="center")
+    align_center = Alignment(horizontal="center", vertical="center")
+    border_thin_bottom = Border(bottom=Side(style='thin', color='000000'))
+    border_medium_bottom = Border(bottom=Side(style='medium', color='000000'))
+    
+    ws.cell(row=1, column=1, value="Genotype").font = font_bold
+    ws.cell(row=1, column=1).alignment = align_left
+    
+    for c_idx, p in enumerate(params, start=2):
+        cell = ws.cell(row=1, column=c_idx, value=p.upper())
+        cell.font = font_bold
+        cell.alignment = align_center
         
-        for idx, val in enumerate(df_raw[0]):
-            if pd.notna(val) and str(val).strip().lower() in anchor_keywords:
-                anchor_row_idx = idx
-                break
-                
-        if anchor_row_idx is None:
-            st.error("Could not find the Treatment/Genotype column. Ensure Column A has a header like 'Genotype' or 'Treatment'.")
-            return
-
-        df_cleaned = pd.read_excel(uploaded_file, skiprows=anchor_row_idx)
-        df_cleaned.columns = [str(c).strip() for c in df_cleaned.columns]
-        treatment_col = df_cleaned.columns[0]
-        
-        treatment_label = treatment_col.lower()
-        treatment_label_plural = treatment_label[:-1] + "ies" if treatment_label.endswith('y') else treatment_label + "s"
-        
-        stats_keywords = ["sem", "p-value", "lsd", "cv", "grand mean"]
-        stats_rows = {}
-        treatment_end_idx = len(df_cleaned)
-        
-        for idx, val in enumerate(df_cleaned[treatment_col]):
-            if pd.notna(val):
-                val_clean = str(val).strip().lower()
-                for key in stats_keywords:
-                    if key in val_clean:
-                        stats_rows[key] = idx
-                        treatment_end_idx = min(treatment_end_idx, idx)
-        
-        df_treatments = df_cleaned.iloc[:treatment_end_idx].copy()
-        stats_data = {key: df_cleaned.iloc[row_idx] for key, row_idx in stats_rows.items()}
-        
-        st.write("#### Preview Treatments:", df_treatments)
-        all_parameters = [col for col in df_cleaned.columns if col != treatment_col]
-        
-        group_1_name = st.text_input("First Table Title", "Vegetative and Morphological Traits")
-        group_1_cols = st.multiselect("Select parameters for Table 1", all_parameters, default=all_parameters[:len(all_parameters)//2])
-        group_2_name = st.text_input("Second Table Title", "Yield and Yield Components")
-        group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in all_parameters if c not in group_1_cols], default=[c for c in all_parameters if c not in group_1_cols])
-        
-        if st.button("Generate Word Report (Summary Mode)"):
-            doc = Document()
-            doc.add_heading("Summarized RCBD Report Draft", 0)
+    for r_idx, g in enumerate(genotypes, start=2):
+        ws.cell(row=r_idx, column=1, value=g).font = font_regular
+        ws.cell(row=r_idx, column=1).alignment = align_left
+        for c_idx, p in enumerate(params, start=2):
+            cell = ws.cell(row=r_idx, column=c_idx, value=results_data[p]["means_str"].get(g, ""))
+            cell.font = font_regular
+            cell.alignment = align_center
             
-            groups = [(group_1_name, group_1_cols, 1), (group_2_name, group_2_cols, 2)]
-            sig_idx, ns_idx = 0, 0
+    stats_labels = ["SEM", "P-value", "LSD (0.05)", "CV (%)", "Grand Mean"]
+    stats_keys = ["sem", "p_text", "lsd", "cv", "gm"]
+    
+    start_stats_row = len(genotypes) + 2
+    for s_idx, (label, key) in enumerate(zip(stats_labels, stats_keys)):
+        curr_row = start_stats_row + s_idx
+        ws.cell(row=curr_row, column=1, value=label).font = font_bold
+        ws.cell(row=curr_row, column=1).alignment = align_left
+        for c_idx, p in enumerate(params, start=2):
+            cell = ws.cell(row=curr_row, column=c_idx, value=results_data[p][key])
+            cell.font = font_regular
+            cell.alignment = align_center
             
-            for g_title, g_cols, table_num in groups:
-                if not g_cols:
-                    continue
-                doc.add_heading(f"Table {table_num}: {g_title}", level=1)
-                text_paragraphs = []
+    # Borders
+    for col in range(1, len(params) + 2):
+        ws.cell(row=1, column=col).border = border_thin_bottom
+        ws.cell(row=start_stats_row, column=col).border = border_thin_bottom
+        ws.cell(row=start_stats_row + len(stats_keys) - 1, column=col).border = border_medium_bottom
+        
+    return wb
+
+def build_multiyear_excel(genotype_col, params, genotypes, results_1, results_2, year1_lbl, year2_lbl):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Analysis Output"
+    
+    font_bold = Font(name="Arial", size=10, bold=True)
+    font_regular = Font(name="Arial", size=10)
+    align_left = Alignment(horizontal="left", vertical="center")
+    align_center = Alignment(horizontal="center", vertical="center")
+    border_thin_bottom = Border(bottom=Side(style='thin', color='000000'))
+    border_medium_bottom = Border(bottom=Side(style='medium', color='000000'))
+    
+    ws.cell(row=3, column=1, value="Genotype").font = font_bold
+    ws.cell(row=3, column=1).alignment = align_left
+    
+    # Header Columns Setup
+    for i, p in enumerate(params):
+        start_col = i * 3 + 2
+        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=start_col+2)
+        cell_p = ws.cell(row=1, column=start_col, value=p.upper())
+        cell_p.font = font_bold
+        cell_p.alignment = align_center
+        
+        ws.cell(row=2, column=start_col, value=year1_lbl).font = font_bold
+        ws.cell(row=2, column=start_col).alignment = align_center
+        ws.cell(row=2, column=start_col+1, value=year2_lbl).font = font_bold
+        ws.cell(row=2, column=start_col+1).alignment = align_center
+        ws.cell(row=2, column=start_col+2, value="Pooled").font = font_bold
+        ws.cell(row=2, column=start_col+2).alignment = align_center
+        
+        ws.cell(row=3, column=start_col, value="Mean").font = font_bold
+        ws.cell(row=3, column=start_col).alignment = align_center
+        ws.cell(row=3, column=start_col+1, value="Mean").font = font_bold
+        ws.cell(row=3, column=start_col+1).alignment = align_center
+        ws.cell(row=3, column=start_col+2, value="Mean").font = font_bold
+        ws.cell(row=3, column=start_col+2).alignment = align_center
+        
+    for r_idx, g in enumerate(genotypes, start=4):
+        ws.cell(row=r_idx, column=1, value=g).font = font_regular
+        ws.cell(row=r_idx, column=1).alignment = align_left
+        for i, p in enumerate(params):
+            start_col = i * 3 + 2
+            
+            val_1 = results_1[p]["means_str"].get(g, "")
+            val_2 = results_2[p]["means_str"].get(g, "")
+            pooled_val = (results_1[p]["means"].get(g, 0.0) + results_2[p]["means"].get(g, 0.0)) / 2
+            
+            cell1 = ws.cell(row=r_idx, column=start_col, value=val_1)
+            cell1.font = font_regular
+            cell1.alignment = align_center
+            
+            cell2 = ws.cell(row=r_idx, column=start_col+1, value=val_2)
+            cell2.font = font_regular
+            cell2.alignment = align_center
+            
+            cell3 = ws.cell(row=r_idx, column=start_col+2, value=f"{pooled_val:.2f}")
+            cell3.font = font_regular
+            cell3.alignment = align_center
+            
+    stats_labels = ["SEM", "P-value", "LSD (0.05)", "CV (%)", "Grand Mean"]
+    stats_keys = ["sem", "p_text", "lsd", "cv", "gm"]
+    
+    start_stats_row = len(genotypes) + 4
+    for s_idx, (label, key) in enumerate(zip(stats_labels, stats_keys)):
+        curr_row = start_stats_row + s_idx
+        ws.cell(row=curr_row, column=1, value=label).font = font_bold
+        ws.cell(row=curr_row, column=1).alignment = align_left
+        for i, p in enumerate(params):
+            start_col = i * 3 + 2
+            
+            cell1 = ws.cell(row=curr_row, column=start_col, value=results_1[p][key])
+            cell1.font = font_regular
+            cell1.alignment = align_center
+            
+            cell2 = ws.cell(row=curr_row, column=start_col+1, value=results_2[p][key])
+            cell2.font = font_regular
+            cell2.alignment = align_center
+            
+            # Pooled Stats Placeholder Column left empty as per agricultural layouts
+            cell3 = ws.cell(row=curr_row, column=start_col+2, value="")
+            cell3.font = font_regular
+            cell3.alignment = align_center
+            
+    total_cols = len(params) * 3 + 1
+    for col in range(1, total_cols + 1):
+        ws.cell(row=1, column=col).border = border_thin_bottom
+        ws.cell(row=3, column=col).border = border_thin_bottom
+        ws.cell(row=start_stats_row, column=col).border = border_thin_bottom
+        ws.cell(row=start_stats_row + len(stats_keys) - 1, column=col).border = border_medium_bottom
+        
+    return wb
+
+# --- DOCX Exporter Formatting Functions ---
+def add_single_table_to_docx(doc, params, genotypes, results_data):
+    num_cols = len(params) + 1
+    table = doc.add_table(rows=1, cols=num_cols)
+    set_table_borders(table)
+    
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = "Genotype"
+    set_cell_margins(hdr_cells[0])
+    hdr_cells[0].paragraphs[0].runs[0].font.bold = True
+    hdr_cells[0].paragraphs[0].runs[0].font.name = 'Arial'
+    hdr_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+    
+    for c_idx, p in enumerate(params):
+        hdr_cells[c_idx + 1].text = p.upper()
+        set_cell_margins(hdr_cells[c_idx + 1])
+        hdr_cells[c_idx + 1].paragraphs[0].alignment = 1
+        hdr_cells[c_idx + 1].paragraphs[0].runs[0].font.bold = True
+        hdr_cells[c_idx + 1].paragraphs[0].runs[0].font.name = 'Arial'
+        hdr_cells[c_idx + 1].paragraphs[0].runs[0].font.size = Pt(10)
+        
+    set_header_bottom_border(table.rows[0])
+    
+    # Data rows
+    for g in sorted(genotypes):
+        row_cells = table.add_row().cells
+        row_cells[0].text = str(g)
+        set_cell_margins(row_cells[0])
+        row_cells[0].paragraphs[0].runs[0].font.name = 'Arial'
+        row_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        for c_idx, p in enumerate(params):
+            row_cells[c_idx + 1].text = str(results_data[p]["means_str"].get(g, ""))
+            set_cell_margins(row_cells[c_idx + 1])
+            p_val = row_cells[c_idx + 1].paragraphs[0]
+            p_val.alignment = 1
+            if p_val.runs:
+                p_val.runs[0].font.name = 'Arial'
+                p_val.runs[0].font.size = Pt(10)
                 
-                for param in g_cols:
-                    p_val_raw = str(stats_data.get("p-value", {}).get(param, "0.05"))
+    set_header_bottom_border(table.rows[-1])
+    
+    stats_labels = ["SEM", "P-value", "LSD (0.05)", "CV (%)", "Grand Mean"]
+    stats_keys = ["sem", "p_text", "lsd", "cv", "gm"]
+    
+    for s_idx, (label, key) in enumerate(zip(stats_labels, stats_keys)):
+        row_cells = table.add_row().cells
+        row_cells[0].text = label
+        set_cell_margins(row_cells[0])
+        row_cells[0].paragraphs[0].runs[0].font.bold = True
+        row_cells[0].paragraphs[0].runs[0].font.name = 'Arial'
+        row_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        for c_idx, p in enumerate(params):
+            row_cells[c_idx + 1].text = str(results_data[p][key])
+            set_cell_margins(row_cells[c_idx + 1])
+            p_val = row_cells[c_idx + 1].paragraphs[0]
+            p_val.alignment = 1
+            if p_val.runs:
+                p_val.runs[0].font.name = 'Arial'
+                p_val.runs[0].font.size = Pt(10)
+                
+        if s_idx == len(stats_keys) - 1:
+            set_header_bottom_border(row_cells)
+
+def add_multi_table_to_docx(doc, params, genotypes, results_1, results_2, year1_lbl, year2_lbl):
+    num_cols = len(params) * 3 + 1
+    table = doc.add_table(rows=3, cols=num_cols)
+    set_table_borders(table)
+    
+    # Merge cells dynamically to replicate multi-year Excel layouts in Word
+    hdr_row0 = table.rows[0].cells
+    hdr_row1 = table.rows[1].cells
+    hdr_row2 = table.rows[2].cells
+    
+    hdr_row0[0].text = "Genotype"
+    set_cell_margins(hdr_row0[0])
+    hdr_row0[0].paragraphs[0].runs[0].font.bold = True
+    hdr_row0[0].paragraphs[0].runs[0].font.name = 'Arial'
+    hdr_row0[0].paragraphs[0].runs[0].font.size = Pt(10)
+    
+    # Merge vertical headers for Treatment Column
+    hdr_row0[0].merge(hdr_row1[0]).merge(hdr_row2[0])
+    
+    for i, p in enumerate(params):
+        start_col = i * 3 + 1
+        
+        # Merge horizontal headers for Parameters
+        hdr_row0[start_col].merge(hdr_row0[start_col+1]).merge(hdr_row0[start_col+2])
+        hdr_row0[start_col].text = p.upper()
+        set_cell_margins(hdr_row0[start_col])
+        hdr_row0[start_col].paragraphs[0].alignment = 1
+        hdr_row0[start_col].paragraphs[0].runs[0].font.bold = True
+        hdr_row0[start_col].paragraphs[0].runs[0].font.name = 'Arial'
+        hdr_row0[start_col].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        # Subheaders (Yearly labels and pooled tags)
+        hdr_row1[start_col].text = year1_lbl
+        set_cell_margins(hdr_row1[start_col])
+        hdr_row1[start_col].paragraphs[0].alignment = 1
+        hdr_row1[start_col].paragraphs[0].runs[0].font.bold = True
+        hdr_row1[start_col].paragraphs[0].runs[0].font.name = 'Arial'
+        hdr_row1[start_col].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        hdr_row1[start_col+1].text = year2_lbl
+        set_cell_margins(hdr_row1[start_col+1])
+        hdr_row1[start_col+1].paragraphs[0].alignment = 1
+        hdr_row1[start_col+1].paragraphs[0].runs[0].font.bold = True
+        hdr_row1[start_col+1].paragraphs[0].runs[0].font.name = 'Arial'
+        hdr_row1[start_col+1].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        hdr_row1[start_col+2].text = "Pooled"
+        set_cell_margins(hdr_row1[start_col+2])
+        hdr_row1[start_col+2].paragraphs[0].alignment = 1
+        hdr_row1[start_col+2].paragraphs[0].runs[0].font.bold = True
+        hdr_row1[start_col+2].paragraphs[0].runs[0].font.name = 'Arial'
+        hdr_row1[start_col+2].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        # Data categories row (Mean markers)
+        for sub_col in range(3):
+            hdr_row2[start_col + sub_col].text = "Mean"
+            set_cell_margins(hdr_row2[start_col + sub_col])
+            hdr_row2[start_col + sub_col].paragraphs[0].alignment = 1
+            hdr_row2[start_col + sub_col].paragraphs[0].runs[0].font.bold = True
+            hdr_row2[start_col + sub_col].paragraphs[0].runs[0].font.name = 'Arial'
+            hdr_row2[start_col + sub_col].paragraphs[0].runs[0].font.size = Pt(10)
+            
+    set_header_bottom_border(table.rows[2])
+    
+    # Fill Data rows
+    for g in sorted(genotypes):
+        row_cells = table.add_row().cells
+        row_cells[0].text = str(g)
+        set_cell_margins(row_cells[0])
+        row_cells[0].paragraphs[0].runs[0].font.name = 'Arial'
+        row_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        for i, p in enumerate(params):
+            start_col = i * 3 + 1
+            pooled_val = (results_1[p]["means"].get(g, 0.0) + results_2[p]["means"].get(g, 0.0)) / 2
+            
+            row_cells[start_col].text = str(results_1[p]["means_str"].get(g, ""))
+            set_cell_margins(row_cells[start_col])
+            row_cells[start_col].paragraphs[0].alignment = 1
+            row_cells[start_col].paragraphs[0].runs[0].font.name = 'Arial'
+            row_cells[start_col].paragraphs[0].runs[0].font.size = Pt(10)
+            
+            row_cells[start_col+1].text = str(results_2[p]["means_str"].get(g, ""))
+            set_cell_margins(row_cells[start_col+1])
+            row_cells[start_col+1].paragraphs[0].alignment = 1
+            row_cells[start_col+1].paragraphs[0].runs[0].font.name = 'Arial'
+            row_cells[start_col+1].paragraphs[0].runs[0].font.size = Pt(10)
+            
+            row_cells[start_col+2].text = f"{pooled_val:.2f}"
+            set_cell_margins(row_cells[start_col+2])
+            row_cells[start_col+2].paragraphs[0].alignment = 1
+            row_cells[start_col+2].paragraphs[0].runs[0].font.name = 'Arial'
+            row_cells[start_col+2].paragraphs[0].runs[0].font.size = Pt(10)
+            
+    set_header_bottom_border(table.rows[-1])
+    
+    stats_labels = ["SEM", "P-value", "LSD (0.05)", "CV (%)", "Grand Mean"]
+    stats_keys = ["sem", "p_text", "lsd", "cv", "gm"]
+    
+    for s_idx, (label, key) in enumerate(zip(stats_labels, stats_keys)):
+        row_cells = table.add_row().cells
+        row_cells[0].text = label
+        set_cell_margins(row_cells[0])
+        row_cells[0].paragraphs[0].runs[0].font.bold = True
+        row_cells[0].paragraphs[0].runs[0].font.name = 'Arial'
+        row_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        for i, p in enumerate(params):
+            start_col = i * 3 + 1
+            row_cells[start_col].text = str(results_1[p][key])
+            set_cell_margins(row_cells[start_col])
+            row_cells[start_col].paragraphs[0].alignment = 1
+            row_cells[start_col].paragraphs[0].runs[0].font.name = 'Arial'
+            row_cells[start_col].paragraphs[0].runs[0].font.size = Pt(10)
+            
+            row_cells[start_col+1].text = str(results_2[p][key])
+            set_cell_margins(row_cells[start_col+1])
+            row_cells[start_col+1].paragraphs[0].alignment = 1
+            row_cells[start_col+1].paragraphs[0].runs[0].font.name = 'Arial'
+            row_cells[start_col+1].paragraphs[0].runs[0].font.size = Pt(10)
+            
+            row_cells[start_col+2].text = ""
+            set_cell_margins(row_cells[start_col+2])
+            
+        if s_idx == len(stats_keys) - 1:
+            set_header_bottom_border(row_cells)
+
+# --- Streamlit Controller ---
+def run_one_factor_analysis():
+    st.markdown("### Single-Factor RCBD Analyzer")
+    years_option = st.radio("Select Trial Duration:", ["1 Year", "2 Years / Multi-Year Pooling"], key="1f_duration")
+    
+    file1 = st.file_uploader("Upload Trial File 1 (.xlsx)", type=["xlsx"], key="file1_1f")
+    
+    file2 = None
+    year1_lbl = "Year 1"
+    year2_lbl = "Year 2"
+    
+    if years_option == "2 Years / Multi-Year Pooling":
+        file2 = st.file_uploader("Upload Trial File 2 (.xlsx)", type=["xlsx"], key="file2_1f")
+        year1_lbl = st.text_input("Label for Year 1 (Optional):", value="Year 1")
+        year2_lbl = st.text_input("Label for Year 2 (Optional):", value="Year 2")
+        
+    if file1 is not None:
+        try:
+            df1_raw = pd.read_excel(file1)
+            st.write("#### Trial 1 Preview:", df1_raw.head())
+            
+            cols = df1_raw.columns.tolist()
+            block_col = st.selectbox("Select Block/Replication Column:", cols, index=0, key="block_1f")
+            genotype_col = st.selectbox("Select Genotype/Treatment Column:", cols, index=1, key="genotype_1f")
+            response_cols = st.multiselect("Select Parameters to Analyze:", cols, default=cols[2:], key="response_1f")
+            
+            if response_cols:
+                # Custom layout subdivisions
+                group_1_name = st.text_input("First Table Title", "Physiological and Morphological Properties", key="1f_t1_title")
+                group_1_cols = st.multiselect("Select parameters for Table 1", response_cols, default=response_cols[:len(response_cols)//2], key="1f_t1_cols")
+                group_2_name = st.text_input("Second Table Title", "Biochemical and Quality Properties", key="1f_t2_title")
+                group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in response_cols if c not in group_1_cols], default=[c for c in response_cols if c not in group_1_cols], key="1f_t2_cols")
+                
+                if st.button("Run Single-Factor Statistical Engine", key="run_1f_engine"):
+                    genotypes_1 = sorted(df1_raw[genotype_col].dropna().unique().tolist())
                     
-                    # Parse significance
-                    is_significant = True
-                    p_notation = "(p < 0.05)"
-                    sig_type = "significant"
-                    
-                    if "NS" in p_val_raw.upper() or float(re.findall(r"[\d\.]+", p_val_raw)[0] if re.findall(r"[\d\.]+", p_val_raw) else 0.5) > 0.05:
-                        is_significant = False
-                        sig_type = "nonsignificant"
-                        p_notation = "(p > 0.05)"
-                    else:
-                        if "***" in p_val_raw: p_notation = "(p < 0.001)"
-                        elif "**" in p_val_raw: p_notation = "(p < 0.01)"
+                    results_data_1 = {}
+                    for param in response_cols:
+                        results_data_1[param] = run_anova_1factor(df1_raw, block_col, genotype_col, param)
                         
-                    param_series = df_treatments[param]
-                    parsed_pairs = [parse_dmrt_value(x) for x in param_series]
+                    results_data_2 = {}
+                    genotypes_2 = []
+                    common_genotypes = genotypes_1
                     
-                    numeric_vals = []
-                    for i, (num_str, let) in enumerate(parsed_pairs):
-                        try:
-                            numeric_vals.append((float(num_str), let, df_treatments.iloc[i][treatment_col]))
-                        except ValueError:
-                            pass
+                    if file2 is not None:
+                        df2_raw = pd.read_excel(file2)
+                        genotypes_2 = sorted(df2_raw[genotype_col].dropna().unique().tolist())
+                        common_genotypes = sorted(list(set(genotypes_1).intersection(set(genotypes_2))))
+                        
+                        if not common_genotypes:
+                            st.error("Error: No matching treatment/genotype tags found between both excel sheets.")
+                            return
                             
-                    if not numeric_vals:
-                        continue
-                        
-                    numeric_vals.sort(reverse=True, key=lambda x: x[0])
-                    top_val, top_let, top_geno = numeric_vals[0]
-                    low_val, low_let, low_geno = numeric_vals[-1]
-                    other_val, other_let, other_geno = numeric_vals[1] if len(numeric_vals) > 1 else (top_val, top_let, top_geno)
-                    
-                    # Gather at-par genotypes (excluding the top one itself)
-                    at_par_list = []
-                    for val, let, geno in numeric_vals[1:]:
-                        if top_let and let and any(char in top_let for char in let):
-                            at_par_list.append(f"{geno} ({val:.2f}^{let})")
-                    at_par_str = ", ".join(at_par_list) if at_par_list else "no other treatments"
-                    
-                    grand_mean_val = str(stats_data.get("grand mean", {}).get(param, "N/A"))
-                    
-                    if is_significant:
-                        template = SIGNIFICANT_TEMPLATES[sig_idx % len(SIGNIFICANT_TEMPLATES)]
-                        sig_idx += 1
+                        for param in response_cols:
+                            results_data_2[param] = run_anova_1factor(df2_raw, block_col, genotype_col, param)
+                            
+                    # 1. EXCEL WORKBOOK EXPORT
+                    excel_bio = io.BytesIO()
+                    if file2 is None:
+                        styled_wb = build_single_year_excel(genotype_col, response_cols, common_genotypes, results_data_1)
                     else:
-                        template = NONSIGNIFICANT_TEMPLATES[ns_idx % len(NONSIGNIFICANT_TEMPLATES)]
-                        ns_idx += 1
+                        styled_wb = build_multiyear_excel(genotype_col, response_cols, common_genotypes, results_data_1, results_data_2, year1_lbl, year2_lbl)
                         
-                    desc = template.format(
-                        parameter=param, significance=sig_type, p_value=p_notation,
-                        top_geno=top_geno, top_val=f"{top_val:.2f}", top_let=top_let,
-                        at_par_genotypes=at_par_str,
-                        other_geno=other_geno, other_val=f"{other_val:.2f}", other_let=other_let,
-                        low_geno=low_geno, low_val=f"{low_val:.2f}", low_let=low_let,
-                        grand_mean=grand_mean_val, treatment_singular=treatment_label, treatment_plural=treatment_label_plural
+                    styled_wb.save(excel_bio)
+                    excel_bio.seek(0)
+                    
+                    st.markdown("#### 📥 Download Formatted Statistical Excel Results")
+                    st.download_button(
+                        label="Download Excel Results Sheet",
+                        data=excel_bio,
+                        file_name="RCBD_1Factor_Output.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        key="btn_d_excel_1f"
                     )
-                    text_paragraphs.append(desc)
+                    st.write("---")
                     
-                # Write to Word
-                for para in text_paragraphs:
-                    p = doc.add_paragraph()
-                    parts = re.split(r'(\*\*.*?\*\*)', para)
-                    for part in parts:
-                        if part.startswith('**') and part.endswith('**'):
-                            p.add_run(part[2:-2]).bold = True
-                        else:
-                            p.add_run(part)
-                            
-                # Create Table
-                table = doc.add_table(rows=1, cols=len(g_cols) + 1)
-                set_table_borders(table)
-                hdr_cells = table.rows[0].cells
-                hdr_cells[0].text = str(treatment_col)
-                set_cell_margins(hdr_cells[0])
-                for c_idx, col_name in enumerate(g_cols):
-                    hdr_cells[c_idx + 1].text = col_name
-                    set_cell_margins(hdr_cells[c_idx + 1])
-                set_header_bottom_border(table.rows[0])
-                
-                for r_idx, t_row in df_treatments.iterrows():
-                    row_cells = table.add_row().cells
-                    row_cells[0].text = str(t_row[treatment_col])
-                    set_cell_margins(row_cells[0])
-                    for c_idx, col_name in enumerate(g_cols):
-                        row_cells[c_idx + 1].text = str(t_row[col_name])
-                        set_cell_margins(row_cells[c_idx + 1])
-                        
-                for stat_key in ["sem", "lsd", "cv", "grand mean"]:
-                    if stat_key in stats_data:
-                        row_cells = table.add_row().cells
-                        label_map = {"sem": "SEm (±)", "lsd": "LSD (0.05)", "cv": "CV (%)", "grand mean": "Grand Mean"}
-                        row_cells[0].text = label_map.get(stat_key, stat_key.title())
-                        set_cell_margins(row_cells[0])
-                        for c_idx, col_name in enumerate(g_cols):
-                            row_cells[c_idx + 1].text = str(stats_data[stat_key].get(col_name, "N/A"))
-                            set_cell_margins(row_cells[c_idx + 1])
-                doc.add_page_break()
-                
-            bio = io.BytesIO()
-            doc.save(bio)
-            bio.seek(0)
-            st.download_button("Download Report (.docx)", data=bio, file_name="Summarized_Report.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-    except Exception as e:
-        st.error(f"Error executing Summarized Mode: {e}")
-
-# --- Execution Core for Raw Data ---
-def run_raw_mode(uploaded_file):
-    try:
-        df_raw_data = pd.read_excel(uploaded_file)
-        st.write("#### Preview Raw Input Data:", df_raw_data.head())
-        
-        cols = df_raw_data.columns.tolist()
-        treatment_col = st.selectbox("Select Treatment Column", cols, index=0)
-        block_col = st.selectbox("Select Block/Replication Column", cols, index=1)
-        response_cols = st.multiselect("Select Response Parameters to Analyze", cols, default=cols[2:])
-        
-        if response_cols:
-            df_raw_data[treatment_col] = df_raw_data[treatment_col].astype(str)
-            df_raw_data[block_col] = df_raw_data[block_col].astype(str)
-            
-            treatment_label = treatment_col.lower()
-            treatment_label_plural = treatment_label[:-1] + "ies" if treatment_label.endswith('y') else treatment_label + "s"
-            
-            group_1_name = st.text_input("First Table Title", "Vegetative Growth Attributes")
-            group_1_cols = st.multiselect("Select parameters for Table 1", response_cols, default=response_cols[:len(response_cols)//2])
-            group_2_name = st.text_input("Second Table Title", "Yield Components Attributes")
-            group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in response_cols if c not in group_1_cols], default=[c for c in response_cols if c not in group_1_cols])
-            
-            if st.button("Generate Word Report (Raw Analysis Mode)"):
-                doc = Document()
-                doc.add_heading("Calculated RCBD Single Factor Report", 0)
-                
-                groups = [(group_1_name, group_1_cols, 1), (group_2_name, group_2_cols, 2)]
-                sig_idx, ns_idx = 0, 0
-                
-                for g_title, g_cols, table_num in groups:
-                    if not g_cols:
-                        continue
-                    doc.add_heading(f"Table {table_num}: {g_title}", level=1)
-                    text_paragraphs = []
+                    # 2. DISCUSSIONS & ACADEMIC DOCUMENT BUILDER
+                    st.markdown("### 📝 Dynamic Analysis Results & Discussions")
+                    doc = Document()
+                    doc.add_heading("Single-Factor RCBD Comprehensive Trial Report", 0)
                     
-                    calculated_means_for_table = {}
-                    calculated_stats_for_table = {k: {} for k in ["sem", "lsd", "cv", "grand mean"]}
+                    tables_layouts = [
+                        (group_1_name, group_1_cols, 1),
+                        (group_2_name, group_2_cols, 2)
+                    ]
                     
-                    for param in g_cols:
-                        # ANOVA calculations
-                        formula = f"Q('{param}') ~ C(Q('{block_col}')) + C(Q('{treatment_col}'))"
-                        model = ols(formula, data=df_raw_data).fit()
-                        anova_table = sm.stats.anova_lm(model, typ=1)
+                    for g_title, g_cols, table_num in tables_layouts:
+                        if not g_cols: continue
+                        table_label = f"Table {table_num}"
                         
-                        df_err = anova_table.loc["Residual", "df"]
-                        mse = anova_table.loc["Residual", "mean_sq"]
-                        p_val_tr = anova_table.loc[f"C(Q('{treatment_col}'))", "PR(>F)"]
+                        st.write(f"### {table_label}: {g_title}")
+                        doc.add_heading(f"{table_label}: {g_title}", level=2)
                         
-                        r = df_raw_data[block_col].nunique()
-                        grand_mean = df_raw_data[param].mean()
-                        sem = np.sqrt(mse / r)
-                        cv = (np.sqrt(mse) / grand_mean) * 100
-                        t_val = t.ppf(0.975, df_err)
-                        lsd = t_val * np.sqrt((2 * mse) / r)
+                        grouped = group_parameters(g_cols)
                         
-                        treatment_means = df_raw_data.groupby(treatment_col)[param].mean().to_dict()
-                        cld_letters = get_cld_letters(treatment_means, lsd)
-                        
-                        # Store computed stats
-                        for t_name, mean_val in treatment_means.items():
-                            if t_name not in calculated_means_for_table:
-                                calculated_means_for_table[t_name] = {}
-                            letter = cld_letters.get(t_name, "")
-                            calculated_means_for_table[t_name][param] = f"{mean_val:.2f}{letter}"
+                        # Generate text discussions
+                        for base_name, items in sorted(grouped.items()):
+                            st.write(f"#### {base_name}")
+                            doc.add_heading(base_name, level=3)
                             
-                        calculated_stats_for_table["sem"][param] = f"{sem:.2f}"
-                        calculated_stats_for_table["lsd"][param] = f"{lsd:.2f}"
-                        calculated_stats_for_table["cv"][param] = f"{cv:.2f}"
-                        calculated_stats_for_table["grand mean"][param] = f"{grand_mean:.2f}"
-                        
-                        # Map Significance Text
-                        is_significant = True
-                        sig_type = "significant"
-                        p_notation = "(p < 0.05)"
-                        
-                        if p_val_tr > 0.05:
-                            is_significant = False
-                            sig_type = "nonsignificant"
-                            p_notation = "(p > 0.05)"
-                        elif p_val_tr < 0.001:
-                            p_notation = "(p < 0.001)"
-                        elif p_val_tr < 0.01:
-                            p_notation = "(p < 0.01)"
-                            
-                        sorted_means = sorted(treatment_means.items(), key=lambda x: x[1], reverse=True)
-                        top_geno, top_val = sorted_means[0]
-                        top_let = cld_letters[top_geno]
-                        low_geno, low_val = sorted_means[-1]
-                        other_geno, other_val = sorted_means[1] if len(sorted_means) > 1 else (top_geno, top_val)
-                        
-                        # Gather at-par genotypes (sharing letters)
-                        at_par_list = []
-                        for geno, val in sorted_means[1:]:
-                            let = cld_letters[geno]
-                            if top_let and let and any(char in top_let for char in let):
-                                at_par_list.append(f"{geno} ({val:.2f}^{let})")
-                        at_par_str = ", ".join(at_par_list) if at_par_list else "no other treatments"
-                        
-                        if is_significant:
-                            template = SIGNIFICANT_TEMPLATES[sig_idx % len(SIGNIFICANT_TEMPLATES)]
-                            sig_idx += 1
-                        else:
-                            template = NONSIGNIFICANT_TEMPLATES[ns_idx % len(NONSIGNIFICANT_TEMPLATES)]
-                            ns_idx += 1
-                            
-                        desc = template.format(
-                            parameter=param, significance=sig_type, p_value=p_notation,
-                            top_geno=top_geno, top_val=f"{top_val:.2f}", top_let=top_let,
-                            at_par_genotypes=at_par_str,
-                            other_geno=other_geno, other_val=f"{other_val:.2f}", other_let=cld_letters.get(other_geno, ""),
-                            low_geno=low_geno, low_val=f"{low_val:.2f}", low_let=cld_letters.get(low_geno, ""),
-                            grand_mean=f"{grand_mean:.2f}", treatment_singular=treatment_label, treatment_plural=treatment_label_plural
-                        )
-                        text_paragraphs.append(desc)
-                        
-                    # Write to Word
-                    for para in text_paragraphs:
-                        p = doc.add_paragraph()
-                        parts = re.split(r'(\*\*.*?\*\*)', para)
-                        for part in parts:
-                            if part.startswith('**') and part.endswith('**'):
-                                p.add_run(part[2:-2]).bold = True
+                            if len(items) > 1:
+                                if file2 is None:
+                                    p_text = generate_single_trend_explanation(base_name, items, results_data_1, table_label)
+                                else:
+                                    p_text = generate_multiyear_trend_explanation(base_name, items, results_data_1, results_data_2, year1_lbl, year2_lbl, table_label)
                             else:
-                                p.add_run(part)
-                                
-                    # Write Table
-                    table = doc.add_table(rows=1, cols=len(g_cols) + 1)
-                    set_table_borders(table)
-                    hdr_cells = table.rows[0].cells
-                    hdr_cells[0].text = str(treatment_col)
-                    set_cell_margins(hdr_cells[0])
-                    for c_idx, col_name in enumerate(g_cols):
-                        hdr_cells[c_idx + 1].text = col_name
-                        set_cell_margins(hdr_cells[c_idx + 1])
-                    set_header_bottom_border(table.rows[0])
-                    
-                    for t_name in sorted(calculated_means_for_table.keys()):
-                        row_cells = table.add_row().cells
-                        row_cells[0].text = str(t_name)
-                        set_cell_margins(row_cells[0])
-                        for c_idx, col_name in enumerate(g_cols):
-                            row_cells[c_idx + 1].text = calculated_means_for_table[t_name].get(col_name, "N/A")
-                            set_cell_margins(row_cells[c_idx + 1])
+                                if file2 is None:
+                                    p_text = generate_single_explanation(items[0][0], results_data_1[items[0][0]], table_label)
+                                else:
+                                    p_text = generate_multiyear_explanation(items[0][0], results_data_1[items[0][0]], results_data_2[items[0][0]], year1_lbl, year2_lbl, table_label)
+                                    
+                            st.write(p_text)
                             
-                    for stat_key in ["sem", "lsd", "cv", "grand mean"]:
-                        row_cells = table.add_row().cells
-                        label_map = {"sem": "SEm (±)", "lsd": "LSD (0.05)", "cv": "CV (%)", "grand mean": "Grand Mean"}
-                        row_cells[0].text = label_map.get(stat_key, stat_key.title())
-                        set_cell_margins(row_cells[0])
-                        for c_idx, col_name in enumerate(g_cols):
-                            row_cells[c_idx + 1].text = calculated_stats_for_table[stat_key].get(col_name, "N/A")
-                            set_cell_margins(row_cells[c_idx + 1])
-                    doc.add_page_break()
+                            p_docx = doc.add_paragraph()
+                            parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                            for part in parts:
+                                if part.startswith('**') and part.endswith('**'):
+                                    p_docx.add_run(part[2:-2]).bold = True
+                                else:
+                                    p_docx.add_run(part)
+                                    
+                        st.write("##### Corresponding Table Visualization:")
+                        if file2 is None:
+                            add_single_table_to_docx(doc, g_cols, common_genotypes, results_data_1)
+                        else:
+                            add_multi_table_to_docx(doc, g_cols, common_genotypes, results_data_1, results_data_2, year1_lbl, year2_lbl)
+                            
+                        st.write("*(Table data formatted as per standard journal specifications)*")
+                        doc.add_page_break()
+                        
+                    bio_doc = io.BytesIO()
+                    doc.save(bio_doc)
+                    bio_doc.seek(0)
                     
-                bio = io.BytesIO()
-                doc.save(bio)
-                bio.seek(0)
-                st.success("🎉 Word Report generated from Raw Data!")
-                st.download_button("Download Report (.docx)", data=bio, file_name="Calculated_Report.docx", mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-    except Exception as e:
-        st.error(f"Error executing Raw Data Mode: {e}")
+                    st.write("---")
+                    st.markdown("#### 💾 Save Explanations & Tables as Word Document")
+                    st.download_button(
+                        "Download Word Explanations Report (.docx)", 
+                        data=bio_doc, 
+                        file_name="SingleFactor_Thesis_Report.docx", 
+                        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                        key="btn_d_1f_doc"
+                    )
+        except Exception as e:
+            st.error(f"Analysis failed. Please check the structure of your Excel dataset: {e}")
+
+# --- Parent Entrypoint ---
+if __name__ == '__main__':
+    st.set_page_config(layout="wide")
+    run_one_factor_analysis()
