@@ -15,9 +15,9 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side
 
 # ==============================================================================
-# DATABASE OF 20 HIGH-STANDARD ACADEMIC THESIS & Q1 JOURNAL TEMPLATES
+# DATABASE OF 20 HIGH-STANDARD SINGLE-YEAR ACADEMIC DISCUSSION TEMPLATES
 # ==============================================================================
-ACADEMIC_TEMPLATES = {
+ACADEMIC_TEMPLATES_1Y = {
     "temp_1_sig_yield": (
         "The evaluation of **{parameter}** demonstrated that genotypes exerted a highly significant influence "
         "({p_val}) on this trait, as presented in **{table_label}**. The highest mean performance was recorded "
@@ -127,10 +127,6 @@ ACADEMIC_TEMPLATES = {
 
 # --- Parameter Grouping Engine for Time-Series/Trend-Line Analysis ---
 def group_parameters(params):
-    """
-    Groups parameters measured over multiple days/intervals (e.g., PLWD2, PLWD4 -> PLWD)
-    to allow unified trend-line explanations under a single topic.
-    """
     pattern = re.compile(r"(.*?)(\d+)\s*(dat|das|days|day|d)?$", re.IGNORECASE)
     groups = {}
     for p in params:
@@ -157,10 +153,6 @@ def group_parameters(params):
 
 # --- Dynamic Academic Explanation Selection Engine ---
 def generate_single_trend_explanation(base_name, items, results_data, table_label):
-    """
-    Generates a Q1-standard paragraph explaining the temporal trend of a group of variables
-    using templates 9, 10, 11, 12, 13, 14, or 15 dynamically based on statistical profile.
-    """
     first_item = items[0]
     last_item = items[-1]
     
@@ -173,7 +165,6 @@ def generate_single_trend_explanation(base_name, items, results_data, table_labe
     first_gm = p_first["gm"]
     last_gm = p_last["gm"]
     
-    # Determine basic directions
     direction = "upward" if last_gm >= first_gm else "downward"
     
     sorted_last = sorted(p_last["means"].items(), key=lambda x: x[1], reverse=True)
@@ -181,48 +172,35 @@ def generate_single_trend_explanation(base_name, items, results_data, table_labe
     low_last, low_val_last = sorted_last[-1]
     top_let_last = p_last["means_str"][top_last].replace(f"{top_val_last:.2f}", "")
     
-    at_par_last_list = []
-    for genotype, val in sorted_last[1:]:
-        let = p_last["means_str"][genotype].replace(f"{val:.2f}", "")
-        if top_let_last and let and any(char in top_let_last for char in let):
-            at_par_last_list.append(f"`{genotype}` ({val:.2f}^{let})")
-    at_par_last_str = ", ".join(at_par_last_list) if at_par_last_list else "no other genotypes"
-    
-    # Selection of Trend Templates
     if direction == "upward" and p_first["p_val"] >= 0.05 and p_last["p_val"] < 0.05:
-        # Template 11: Late-Onset Divergence (Upward)
-        template = ACADEMIC_TEMPLATES["temp_11_late_onset_divergence"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_11_late_onset_divergence"]
         return template.format(
             base_name=base_name, first_day=first_day_str, last_day=last_day_str,
             first_p=f"p = {p_first['p_val']:.4f}", last_p=f"p = {p_last['p_val']:.4f}",
             top_g=top_last, top_val=f"{top_val_last:.2f}", top_let=top_let_last, table_label=table_label
         )
     elif direction == "downward" and p_first["p_val"] < 0.05 and p_last["p_val"] >= 0.05:
-        # Template 12: Early-Onset with Late Convergence
-        template = ACADEMIC_TEMPLATES["temp_12_early_onset_convergence"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_12_early_onset_convergence"]
         return template.format(
             base_name=base_name, first_day=first_day_str, last_day=last_day_str,
             first_p=f"p = {p_first['p_val']:.4f}", last_p=f"p = {p_last['p_val']:.4f}",
             table_label=table_label
         )
     elif p_first["p_val"] >= 0.05 and p_last["p_val"] >= 0.05:
-        # Template 13: Strictly Uniform Trend
-        template = ACADEMIC_TEMPLATES["temp_13_uniform_trend"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_13_uniform_trend"]
         return template.format(
             base_name=base_name, first_gm=f"{first_gm:.2f}", last_gm=f"{last_gm:.2f}",
             last_p=f"p = {p_last['p_val']:.4f}", table_label=table_label
         )
     elif "decay" in base_name.lower() or "rot" in base_name.lower():
-        # Template 15: Decay Progression
-        template = ACADEMIC_TEMPLATES["temp_15_decay_progression"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_15_decay_progression"]
         return template.format(
             base_name=base_name, first_gm=f"{first_gm:.2f}", last_gm=f"{last_gm:.2f}",
             last_p=f"p = {p_last['p_val']:.4f}", top_g=top_last, top_val=f"{top_val_last:.2f}",
             top_let=top_let_last, low_g=low_last, table_label=table_label
         )
     elif direction == "upward":
-        # Template 9: Progressive Upward Trend
-        template = ACADEMIC_TEMPLATES["temp_9_progressive_upward_trend"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_9_progressive_upward_trend"]
         first_sig_txt = "significant" if p_first["p_val"] < 0.05 else "nonsignificant"
         last_sig_txt = f"p = {p_last['p_val']:.4f}"
         return template.format(
@@ -232,8 +210,7 @@ def generate_single_trend_explanation(base_name, items, results_data, table_labe
             top_let=top_let_last, table_label=table_label
         )
     else:
-        # Template 10: Progressive Decline Trend
-        template = ACADEMIC_TEMPLATES["temp_10_progressive_decline_trend"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_10_progressive_decline_trend"]
         return template.format(
             base_name=base_name, first_gm=f"{first_gm:.2f}", last_gm=f"{last_gm:.2f}",
             first_day=first_day_str, last_day=last_day_str, last_p=f"p = {p_last['p_val']:.4f}",
@@ -242,10 +219,6 @@ def generate_single_trend_explanation(base_name, items, results_data, table_labe
         )
 
 def generate_single_explanation(param_name, p_data, table_label):
-    """
-    Selects and renders the best matching academic templates for isolated parameters
-    based on the statistical significance and treatment CLD profile.
-    """
     p_val = p_data["p_val"]
     
     sorted_means = sorted(p_data["means"].items(), key=lambda x: x[1], reverse=True)
@@ -260,51 +233,44 @@ def generate_single_explanation(param_name, p_data, table_label):
             at_par_list.append(f"`{genotype}` ({val:.2f}^{let})")
     at_par_str = ", ".join(at_par_list) if at_par_list else "no other genotypes"
     
-    # Selection logic mapping back to the 20 templates
     if p_val >= 0.05:
-        # Template 4: Highly Homogeneous / Non-Significant Response
-        template = ACADEMIC_TEMPLATES["temp_4_homogeneous"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_4_homogeneous"]
         return template.format(
             parameter=param_name, p_val=f"p = {p_val:.4f}", grand_mean=f"{p_data['gm']:.2f}", table_label=table_label
         )
     elif len(sorted_means) >= 3 and not at_par_list:
-        # Template 3: Genotype Leader with No At-Par Competitors
         second_g, second_val = sorted_means[1]
-        template = ACADEMIC_TEMPLATES["temp_3_strict_superiority"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_3_strict_superiority"]
         return template.format(
             parameter=param_name, p_val=f"p = {p_val:.4f}", top_g=top_g, top_val=f"{top_val_g:.2f}",
             top_let=top_let_g, second_g=second_g, second_val=f"{second_val:.2f}", table_label=table_label
         )
     elif "yield" in param_name.lower() or "weight" in param_name.lower() or "output" in param_name.lower():
-        # Template 1: Highly Significant Genotype Effect (Yield focus)
-        template = ACADEMIC_TEMPLATES["temp_1_sig_yield"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_1_sig_yield"]
         return template.format(
             parameter=param_name, p_val=f"p = {p_val:.4f}", top_g=top_g, top_val=f"{top_val_g:.2f}",
             top_let=top_let_g, at_par=at_par_str, table_label=table_label
         )
     elif any(x in param_name.lower() for x in ["ascorbic", "acid", "tss", "sugar", "nutrient", "antioxidant"]):
-        # Template 19: Biochemical Activity / Nutrient Stability
-        template = ACADEMIC_TEMPLATES["temp_19_biochemical_nutrient"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_19_biochemical_nutrient"]
         return template.format(
             parameter=param_name, top_g=top_g, top_val=f"{top_val_g:.2f}", top_let=top_let_g,
             at_par=at_par_str, table_label=table_label
         )
     elif len(at_par_list) >= 3:
-        # Template 7: Genotype with Broad Parity
-        template = ACADEMIC_TEMPLATES["temp_7_broad_parity"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_7_broad_parity"]
         return template.format(
             parameter=param_name, p_val=f"p = {p_val:.4f}", top_g=top_g, top_val=f"{top_val_g:.2f}",
             top_let=top_let_g, at_par=at_par_str, table_label=table_label
         )
     else:
-        # Template 2: Significant Genotype Effect (Quality focus)
-        template = ACADEMIC_TEMPLATES["temp_2_sig_quality"]
+        template = ACADEMIC_TEMPLATES_1Y["temp_2_sig_quality"]
         return template.format(
             parameter=param_name, p_val=f"p = {p_val:.4f}", top_g=top_g, top_val=f"{top_val_g:.2f}",
             top_let=top_let_g, at_par=at_par_str, table_label=table_label
         )
 
-# --- Statistical Computation Engine ---
+# --- Statistical Calculation Engine ---
 def get_signif_code_val(p):
     if is_nan_val(p): return "ns"
     if p < 0.001: return "***"
@@ -358,6 +324,17 @@ def get_cld_letters(means_dict, lsd):
             
     return treatment_letters
 
+def parse_dmrt_value(val):
+    if pd.isna(val):
+        return "", ""
+    val_str = str(val).strip()
+    match = re.match(r"^([\d\.\-]+)\s*([a-zA-Z\s]+)?$", val_str)
+    if match:
+        num = match.group(1)
+        letters = match.group(2).strip() if match.group(2) else ""
+        return num, letters
+    return val_str, ""
+
 def run_anova_1factor(df, block_col, genotype_col, param):
     df_temp = pd.DataFrame({
         'rep': df[block_col].astype(str),
@@ -402,14 +379,52 @@ def run_anova_1factor(df, block_col, genotype_col, param):
         "gm": round(grand_mean, 2)
     }
 
-# --- Excel Sheet Builder ---
+# --- Summarized Parser for 1-Year ---
+def parse_summarized_table_to_results_1y(df_raw, idx_sem, idx_pval, idx_lsd, idx_cv, idx_gm, param_cols, genotypes):
+    results_data = {}
+    for p, start_col in param_cols.items():
+        means = {}
+        means_str = {}
+        for r_idx, g in enumerate(genotypes, start=1):
+            cell_val = df_raw.iloc[r_idx, start_col]
+            num, let = parse_dmrt_value(cell_val)
+            try:
+                val = float(num)
+                means[g] = val
+                means_str[g] = f"{val:.2f}{let}"
+            except ValueError:
+                means[g] = 0.0
+                means_str[g] = "0.00"
+                
+        p_val_raw = str(df_raw.iloc[idx_pval, start_col]).strip()
+        match_p = re.search(r"[\d\.\-]+e?[\d\-]*", p_val_raw)
+        try:
+            p_val = float(match_p.group(0)) if match_p else (0.01 if "*" in p_val_raw else 0.5)
+        except ValueError:
+            p_val = 0.5
+            
+        results_data[p] = {
+            "means": means,
+            "means_str": means_str,
+            "sem": df_raw.iloc[idx_sem, start_col],
+            "p_val": p_val,
+            "p_text": p_val_raw,
+            "lsd": df_raw.iloc[idx_lsd, start_col],
+            "cv": df_raw.iloc[idx_cv, start_col],
+            "gm": float(re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_gm, start_col])).group(0)) if re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_gm, start_col])) else 0.0
+        }
+    return results_data
+
+# --- Excel Sheet Builder (1-Year Format) ---
 def build_single_year_excel(genotype_col, params, genotypes, results_data):
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Analysis Output"
+    ws.title = "Result final"
     
-    font_bold = Font(name="Arial", size=10, bold=True)
-    font_regular = Font(name="Arial", size=10)
+    ws.views.sheetView[0].showGridLines = True
+    
+    font_bold = Font(name="Calibri", size=11, bold=True)
+    font_regular = Font(name="Calibri", size=11)
     align_left = Alignment(horizontal="left", vertical="center")
     align_center = Alignment(horizontal="center", vertical="center")
     border_thin_bottom = Border(bottom=Side(style='thin', color='000000'))
@@ -419,7 +434,7 @@ def build_single_year_excel(genotype_col, params, genotypes, results_data):
     ws.cell(row=1, column=1).alignment = align_left
     
     for c_idx, p in enumerate(params, start=2):
-        cell = ws.cell(row=1, column=c_idx, value=p.upper())
+        cell = ws.cell(row=1, column=c_idx, value=p)
         cell.font = font_bold
         cell.alignment = align_center
         
@@ -431,7 +446,7 @@ def build_single_year_excel(genotype_col, params, genotypes, results_data):
             cell.font = font_regular
             cell.alignment = align_center
             
-    stats_labels = ["SEM", "P-value", "LSD (0.05)", "CV (%)", "Grand Mean"]
+    stats_labels = ["Sem", "p-value", "LSD(0.05)", "CV(%)", "Grand Mean"]
     stats_keys = ["sem", "p_text", "lsd", "cv", "gm"]
     
     start_stats_row = len(genotypes) + 2
@@ -446,21 +461,25 @@ def build_single_year_excel(genotype_col, params, genotypes, results_data):
             
     for col in range(1, len(params) + 2):
         ws.cell(row=1, column=col).border = border_thin_bottom
-        ws.cell(row=start_stats_row, column=col).border = border_thin_bottom
+        ws.cell(row=start_stats_row - 1, column=col).border = border_thin_bottom
         ws.cell(row=start_stats_row + len(stats_keys) - 1, column=col).border = border_medium_bottom
         
     return wb
 
-# --- DOCX Layout Formatting Functions ---
-def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
-    tcPr = cell._tc.get_or_add_tcPr()
-    tcMar = OxmlElement('w:tcMar')
-    for m, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
-        node = OxmlElement(f'w:{m}')
-        node.set(qn('w:w'), str(val))
-        node.set(qn('w:type'), 'dxa')
-        tcMar.append(node)
-    tcPr.append(tcMar)
+# --- Corrected Border Setting Helper (Fixes tuple attribute error) ---
+def set_header_bottom_border(row_or_cells):
+    if hasattr(row_or_cells, 'cells'):
+        cells = row_or_cells.cells
+    else:
+        cells = row_or_cells  # Already cell tuple
+    for cell in cells:
+        tcPr = cell._tc.get_or_add_tcPr()
+        borders = parse_xml(
+            '<w:tcBorders %s>'
+            '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
+            '</w:tcBorders>' % nsdecls('w')
+        )
+        tcPr.append(borders)
 
 def set_table_borders(table):
     tblPr = table._tbl.tblPr
@@ -475,16 +494,6 @@ def set_table_borders(table):
         '</w:tblBorders>' % nsdecls('w')
     )
     tblPr.append(borders)
-
-def set_header_bottom_border(row):
-    for cell in row.cells:
-        tcPr = cell._tc.get_or_add_tcPr()
-        borders = parse_xml(
-            '<w:tcBorders %s>'
-            '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-            '</w:tcBorders>' % nsdecls('w')
-        )
-        tcPr.append(borders)
 
 def add_single_table_to_docx(doc, params, genotypes, results_data):
     num_cols = len(params) + 1
@@ -526,7 +535,7 @@ def add_single_table_to_docx(doc, params, genotypes, results_data):
                 
     set_header_bottom_border(table.rows[-1])
     
-    stats_labels = ["SEM", "P-value", "LSD (0.05)", "CV (%)", "Grand Mean"]
+    stats_labels = ["Sem", "p-value", "LSD(0.05)", "CV(%)", "Grand Mean"]
     stats_keys = ["sem", "p_text", "lsd", "cv", "gm"]
     
     for s_idx, (label, key) in enumerate(zip(stats_labels, stats_keys)):
@@ -549,11 +558,21 @@ def add_single_table_to_docx(doc, params, genotypes, results_data):
         if s_idx == len(stats_keys) - 1:
             set_header_bottom_border(row_cells)
 
-# --- Parent Layout Web App ---
+# --- Web Interface and Multi-Year controller ---
 def show_module():
     st.markdown("### Single-Year Single-Factor RCBD Analyzer")
     
-    file1 = st.file_uploader("Upload Raw Data File (.xlsx)", type=["xlsx"], key="file1_1f_sy")
+    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="1f_sy_mode_selector")
+    
+    if mode == "Raw Data Mode":
+        run_raw_mode()
+    else:
+        file_sum = st.file_uploader("Upload Summarized 1-Year Excel Output (.xlsx)", type=["xlsx"], key="file_sum_1f_sy")
+        if file_sum is not None:
+            run_summary_mode_processing(file_sum)
+
+def run_raw_mode():
+    file1 = st.file_uploader("Upload Raw Excel Dataset (.xlsx)", type=["xlsx"], key="file1_1f_sy_raw")
     
     if file1 is not None:
         try:
@@ -588,13 +607,13 @@ def show_module():
                     st.download_button(
                         label="Download Excel Results Sheet",
                         data=excel_bio,
-                        file_name="RCBD_SingleYear_Output.xlsx",
+                        file_name="RCBD_Result_Final.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         key="btn_d_excel_sy"
                     )
                     st.write("---")
                     
-                    # Generate on-screen discussions and docx
+                    # Generate dynamic report
                     st.markdown("### 📝 Dynamic Analysis Results & Discussions")
                     doc = Document()
                     doc.add_heading("Single-Factor RCBD Comprehensive Trial Report", 0)
@@ -617,7 +636,6 @@ def show_module():
                             st.write(f"#### {base_name}")
                             doc.add_heading(base_name, level=3)
                             
-                            # Temporal/trend-line parameter selection logic vs static single parameter
                             if len(items) > 1:
                                 p_text = generate_single_trend_explanation(base_name, items, results_data, table_label)
                             else:
@@ -625,7 +643,6 @@ def show_module():
                                 
                             st.write(p_text)
                             
-                            # Append formatted paragraph to docx
                             p_docx = doc.add_paragraph()
                             parts = re.split(r'(\*\*.*?\*\*)', p_text)
                             for part in parts:
@@ -636,7 +653,7 @@ def show_module():
                                     
                         st.write("##### Corresponding Table Visualization:")
                         add_single_table_to_docx(doc, g_cols, genotypes, results_data)
-                        st.write("*(Table data formatted as per standard journal specifications)*")
+                        st.write("*(Table data formatted precisely as per standard journal specifications)*")
                         doc.add_page_break()
                         
                     bio_doc = io.BytesIO()
@@ -655,6 +672,100 @@ def show_module():
         except Exception as e:
             st.error(f"Analysis failed. Please check the structure of your Excel dataset: {e}")
 
-if __name__ == '__main__':
-    st.set_page_config(layout="wide")
-    show_module()
+# --- Summarized Processing 1-Year ---
+def run_summary_mode_processing(uploaded_file):
+    try:
+        df_raw = pd.read_excel(uploaded_file, header=None)
+        
+        idx_sem, idx_pval, idx_lsd, idx_cv, idx_gm = None, None, None, None, None
+        for idx, val in enumerate(df_raw[0]):
+            if pd.isna(val): continue
+            val_str = str(val).strip().lower()
+            if val_str == "sem": idx_sem = idx
+            elif val_str == "p-value": idx_pval = idx
+            elif "lsd" in val_str: idx_lsd = idx
+            elif "cv" in val_str: idx_cv = idx
+            elif "grand mean" in val_str or "grandmean" in val_str: idx_gm = idx
+            
+        if any(v is None for v in [idx_sem, idx_pval, idx_lsd, idx_cv, idx_gm]):
+            st.error("Missing structural labels (Sem, p-value, LSD, CV, Grand Mean) in Column A.")
+            return
+            
+        # Parse parameters from Row 1
+        parameters = [str(x).strip() for x in df_raw.iloc[0].tolist()[1:] if pd.notna(x)]
+        param_cols = {p: df_raw.iloc[0].tolist().index(p) for p in parameters}
+        
+        # Parse Genotypes (Starts at index 1 up to idx_sem - 1)
+        genotypes = [str(df_raw.iloc[r, 0]).strip() for r in range(1, idx_sem)]
+        
+        st.success(f"Detected Genotypes: {', '.join(genotypes)}")
+        st.success(f"Detected Parameters: {', '.join(parameters)}")
+        
+        group_1_name = st.text_input("First Table Title", "Physiological and Crop Growth Parameters", key="1f_sum_t1_title_sy")
+        group_1_cols = st.multiselect("Select parameters for Table 1", parameters, default=parameters[:len(parameters)//2], key="1f_sum_t1_cols_sy")
+        group_2_name = st.text_input("Second Table Title", "Crop Quality and Yield Parameters", key="1f_sum_t2_title_sy")
+        group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in parameters if c not in group_1_cols], default=[c for c in parameters if c not in group_1_cols], key="1f_sum_t2_cols_sy")
+        
+        if st.button("Generate Word Document Draft", key="btn_1f_sum_gen_sy"):
+            results_data = parse_summarized_table_to_results_1y(
+                df_raw, idx_sem, idx_pval, idx_lsd, idx_cv, idx_gm, param_cols, genotypes
+            )
+            
+            doc = Document()
+            doc.add_heading("Single-Factor RCBD Comprehensive Trial Report", 0)
+            
+            tables_layouts = [
+                (group_1_name, group_1_cols, 1),
+                (group_2_name, group_2_cols, 2)
+            ]
+            
+            st.markdown("### 📝 Dynamic Analysis Results & Discussions")
+            
+            for g_title, g_cols, table_num in tables_layouts:
+                if not g_cols: continue
+                table_label = f"Table {table_num}"
+                
+                st.write(f"### {table_label}: {g_title}")
+                doc.add_heading(f"{table_label}: {g_title}", level=2)
+                
+                grouped = group_parameters(g_cols)
+                
+                for base_name, items in sorted(grouped.items()):
+                    st.write(f"#### {base_name}")
+                    doc.add_heading(base_name, level=3)
+                    
+                    if len(items) > 1:
+                        p_text = generate_single_trend_explanation(base_name, items, results_data, table_label)
+                    else:
+                        p_text = generate_single_explanation(items[0][0], results_data[items[0][0]], table_label)
+                        
+                    st.write(p_text)
+                    
+                    p_docx = doc.add_paragraph()
+                    parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                    for part in parts:
+                        if part.startswith('**') and part.endswith('**'):
+                            p_docx.add_run(part[2:-2]).bold = True
+                        else:
+                            p_docx.add_run(part)
+                            
+                st.write("##### Corresponding Table Visualization:")
+                add_single_table_to_docx(doc, g_cols, genotypes, results_data)
+                st.write("*(Table data formatted precisely as per standard journal specifications)*")
+                doc.add_page_break()
+                
+            bio_doc = io.BytesIO()
+            doc.save(bio_doc)
+            bio_doc.seek(0)
+            
+            st.write("---")
+            st.markdown("#### 💾 Save Explanations & Tables as Word Document")
+            st.download_button(
+                "Download Word Explanations Report (.docx)", 
+                data=bio_doc, 
+                file_name="SingleYear_Thesis_Report.docx", 
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                key="btn_d_sy_doc_sum"
+            )
+    except Exception as e:
+        st.error(f"Analysis failed. Please check the structure of your Excel dataset: {e}")
