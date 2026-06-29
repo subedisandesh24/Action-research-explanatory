@@ -409,11 +409,23 @@ ACADEMIC_TEMPLATES_30 = {
     )
 }
 
-SINGLE_DAY_TEMPLATES = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
-TIME_SERIES_TEMPLATES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+SINGLE_DAY_TEMPLATES_CATEGORIES = {
+    "interaction": [16, 23],
+    "both_significant": [17, 22, 24, 25, 26, 28, 30],
+    "factor_a_significant": [18, 27],
+    "factor_b_significant": [19],
+    "non_significant": [20, 21, 29]
+}
+
+TIME_SERIES_TEMPLATES_CATEGORIES = {
+    "interaction": [1, 3, 12, 14],
+    "upward_trend": [4, 7, 9, 10, 13],
+    "downward_trend": [2, 6, 15],
+    "general": [5, 8, 11]
+}
 
 # ==============================================================================
-# Dynamic Shuffling Class
+# Dynamic Shuffling Class Pool
 # ==============================================================================
 class TemplatePool:
     """Manages randomized selection of template structures by category."""
@@ -432,21 +444,6 @@ class TemplatePool:
             self.pools[category] = shuffled
         return self.pools[category].pop(0)
 
-# Concrete category grouping for the Shuffling Pool
-SINGLE_DAY_TEMPLATES_CATEGORIES = {
-    "interaction": [16, 23],
-    "both_significant": [17, 22, 24, 25, 26, 28, 30],
-    "factor_a_significant": [18, 27],
-    "factor_b_significant": [19],
-    "non_significant": [20, 21, 29]
-}
-
-TIME_SERIES_TEMPLATES_CATEGORIES = {
-    "interaction": [1, 3, 12, 14],
-    "upward_trend": [4, 7, 9, 10, 13],
-    "downward_trend": [2, 6, 15],
-    "general": [5, 8, 11]
-}
 
 # ==============================================================================
 # Hierarchical categorization layout setup
@@ -1412,13 +1409,14 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
     """
     Produces a Document with clustered parameters:
     Groups up to 4 static single parameters under the same category to produce
-    cohesive narrative paragraphs and multi-column tables.
+    cohesive multi-column tables, but writes individual analytical paragraphs 
+    for each parameter.
     """
     doc = Document()
     doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
     numberer = ReportNumberer()
 
-    # Dynamic thread-safe shuffling pools instantiated for this report build run
+    # Thread-safe fresh shuffling pools instantiated for this report build run
     single_day_pool = TemplatePool(SINGLE_DAY_TEMPLATES_CATEGORIES)
     time_series_pool = TemplatePool(TIME_SERIES_TEMPLATES_CATEGORIES)
 
@@ -1463,36 +1461,13 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                 table_n = numberer.next_table()
                 table_label = f"Table {table_n}"
 
-                # Shuffle transitions globally per chunk to prevent format fatigue
-                transitions = [
-                    " Concurrently, regarding the performance of {param}: ",
-                    " In terms of {param}, the statistical analysis indicated that: ",
-                    " Evaluated parallel to other traits, {param} showed that: ",
-                    " Moving onto {param}, the results revealed: ",
-                    " Likewise, for the parameter {param}, the data showed: ",
-                    " Additionally, an examination of {param} indicated: "
-                ]
-                random.shuffle(transitions)
-
-                explanations = []
-                for idx, p in enumerate(chunk):
+                # Write individual explanation paragraphs for each parameter in this chunk
+                for p in chunk:
                     p_text = generate_two_factor_explanation_shuffled(
                         p, results_data[p], factor_a_col, factor_b_col, table_label, single_day_pool
                     )
-                    
-                    if idx > 0:
-                        transition = transitions[idx % len(transitions)].format(param=p)
-                        # Clean duplicate prefixes gracefully
-                        p_text = re.sub(
-                            r"^(The terminal value of\s+|The terminal measurement of\s+|The final ratio of the system components at terminal harvest was\s+)", 
-                            "", p_text, flags=re.IGNORECASE
-                        )
-                        p_text = transition + p_text[0].lower() + p_text[1:]
-                    explanations.append(p_text)
-
-                combined_narrative = " ".join(explanations)
-                st.write(combined_narrative)
-                doc.add_paragraph(combined_narrative)
+                    st.write(p_text)
+                    doc.add_paragraph(p_text)
 
                 # Render consolidated multi-column table
                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
