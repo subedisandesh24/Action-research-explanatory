@@ -107,7 +107,7 @@ def classify_parameter(param):
         "pri": "I. Vegetative Parameters (Growth Parameters) - Physiological Parameters",
     }
     
-    # Strip timepoints (e.g., PLWD2 -> PLWD)
+    # Strip trailing numbers (e.g., PLWD2 -> PLWD, DL4 -> DL)
     base_abbrev = re.sub(r"\d+$", "", param_clean)
     if base_abbrev in abbrev_map:
         return abbrev_map[base_abbrev]
@@ -421,14 +421,14 @@ def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_c
     at_par_a_list = []
     for lvl, val in sorted_a[1:]:
         let = p_data["means_a_str"][lvl].replace(f"{val:.2f}", "")
-        if top_let_a and let and any(char in top_let_a for char in let):
+        if top_let_a, let and any(char in top_let_a for char in let):
             at_par_a_list.append(f"{lvl} ({val:.2f}^{let})")
     at_par_a_str = ", ".join(at_par_a_list) if at_par_a_list else "no other levels"
     
     at_par_b_list = []
     for lvl, val in sorted_b[1:]:
         let = p_data["means_b_str"][lvl].replace(f"{val:.2f}", "")
-        if top_let_b and let and any(char in top_let_b for char in let):
+        if top_let_b, let and any(char in top_let_b for char in let):
             at_par_b_list.append(f"{lvl} ({val:.2f}^{let})")
     at_par_b_str = ", ".join(at_par_b_list) if at_par_b_list else "no other levels"
     if p_b >= 0.05:
@@ -449,7 +449,7 @@ def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_c
             f"in {table_label}). This interaction confirms that the regulatory influence of {factor_b_col} "
             f"depends heavily on the baseline level of {factor_a_col}. Among all treatment combinations, "
             f"{comb_top_name} established its position at the statistical apex with {comb_top_val:.2f}^{comb_top_let}, "
-            f"showing statistical parity with other high-performing treatments including {at_par_comb}. Conversely, the lowest "
+            f"showing statistical parity with other high-performing treatments including {at_par_comb_str}. Conversely, the lowest "
             f"performance tier was marked by the combination {comb_low_name} ({comb_low_val:.2f}), representing the "
             f"cumulative severity of stress or untreated control conditions."
         )
@@ -813,7 +813,7 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
 def show_module():
     st.markdown("### Two-Factor RCBD Analyzer")
     
-    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_two")
+    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_mult")
     uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f_two")
 
     if uploaded_file is not None:
@@ -967,8 +967,6 @@ def run_raw_mode(uploaded_file):
                     for base_name, items in sorted(grouped.items()):
                         if len(items) > 1:
                             trend_lbl = f"Table {table_counter}"
-                            
-                            st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
                             trend_params = [it[0] for it in items]
                             caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, trend_params)
                             
@@ -1121,12 +1119,14 @@ def run_summary_mode_processing(uploaded_file):
                             doc.add_paragraph(p_text)
                                     
                         add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
+                        
                         p_cap = doc.add_paragraph(caption_text)
                         p_cap.runs[0].font.name = 'Arial'
                         p_cap.runs[0].font.size = Pt(10)
                         
                     elif layout_style == 1:
                         add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
+                        
                         p_cap = doc.add_paragraph(caption_text)
                         p_cap.runs[0].font.name = 'Arial'
                         p_cap.runs[0].font.size = Pt(10)
@@ -1147,6 +1147,7 @@ def run_summary_mode_processing(uploaded_file):
                             doc.add_paragraph(p_text)
                             
                         add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
+                        
                         p_cap = doc.add_paragraph(caption_text)
                         p_cap.runs[0].font.name = 'Arial'
                         p_cap.runs[0].font.size = Pt(10)
@@ -1175,15 +1176,18 @@ def run_summary_mode_processing(uploaded_file):
                             st.write(p_text)
                             doc.add_paragraph(p_text)
                             add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
                             
                         elif layout_style == 1:
                             add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
+                            
                             st.write(p_text)
                             doc.add_paragraph(p_text)
                             
@@ -1191,7 +1195,9 @@ def run_summary_mode_processing(uploaded_file):
                             part1, part2 = split_text_by_sentence(p_text)
                             st.write(part1)
                             doc.add_paragraph(part1)
+                            
                             add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
