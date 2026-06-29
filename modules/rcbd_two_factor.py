@@ -176,7 +176,7 @@ ACADEMIC_TEMPLATES_30 = {
         "the early stages but expanded considerably as the study progressed. Table {{table_num}} shows that at "
         "{{time_point_1}} and {{time_point_2}} {{time_unit}}, the range between the highest and lowest treatment "
         "means was narrow and statistically non-significant, with a maximum range of only {{range_early}} {{unit}}. "
-        "Horizontal values began to diverge as treatment units advanced. For Factor A, "
+        "However, at {{time_point_3}} {{time_unit}}, this treatment range expanded significantly. For Factor A, "
         "the range between the highest-performing treatment ({{treatment_A1}}; {{val_max_A}} {{unit}}) and the "
         "lowest-performing treatment ({{val_min_A}} {{unit}}) was {{range_mid_A}} {{unit}} (P \u2264 0.01). For Factor B, "
         "the range was {{range_mid_B}} {{unit}} (P \u2264 0.01). At {{time_point_4}} {{time_unit}}, the treatment "
@@ -296,7 +296,7 @@ ACADEMIC_TEMPLATES_30 = {
     ),
     22: (
         "The relative percentage changes in the terminal value of {{variable_name}} were evaluated "
-        "to assess the magnitude of the treatment effects [3, 9]. Table {{table_num}} shows that the application of "
+        "to assess the magnitude of the treatment effects. Table {{table_num}} shows that the application of "
         "{{treatment_A1}} increased {{variable_name}} by {{pct_diff_A}}% compared to the lowest treatment level "
         "({{val_max_A}} vs. {{val_min_A}} {{unit}}). Other treatments, such as {{treatment_A2}} and "
         "{{treatment_A3}}, also increased the values by {{pct_diff_A2}}% and {{pct_diff_A3}}% over the "
@@ -307,7 +307,7 @@ ACADEMIC_TEMPLATES_30 = {
     ),
     23: (
         "The interaction effect between {{factor_A}} and {{factor_B}} (A \u00d7 B) was highly "
-        "significant for the terminal value of {{variable_name}} (P \u2264 0.01) [3]. Table {{table_num}} shows "
+        "significant for the terminal value of {{variable_name}} (P \u2264 0.01). Table {{table_num}} shows "
         "that this significant interaction dominated the experimental response, making the main effects "
         "secondary in explaining the variation in {{variable_name}}. Under this significant interactive "
         "response, the combination of {{treatment_A1}} and {{treatment_B1}} produced the highest overall value "
@@ -370,7 +370,7 @@ ACADEMIC_TEMPLATES_30 = {
     28: (
         "The terminal value of the primary output component, {{variable_name}}, was "
         "significantly affected by both experimental factors, with no significant interaction "
-        "observed [3, 10]. Table {{table_num}} shows that the main effect of {{factor_A}} was significant "
+        "observed. Table {{table_num}} shows that the main effect of {{factor_A}} was significant "
         "(P \u2264 0.05), with {{treatment_A1}} producing the highest value ({{val_A1}}), which was statistically "
         "equivalent to {{treatment_A2}} ({{val_A2}}) but significantly higher than the lowest treatment "
         "level ({{val_lowest}}; LSD_0.05 = {{lsd_A}}). Similarly, the main effect of {{factor_B}} was highly "
@@ -409,7 +409,7 @@ ACADEMIC_TEMPLATES_30 = {
 }
 
 # ==============================================================================
-# Hierarchical categories configuration
+# Hierarchical numbering for the Word report (1 / 1.1 / 1.1.1) + table numbering
 # ==============================================================================
 MAJOR_CATEGORY_ORDER = [
     "Vegetative Parameters",
@@ -452,7 +452,7 @@ SUB_CATEGORY_ORDER = {
 
 
 class ReportNumberer:
-    """Generates sequential 1 / 1.1 / 1.1.1 headings and Table IDs."""
+    """Generates continuous 1 / 1.1 / 1.1.1 style headings and continuous Table N numbers."""
 
     def __init__(self):
         self.major_num = 0
@@ -501,6 +501,9 @@ def get_p_val_notation(p_val):
 
 # --- Agronomic Classification Engine ---
 def classify_parameter(param):
+    """
+    Classifies parameters dynamically based on standard agricultural taxonomy.
+    """
     param_clean = param.strip().lower()
 
     abbrev_map = {
@@ -529,6 +532,7 @@ def classify_parameter(param):
         "pri": ("Vegetative Parameters", "Physiological Parameters"),
     }
 
+    # Strip trailing numbers (e.g., PLWD2 -> PLWD, DL4 -> DL)
     base_abbrev = re.sub(r"\d+$", "", param_clean)
     if base_abbrev in abbrev_map:
         return abbrev_map[base_abbrev]
@@ -623,13 +627,8 @@ def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
 
 
 def set_table_borders(table):
-    """Applies clean standard fully bordered gridlines."""
     tbl = table._tbl
     tblPr = tbl.tblPr
-    # Clear preexisting borders
-    for child in list(tblPr):
-        if child.tag.endswith('tblBorders'):
-            tblPr.remove(child)
     tblBorders = OxmlElement('w:tblBorders')
     for edge in ('top', 'left', 'bottom', 'right', 'insideH', 'insideV'):
         element = OxmlElement(f'w:{edge}')
@@ -638,44 +637,6 @@ def set_table_borders(table):
         element.set(qn('w:space'), '0')
         element.set(qn('w:color'), '000000')
         tblBorders.append(element)
-    tblPr.append(tblBorders)
-
-
-def set_apa_table_borders(table):
-    """Applies standard APA style academic borders (no vertical lines, thick top/bottom horizontal lines)."""
-    tbl = table._tbl
-    tblPr = tbl.tblPr
-    # Clear preexisting borders
-    for child in list(tblPr):
-        if child.tag.endswith('tblBorders'):
-            tblPr.remove(child)
-    tblBorders = OxmlElement('w:tblBorders')
-    
-    top = OxmlElement('w:top')
-    top.set(qn('w:val'), 'single')
-    top.set(qn('w:sz'), '12')  # Thick top border (1.5 pt)
-    top.set(qn('w:color'), '000000')
-    tblBorders.append(top)
-    
-    bottom = OxmlElement('w:bottom')
-    bottom.set(qn('w:val'), 'single')
-    bottom.set(qn('w:sz'), '12')  # Thick bottom border (1.5 pt)
-    bottom.set(qn('w:color'), '000000')
-    tblBorders.append(bottom)
-    
-    # Empty vertical borders
-    for edge in ('left', 'right', 'insideV'):
-        element = OxmlElement(f'w:{edge}')
-        element.set(qn('w:val'), 'none')
-        tblBorders.append(element)
-        
-    # Inside thin horizontal line for header/data separators
-    insideH = OxmlElement('w:insideH')
-    insideH.set(qn('w:val'), 'single')
-    insideH.set(qn('w:sz'), '4')  # Thin separator (0.5 pt)
-    insideH.set(qn('w:color'), '000000')
-    tblBorders.append(insideH)
-    
     tblPr.append(tblBorders)
 
 
@@ -696,11 +657,11 @@ def set_header_bottom_border(row_or_cells):
         tcPr.append(tcBorders)
 
 
-# --- Dynamic Table Caption Generator ---
+# --- Dynamic Table Caption Generator (Varieties of Wordings) ---
 def generate_table_caption(table_num, factor_a, factor_b, variables_list):
     vars_txt = ", ".join(variables_list)
-    if len(variables_list) > 3:
-        vars_txt = f"{variables_list[0]}, {variables_list[1]} and other evaluated parameters"
+    if len(variables_list) > 2:
+        vars_txt = f"{', '.join(variables_list[:-1])} and {variables_list[-1]}"
 
     captions = [
         f"Table {table_num}. Influence of {factor_a} and {factor_b} on {vars_txt}.",
@@ -734,7 +695,7 @@ def group_parameters(params):
     return groups
 
 
-# --- Statistical Separation Engines ---
+# --- Statistical Calculation Helpers ---
 def get_signif_code_val(p):
     if pd.isna(p):
         return "ns"
@@ -882,7 +843,6 @@ def parse_summarized_table_to_results_2f(df_raw, idx_A, idx_B, idx_cv, idx_inter
         p_b = 0.01 if "**" in f_val_B else (0.04 if "*" in f_val_B else 0.5)
         p_ab = 0.01 if "**" in f_val_AB else (0.04 if "*" in f_val_AB else 0.5)
 
-        # Factor A
         means_a = {}
         means_a_str = {}
         for i, lvl in enumerate(factor_a_levels):
@@ -895,7 +855,6 @@ def parse_summarized_table_to_results_2f(df_raw, idx_A, idx_B, idx_cv, idx_inter
                 means_a[lvl] = 0.0
                 means_a_str[lvl] = "0.00"
 
-        # Factor B
         means_b = {}
         means_b_str = {}
         for i, lvl in enumerate(factor_b_levels):
@@ -1132,13 +1091,13 @@ def extract_time_series_facts(base_name, items, results_data, factor_a_col, fact
 
 
 # ==============================================================================
-# Dynamic Academic Explanation Routers
+# Academic explanation generators (built from ACADEMIC_TEMPLATES_30)
 # ==============================================================================
 def generate_two_factor_explanation(parameter, res, factor_a_col, factor_b_col, table_label):
     p_a, p_b, p_ab = res["p_a"], res["p_b"], res["p_ab"]
     placeholders = extract_single_day_facts(parameter, res, factor_a_col, factor_b_col, table_label)
 
-    # Alternate/Route dynamically to prevent identical text formatting patterns [3, 10]
+    # Dynamic format shifting to ensure we don't always use the exact same layout
     if p_ab < 0.05:
         tpl_idx = 16 if (hash(parameter) % 2 == 0) else 23
     elif p_a < 0.05 and p_b < 0.05:
@@ -1313,17 +1272,11 @@ def build_styled_excel(factor_a_col, factor_b_col, params, levels_a, levels_b, r
     return wb
 
 
-# --- DOCX Copy of Styled Excel Table with Alternating Layout Formats ---
+# --- DOCX Copy of Styled Excel Table ---
 def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, levels_b, results_data):
     num_cols = len(g_cols) + 1
     table = doc.add_table(rows=1, cols=num_cols)
-    
-    # Alternates between Standard Grid and APA academic structures to prevent monotonic presentation formats
-    alternating_style = hash("".join(g_cols)) % 2
-    if alternating_style == 0:
-        set_table_borders(table)
-    else:
-        set_apa_table_borders(table)
+    set_table_borders(table)
 
     hdr_cells = table.rows[0].cells
     hdr_cells[0].text = "Treatments"
@@ -1420,15 +1373,22 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
     r_gm = add_styled_data_row("Grand mean", gm_dict)
     set_header_bottom_border(r_gm)
 
+    # Apply responsive widths
     for row in table.rows:
-        for idx, width in enumerate([Inches(1.5)] + [Inches(1.1)] * len(g_cols)):
-            row.cells[idx].width = width
+        row.cells[0].width = Inches(1.5)
+        for idx in range(1, len(g_cols) + 1):
+            row.cells[idx].width = Inches(1.1)
 
 
 # ==============================================================================
 # Word report builder: produces the 1 / 1.1 / 1.1.1 hierarchical structure
 # ==============================================================================
 def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, levels_a, levels_b, results_data):
+    """
+    Produces a Document with clustered parameters:
+    Groups up to 4 static single parameters under the same category to produce
+    cohesive narrative paragraphs and multi-column tables.
+    """
     doc = Document()
     doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
     numberer = ReportNumberer()
@@ -1455,30 +1415,55 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
 
             grouped = group_parameters(cat_params)
 
-            # Static single-instance parameters grouped into chunks of up to 4 to render side-by-side
+            # Separate static parameters vs time-series/trend parameters
             static_items = [items[0][0] for base_name, items in sorted(grouped.items()) if len(items) == 1]
-            static_chunks = [static_items[i:i + 4] for i in range(0, len(static_items), 4)]
+            time_series_items = {base_name: items for base_name, items in sorted(grouped.items()) if len(items) > 1}
 
-            for chunk in static_chunks:
-                title_text = ", ".join(chunk)
-                param_title = numberer.param(doc, title_text)
+            # 1. Clustered static parameters (grouped in chunks of up to 4 for publications)
+            chunk_size = 4
+            for i in range(0, len(static_items), chunk_size):
+                chunk = static_items[i:i + chunk_size]
+
+                # Dynamic title combining chunk elements
+                chunk_title_str = ", ".join(chunk)
+                if len(chunk) > 2:
+                    chunk_title_str = f"{', '.join(chunk[:-1])} and {chunk[-1]}"
+
+                param_title = numberer.param(doc, chunk_title_str)
                 st.write(f"**{param_title}**")
 
                 table_n = numberer.next_table()
                 table_label = f"Table {table_n}"
 
-                combined_texts = []
-                for p in chunk:
+                # Generate varied narrative with dynamic transitions
+                explanations = []
+                for idx, p in enumerate(chunk):
                     p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, table_label)
-                    combined_texts.append(p_text)
+                    
+                    if idx > 0:
+                        transitions = [
+                            " Concurrently, regarding the performance of {param}: ",
+                            " In terms of {param}, the statistical analysis indicated that: ",
+                            " Evaluated parallel to other traits, {param} showed that: ",
+                            " Moving onto {param}, the results revealed: "
+                        ]
+                        transition = transitions[(hash(p) + idx) % len(transitions)].format(param=p)
+                        # Clean up repetitive starts to make flow natural
+                        p_text = re.sub(
+                            r"^(The terminal value of\s+|The terminal measurement of\s+|The final ratio of the system components at terminal harvest was\s+)", 
+                            "", p_text, flags=re.IGNORECASE
+                        )
+                        p_text = transition + p_text[0].lower() + p_text[1:]
+                    explanations.append(p_text)
 
-                full_text = " ".join(combined_texts)
-                st.write(full_text)
-                doc.add_paragraph(full_text)
+                combined_narrative = " ".join(explanations)
+                st.write(combined_narrative)
+                doc.add_paragraph(combined_narrative)
 
-                # Renders the single parameters side-by-side inside a unified table
+                # Render consolidated multi-column table
                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
 
+                # Caption
                 caption_text = generate_table_caption(table_n, factor_a_col, factor_b_col, chunk)
                 p_cap = doc.add_paragraph(caption_text)
                 p_cap.runs[0].font.name = 'Arial'
@@ -1488,35 +1473,31 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                 st.write(f"*{table_label} rendered below*")
                 doc.add_paragraph()
 
-            # Time-series / Trend parameters chunked into groups of up to 4 to prevent horizontal overflow
-            for base_name, items in sorted(grouped.items()):
-                if len(items) > 1:
-                    trend_chunks = [items[i:i + 4] for i in range(0, len(items), 4)]
-                    for chunk_idx, t_chunk in enumerate(trend_chunks):
-                        chunk_title = base_name if len(trend_chunks) == 1 else f"{base_name} (Phase {chunk_idx + 1})"
-                        param_title = numberer.param(doc, chunk_title)
-                        st.write(f"**{param_title}**")
+            # 2. Time-series parameter groups (already chronological, up to 4 days tracked together)
+            for base_name, items in sorted(time_series_items.items()):
+                param_title = numberer.param(doc, base_name)
+                st.write(f"**{param_title}**")
 
-                        table_n = numberer.next_table()
-                        table_label = f"Table {table_n}"
-                        trend_params_chunk = [it[0] for it in t_chunk]
+                table_n = numberer.next_table()
+                table_label = f"Table {table_n}"
+                trend_params = [it[0] for it in items]
 
-                        p_text = generate_trend_explanation_2f(base_name, t_chunk, results_data,
-                                                                 factor_a_col, factor_b_col, table_label)
-                        st.write(p_text)
-                        doc.add_paragraph(p_text)
+                p_text = generate_trend_explanation_2f(base_name, items, results_data,
+                                                         factor_a_col, factor_b_col, table_label)
+                st.write(p_text)
+                doc.add_paragraph(p_text)
 
-                        add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params_chunk,
-                                                 levels_a, levels_b, results_data)
+                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params,
+                                         levels_a, levels_b, results_data)
 
-                        caption_text = generate_table_caption(table_n, factor_a_col, factor_b_col, trend_params_chunk)
-                        p_cap = doc.add_paragraph(caption_text)
-                        p_cap.runs[0].font.name = 'Arial'
-                        p_cap.runs[0].font.size = Pt(10)
-                        p_cap.runs[0].font.italic = True
+                caption_text = generate_table_caption(table_n, factor_a_col, factor_b_col, trend_params)
+                p_cap = doc.add_paragraph(caption_text)
+                p_cap.runs[0].font.name = 'Arial'
+                p_cap.runs[0].font.size = Pt(10)
+                p_cap.runs[0].font.italic = True
 
-                        st.write(f"*{table_label} (time-series) rendered below*")
-                        doc.add_paragraph()
+                st.write(f"*{table_label} (time-series) rendered below*")
+                doc.add_paragraph()
 
         doc.add_paragraph("-" * 60)
 
@@ -1589,4 +1570,124 @@ def run_raw_mode(uploaded_file):
                 for param in response_cols:
                     results_data[param] = run_anova_2factor_raw(df_raw_data, block_col, factor_a_col, factor_b_col, param)
 
-                styled_wb = build_styled_excel(factor_a_col,
+                styled_wb = build_styled_excel(factor_a_col, factor_b_col, response_cols, levels_a, levels_b, results_data)
+                excel_bio = io.BytesIO()
+                styled_wb.save(excel_bio)
+                excel_bio.seek(0)
+
+                st.markdown("#### \U0001F4E5 Download Formatted Statistical Excel Results")
+                st.download_button(
+                    label="Download Formatted Excel Results Table",
+                    data=excel_bio,
+                    file_name="Result_2Factor_Output.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    key="btn_d_excel_styled"
+                )
+                st.write("---")
+
+                st.markdown("### \U0001F4DD Analysis Results and Academic Explanations")
+
+                doc = build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, levels_a, levels_b, results_data)
+
+                bio_doc = io.BytesIO()
+                doc.save(bio_doc)
+                bio_doc.seek(0)
+
+                st.write("---")
+                st.markdown("#### \U0001F4BE Save Explanations as a Word Report")
+                st.download_button(
+                    "Download Word Explanations Report (.docx)",
+                    data=bio_doc,
+                    file_name="Calculated_Factorial_Report.docx",
+                    mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    key="btn_d_2f_raw_cal"
+                )
+    except Exception as e:
+        st.error(f"Error executing raw combined Two-Factor analysis: {e}")
+
+
+def run_summary_mode_processing(uploaded_file):
+    try:
+        df_raw = pd.read_excel(uploaded_file, header=None)
+
+        idx_A, idx_B, idx_cv, idx_interaction, idx_grand = None, None, None, None, None
+        for idx, val in enumerate(df_raw[0]):
+            if pd.isna(val):
+                continue
+            val_str = str(val).strip().lower()
+            if "factor a" in val_str:
+                idx_A = idx
+            elif "factor b" in val_str:
+                idx_B = idx
+            elif "cv" in val_str:
+                idx_cv = idx
+            elif any(x in val_str for x in ["factor a \u00d7 factor b", "factor a*factor b", "factor a x factor b", "interaction"]):
+                idx_interaction = idx
+            elif "grand mean" in val_str or "grandmean" in val_str:
+                idx_grand = idx
+
+        if any(v is None for v in [idx_A, idx_B, idx_cv, idx_interaction, idx_grand]):
+            st.error("Missing structural markers (Factor A, Factor B, CV, Interaction, Grand Mean) in Column A.")
+            return
+
+        idx_A_sem, idx_A_f, idx_A_lsd = None, None, None
+        for idx in range(idx_A + 1, idx_B):
+            val = str(df_raw.iloc[idx, 0]).strip().lower()
+            if "sem" in val:
+                idx_A_sem = idx
+            elif "f-value" in val or "f value" in val:
+                idx_A_f = idx
+            elif "lsd" in val:
+                idx_A_lsd = idx
+
+        idx_B_sem, idx_B_f, idx_B_lsd = None, None, None
+        for idx in range(idx_B + 1, idx_cv):
+            val = str(df_raw.iloc[idx, 0]).strip().lower()
+            if "sem" in val:
+                idx_B_sem = idx
+            elif "f-value" in val or "f value" in val:
+                idx_B_f = idx
+            elif "lsd" in val:
+                idx_B_lsd = idx
+
+        factor_a_levels = [str(df_raw.iloc[i, 0]).strip() for i in range(idx_A + 1, idx_A_sem)]
+        factor_b_levels = [str(df_raw.iloc[i, 0]).strip() for i in range(idx_B + 1, idx_B_sem)]
+
+        factor_a_label = str(df_raw.iloc[idx_A, 0]).split(":")[-1].replace("(", "").replace(")", "").strip()
+        factor_b_label = str(df_raw.iloc[idx_B, 0]).split(":")[-1].replace("(", "").replace(")", "").strip()
+
+        parameters = [str(x).strip() for x in df_raw.iloc[0].tolist()[1:] if pd.notna(x)]
+        st.success(f"Detected Factor A: {factor_a_label} | Factor B: {factor_b_label}")
+
+        classified_cols = build_classified_cols(parameters)
+        show_category_preview(classified_cols)
+
+        if st.button("Generate Word Document Draft from Direct Output", key="btn_2f_sum_gen"):
+            results_data = parse_summarized_table_to_results_2f(
+                df_raw, idx_A, idx_B, idx_cv, idx_interaction, idx_grand,
+                idx_A_sem, idx_A_f, idx_A_lsd, idx_B_sem, idx_B_f, idx_B_lsd,
+                factor_a_levels, factor_b_levels, parameters
+            )
+
+            doc = build_hierarchical_report(classified_cols, factor_a_label, factor_b_label,
+                                             factor_a_levels, factor_b_levels, results_data)
+
+            bio_doc = io.BytesIO()
+            doc.save(bio_doc)
+            bio_doc.seek(0)
+
+            st.write("---")
+            st.markdown("#### \U0001F4BE Save Explanations & Tables as Word Document")
+            st.download_button(
+                "Download Word Explanations Report (.docx)",
+                data=bio_doc,
+                file_name="MultiYear_Summarized_Thesis_Report.docx",
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                key="btn_d_2f_sum_doc"
+            )
+    except Exception as e:
+        st.error(f"Error parsing direct result summary table: {e}")
+
+
+if __name__ == "__main__":
+    show_module()
