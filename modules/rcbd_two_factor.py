@@ -1124,23 +1124,23 @@ def extract_time_series_facts(base_name, items, results_data, factor_a_col, fact
     }
 
 
-# --- Academic Explanation Selector Hooks ---
+# --- Academic Explanation Selector Hooks (Absolute Global Shuffling) ---
 def generate_two_factor_explanation_shuffled(parameter, res, factor_a_col, factor_b_col, table_label, pool):
-    p_a, p_b, p_ab = res["p_a"], res["p_b"], res["p_ab"]
+    """Selects a completely random template from the entire Single-Day pool (16-30) on every draw."""
     placeholders = extract_single_day_facts(parameter, res, factor_a_col, factor_b_col, table_label)
+    
+    # Randomly select any template ID from the single-day pool
+    tpl_idx = random.choice([16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30])
+    raw_template = ACADEMIC_TEMPLATES_30[tpl_idx]
+    return inject_template_placeholders(raw_template, placeholders)
 
-    if p_ab < 0.05:
-        category = "interaction"
-    elif p_a < 0.05 and p_b < 0.05:
-        category = "both_significant"
-    elif p_a < 0.05 and p_b >= 0.05:
-        category = "factor_a_significant"
-    elif p_a >= 0.05 and p_b < 0.05:
-        category = "factor_b_significant"
-    else:
-        category = "non_significant"
 
-    tpl_idx = pool.get_template_id(category)
+def generate_trend_explanation_2f_shuffled(base_name, items, results_data, factor_a_col, factor_b_col, table_label, pool):
+    """Selects a completely random template from the entire Time-Series pool (1-15) on every draw."""
+    placeholders = extract_time_series_facts(base_name, items, results_data, factor_a_col, factor_b_col, table_label)
+
+    # Randomly select any template ID from the time-series pool
+    tpl_idx = random.choice([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
     raw_template = ACADEMIC_TEMPLATES_30[tpl_idx]
     return inject_template_placeholders(raw_template, placeholders)
 
