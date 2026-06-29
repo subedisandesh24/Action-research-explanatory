@@ -1461,14 +1461,27 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                 table_n = numberer.next_table()
                 table_label = f"Table {table_n}"
 
-                # Write individual explanation paragraphs for each parameter in this chunk
+                # Write individual explanations with separate topic headings
                 for p in chunk:
+                    # 1. Add the topic heading in Word (Styled as Arial 11pt, Bold)
+                    p_head = doc.add_paragraph()
+                    p_head_run = p_head.add_run(p)
+                    p_head_run.bold = True
+                    p_head_run.font.size = Pt(11)
+                    p_head_run.font.name = 'Arial'
+                    p_head.paragraph_format.space_before = Pt(12)
+                    p_head.paragraph_format.space_after = Pt(3)
+                    
+                    # 2. Add the topic heading in the Streamlit preview
+                    st.write(f"#### {p}")
+                    
+                    # 3. Generate and add the individual explanation text
                     p_text = generate_two_factor_explanation_shuffled(
                         p, results_data[p], factor_a_col, factor_b_col, table_label, single_day_pool
                     )
                     st.write(p_text)
                     doc.add_paragraph(p_text)
-
+                    
                 # Render consolidated multi-column table
                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
 
