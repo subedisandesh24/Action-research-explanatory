@@ -1451,37 +1451,35 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
             for i in range(0, len(static_items), chunk_size):
                 chunk = static_items[i:i + chunk_size]
 
-                chunk_title_str = ", ".join(chunk)
-                if len(chunk) > 2:
-                    chunk_title_str = f"{', '.join(chunk[:-1])} and {chunk[-1]}"
-
-                param_title = numberer.param(doc, chunk_title_str)
-                st.write(f"**{param_title}**")
-
                 table_n = numberer.next_table()
                 table_label = f"Table {table_n}"
 
-                # Write individual explanations with separate topic headings
+                # Write individual headings and explanation paragraphs for each parameter in this chunk
                 for p in chunk:
-                    # 1. Add the topic heading in Word (Styled as Arial 11pt, Bold)
-                    p_head = doc.add_paragraph()
-                    p_head_run = p_head.add_run(p)
-                    p_head_run.bold = True
-                    p_head_run.font.size = Pt(11)
-                    p_head_run.font.name = 'Arial'
-                    p_head.paragraph_format.space_before = Pt(12)
-                    p_head.paragraph_format.space_after = Pt(3)
-                    
-                    # 2. Add the topic heading in the Streamlit preview
-                    st.write(f"#### {p}")
-                    
-                    # 3. Generate and add the individual explanation text
+                    # 1. Generate and add the individual numbered Heading 3 (e.g., 1.2.1 Acidity)
+                    param_title = numberer.param(doc, p)
+                    st.write(f"**{param_title}**")
+
+                    # 2. Generate and write explanation narrative
                     p_text = generate_two_factor_explanation_shuffled(
                         p, results_data[p], factor_a_col, factor_b_col, table_label, single_day_pool
                     )
                     st.write(p_text)
                     doc.add_paragraph(p_text)
-                    
+
+                # Render consolidated multi-column table for this chunk
+                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+
+                # Caption
+                caption_text = generate_table_caption(table_n, factor_a_col, factor_b_col, chunk)
+                p_cap = doc.add_paragraph(caption_text)
+                p_cap.runs[0].font.name = 'Arial'
+                p_cap.runs[0].font.size = Pt(10)
+                p_cap.runs[0].font.italic = True
+
+                st.write(f"*{table_label} rendered below*")
+                doc.add_paragraph()
+                
                 # Render consolidated multi-column table
                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
 
