@@ -213,7 +213,7 @@ def set_header_bottom_border(row_or_cells):
     if hasattr(row_or_cells, 'cells'):
         cells = row_or_cells.cells
     else:
-        cells = row_or_cells
+        cells = row_or_cells  # Passed cell tuple
     for cell in cells:
         tcPr = cell._tc.get_or_add_tcPr()
         borders = parse_xml(
@@ -417,18 +417,17 @@ def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_c
     comb_low_name, comb_low_val = sorted_comb[-1]
     comb_top_let = p_data["cld_comb"].get(comb_top_name, "")
     
-    # Parity Groups Lists (Formatted as plain text, no bold brackets or backticks)
     at_par_a_list = []
     for lvl, val in sorted_a[1:]:
         let = p_data["means_a_str"][lvl].replace(f"{val:.2f}", "")
-        if top_let_a, let and any(char in top_let_a for char in let):
+        if top_let_a and let and any(char in top_let_a for char in let):
             at_par_a_list.append(f"{lvl} ({val:.2f}^{let})")
     at_par_a_str = ", ".join(at_par_a_list) if at_par_a_list else "no other levels"
     
     at_par_b_list = []
     for lvl, val in sorted_b[1:]:
         let = p_data["means_b_str"][lvl].replace(f"{val:.2f}", "")
-        if top_let_b, let and any(char in top_let_b for char in let):
+        if top_let_b and let and any(char in top_let_b for char in let):
             at_par_b_list.append(f"{lvl} ({val:.2f}^{let})")
     at_par_b_str = ", ".join(at_par_b_list) if at_par_b_list else "no other levels"
     if p_b >= 0.05:
@@ -442,7 +441,6 @@ def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_c
     at_par_comb_str = ", ".join(at_par_comb_list) if at_par_comb_list else "no other combinations"
 
     if p_ab < 0.05:
-        # Significant interaction effect
         para = (
             f"Regarding the parameter {param_name}, the statistical evaluation revealed a highly significant "
             f"interaction effect between {factor_a_col} and {factor_b_col} ({p_notation_int}) (as summarized "
@@ -454,7 +452,6 @@ def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_c
             f"cumulative severity of stress or untreated control conditions."
         )
     else:
-        # Non-significant interaction effect (Independent main effects)
         part_a = ""
         if p_a >= 0.05:
             part_a = f"the main effect of {factor_a_col} was nonsignificant ({p_notation_a}) on {param_name}, suggesting stable and uniform behavior across levels."
@@ -813,7 +810,7 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
 def show_module():
     st.markdown("### Two-Factor RCBD Analyzer")
     
-    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_mult")
+    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_two")
     uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f_two")
 
     if uploaded_file is not None:
@@ -922,6 +919,7 @@ def run_raw_mode(uploaded_file):
                                 doc.add_paragraph(p_text)
                                 
                             add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
@@ -929,6 +927,7 @@ def run_raw_mode(uploaded_file):
                         elif layout_style == 1:
                             # Style 1: Table -> Caption -> Explanations
                             add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
@@ -950,6 +949,7 @@ def run_raw_mode(uploaded_file):
                                 doc.add_paragraph(p_text)
                                 
                             add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
@@ -978,15 +978,18 @@ def run_raw_mode(uploaded_file):
                                 st.write(p_text)
                                 doc.add_paragraph(p_text)
                                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                
                                 p_cap = doc.add_paragraph(caption_text)
                                 p_cap.runs[0].font.name = 'Arial'
                                 p_cap.runs[0].font.size = Pt(10)
                                 
                             elif layout_style == 1:
                                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                
                                 p_cap = doc.add_paragraph(caption_text)
                                 p_cap.runs[0].font.name = 'Arial'
                                 p_cap.runs[0].font.size = Pt(10)
+                                
                                 st.write(p_text)
                                 doc.add_paragraph(p_text)
                                 
@@ -994,7 +997,9 @@ def run_raw_mode(uploaded_file):
                                 part1, part2 = split_text_by_sentence(p_text)
                                 st.write(part1)
                                 doc.add_paragraph(part1)
+                                
                                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                
                                 p_cap = doc.add_paragraph(caption_text)
                                 p_cap.runs[0].font.name = 'Arial'
                                 p_cap.runs[0].font.size = Pt(10)
