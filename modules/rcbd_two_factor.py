@@ -1410,7 +1410,7 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
     Produces a Document with clustered parameters:
     Groups up to 4 static single parameters under the same category to produce
     cohesive multi-column tables, but writes individual analytical paragraphs 
-    for each parameter.
+    with their own bold headings for each parameter.
     """
     doc = Document()
     doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
@@ -1467,20 +1467,7 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                     st.write(p_text)
                     doc.add_paragraph(p_text)
 
-                # Render consolidated multi-column table for this chunk
-                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
-
-                # Caption
-                caption_text = generate_table_caption(table_n, factor_a_col, factor_b_col, chunk)
-                p_cap = doc.add_paragraph(caption_text)
-                p_cap.runs[0].font.name = 'Arial'
-                p_cap.runs[0].font.size = Pt(10)
-                p_cap.runs[0].font.italic = True
-
-                st.write(f"*{table_label} rendered below*")
-                doc.add_paragraph()
-                
-                # Render consolidated multi-column table
+                # Render consolidated multi-column table for this chunk (ONLY ONCE)
                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
 
                 # Caption
@@ -1523,7 +1510,6 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
         doc.add_paragraph("-" * 60)
 
     return doc
-
 
 def build_classified_cols(parameters):
     classified_cols = {}
