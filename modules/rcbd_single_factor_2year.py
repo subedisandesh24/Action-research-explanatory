@@ -16,10 +16,117 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side
 
 # ==============================================================================
-# DATABASE OF 30 HIGH-STANDARD MULTI-YEAR SINGLE-FACTOR ACADEMIC DISCUSSION TEMPLATES
+# DATABASE 1: 20 HIGH-STANDARD SINGLE-YEAR SINGLE-FACTOR TEMPLATES
+# ==============================================================================
+ACADEMIC_TEMPLATES_1Y = {
+    "temp_1_sig_yield": (
+        "The statistical evaluation of **{parameter}** demonstrated that genotypes exerted a highly significant influence "
+        "({p_val_notation}) on this trait, as presented in **{table_label}**. Genotype **{top_g}** recorded the maximum average value "
+        "of {top_val}^{top_let}, establishing its performance in the premier statistical group, which was statistically at par with other "
+        "notable genotypes including {at_par}. This pronounced variation highlights the presence of substantial genetic diversity and "
+        "phenotypic plasticity among the evaluated germplasm under these environmental conditions."
+    ),
+    "temp_2_sig_quality": (
+        "With respect to **{parameter}**, a significant genotype treatment effect was observed ({p_val_notation}) (as shown in "
+        "**{table_label}**). Genotype **{top_g}** ({top_val}^{top_let}) proved statistically superior, sharing statistical parity only with "
+        "{at_par}. This variation suggests that structural retention, tissue quality, and cellular integrity were uniquely preserved under "
+        "this genotype. The lower-performing treatments fell into distinctly inferior statistical groups, illustrating the severity of "
+        "standard tissue degradation when not buffered by the superior genetic characteristics of **{top_g}**."
+    ),
+    "temp_3_strict_superiority": (
+        "For the parameter **{parameter}**, the treatment factor induced a highly significant response ({p_val_notation}). Genotype **{top_g}** "
+        "recorded {top_val}^{top_let}, establishing clear statistical superiority over all other treatments (as summarized in "
+        "**{table_label}**). The closest competitor was **{second_g}** ({second_val}), indicating that **{top_g}** possesses a highly "
+        "unique and efficient phenotypic expression for this trait."
+    ),
+    "temp_4_homogeneous": (
+        "The statistical analysis of **{parameter}** revealed a strictly nonsignificant treatment effect ({p_val_notation}), as detailed "
+        "in **{table_label}**. The observed treatment means fluctuated within an exceptionally narrow, statistically negligible margin "
+        "around the grand mean of {grand_mean}. This complete lack of statistical divergence implies that all evaluated genotypes "
+        "possess comparable physiological stability and highly buffered chemical pathways for this specific trait."
+    ),
+    "temp_5_marginal_sig": (
+        "The trait **{parameter}** was significantly influenced by genotype variations ({p_val_notation}) (as shown in **{table_label}**). "
+        "Genotype **{top_g}** led the performance with {top_val}^{top_let}, and shared statistical letters with {at_par}. "
+        "The lower baseline limit was defined by **{low_g}** ({low_val}), indicating a moderate range of phenotypic expression."
+    ),
+    "temp_6_precision_verification": (
+        "Regarding **{parameter}**, the analysis of variance revealed a significant treatment effect ({p_val_notation}). The overall "
+        "precision of the trial was verified by a low Coefficient of Variation (CV) of {cv}% and a Standard Error of "
+        "the Mean (SEm) of {sem} (Table **{table_label}**), demonstrating that background spatial noise was managed under "
+        "the block partitions."
+    ),
+    "temp_7_broad_parity": (
+        "For **{parameter}**, the genotype effect was significant ({p_val_notation}) (as summarized in **{table_label}**). Genotype **{top_g}** "
+        "({top_val}^{top_let}) occupied the top statistical tier but did not differ significantly from a broad range of genotypes, including "
+        "{at_par}. This suggests a wide genetic buffer for this trait, indicating that multiple germplasms are functionally equivalent."
+    ),
+    "temp_8_extreme_contrast": (
+        "The response of **{parameter}** was highly dependent on the treatment genotypes ({p_val_notation}) (Table **{table_label}**). "
+        "A sharp contrast was observed between the leading genotype **{top_g}** ({top_val}^{top_let}) and the lowest-performing "
+        "genotype **{low_g}** ({low_val}), representing a highly pronounced phenotypic difference."
+    ),
+    "temp_9_progressive_upward_trend": (
+        "Concerning the progressive changes in **{base_name}** over time, a highly defined, time-dependent upward trend was observed across "
+        "the evaluation timeline, as summarized in **{table_label}**. The grand mean of the trial increased systematically from {first_gm} "
+        "at {first_day} and progressively rose to {last_gm} by {last_day}."
+    ),
+    "temp_10_progressive_decline_trend": (
+        "For the temporal progression of **{base_name}**, a systematic, progressive decline was observed across the storage and evaluation "
+        "period, as detailed in **{table_label}**. The grand mean fell from {first_gm} at {first_day} and progressively dropped to "
+        "{last_gm} by {last_day}."
+    ),
+    "temp_11_late_onset_divergence": (
+        "The progressive evaluation of **{base_name}** revealed a late-onset treatment divergence. While genotype differences were "
+        "completely nonsignificant on {first_day} ({first_p}), they became highly significant on {last_day} ({last_p}) (as presented "
+        "in **{table_label}**), where genotype **{top_g}** ({top_val}^{top_let}) established its statistical lead."
+    ),
+    "temp_12_early_onset_convergence": (
+        "For **{base_name}**, the initial treatment differences observed at {first_day} ({first_p}) converged over time, "
+        "becoming nonsignificant on {last_day} ({last_p}) (as shown in **{table_label}**)."
+    ),
+    "temp_13_uniform_trend": (
+        "Although **{base_name}** changed progressively from {first_gm} to {last_gm} over the course of the trial (Table **{table_label}**), "
+        "the genotype main effect remained consistently nonsignificant ({last_p}) across all intervals, confirming highly uniform behavioral "
+        "patterns."
+    ),
+    "temp_14_stabilization_trend": (
+        "Regarding the temporal progression of **{base_name}**, a progressive stabilization pattern was observed in the latter half of the "
+        "trial, as shown in **{table_label}**. The values changed sharply from {first_day} to {mid_day}, but stabilized by {last_day}."
+    ),
+    "temp_15_decay_progression": (
+        "Decay progression for **{base_name}** rose over the evaluation intervals, escalating from {first_gm} to {last_gm} (Table "
+        "**{table_label}**). Genotypes significantly influenced decay development by {last_day} ({last_p}), with **{top_g}** successfully "
+        "suppressing decay loss ({top_val}^{top_let}) compared to the control **{low_g}**."
+    ),
+    "temp_16_performance_tier": (
+        "The post-hoc grouping for **{parameter}** clearly differentiated the genotypes into distinct performance tiers, as detailed in "
+        "**{table_label}**. Genotype **{top_g}** ({top_val}^{top_let}) led the elite tier, making it a promising candidate for future breeding."
+    ),
+    "temp_17_stress_conservation": (
+        "Under the trial conditions, **{parameter}** was preserved best under genotype **{top_g}** ({top_val}^{top_let}) (Table "
+        "**{table_label}**), demonstrating superior cellular buffering or metabolic stability. This genotype was statistically at par "
+        "with {at_par}."
+    ),
+    "temp_18_buffered_expression": (
+        "Trait expression for **{parameter}** was highly stable, with nonsignificant genotype effects ({p_val_notation}), as detailed in "
+        "**{table_label}**. The minimal variance among treatments is supported by a very low CV of {cv}%, proving that this trait "
+        "is highly buffered."
+    ),
+    "temp_19_biochemical_nutrient": (
+        "Genotype **{top_g}** ({top_val}^{top_let}) exhibited the highest levels of **{parameter}** (as shown in **{table_label}**), "
+        "indicating a highly active metabolic pathway or synthesis rate. It shared statistical parity only with {at_par}."
+    ),
+    "temp_20_comprehensive_candidate": (
+        "In conclusion, genotype **{top_g}** proved to be the most promising candidate for the optimization of **{parameter}** (as presented "
+        "in **{table_label}**). It combined high statistical performance ({top_val}^{top_let}) with strong experimental precision."
+    )
+}
+
+# ==============================================================================
+# DATABASE 2: 30 HIGH-STANDARD MULTI-YEAR SINGLE-FACTOR TEMPLATES
 # ==============================================================================
 ACADEMIC_TEMPLATES_2Y_30 = {
-    # --- Group A: Temporal / Multi-Date / Trend Line Parameters (Templates 1–15) ---
     1: (
         "The temporal development of {{variable_name}} was monitored sequentially across {{num_intervals}} experimental "
         "intervals from {{start_time}} to {{end_time}} {{time_unit}} over two consecutive seasons ({{year_1}} and {{year_2}}). "
@@ -28,7 +135,7 @@ ACADEMIC_TEMPLATES_2Y_30 = {
         "both years. Consequently, data were pooled over the two years for subsequent analysis. During the initial stages at "
         "{{time_point_1}} and {{time_point_2}} {{time_unit}}, the pooled treatment levels of {{factor_A}} did not exert "
         "any statistically significant influence on the observed values (P > 0.05), with the overall pooled grand mean remaining "
-        "stable at {{grand_mean_early}} {{unit}} with a CV of {{cv_early}}%. However, as the experimental timeline progressed to "
+        "stable at {{grand_mean_early}} {{unit}} with a CV of {{cv_early}}%. However, as the evaluation timeline progressed to "
         "{{time_point_3}} {{time_unit}}, a highly significant pooled treatment divergence emerged (P \u2264 0.01). Table {{table_num}} "
         "shows that the pooled mean of {{treatment_A1}} achieved the maximum value of {{value_1}} {{unit}}, which was significantly "
         "higher than {{treatment_A2}} ({{value_2}} {{unit}}) and the baseline treatment {{treatment_A_lowest}} ({{value_lowest}} "
@@ -182,8 +289,8 @@ ACADEMIC_TEMPLATES_2Y_30 = {
         "emerged during the middle phase at {{time_point_3}} {{time_unit}}, where the pooled main effect of {{factor_A}} was "
         "significant (P \u2264 0.05), with {{treatment_A1}} producing a higher pooled value ({{val_A1}} {{unit}}) than "
         "{{treatment_A2}} ({{val_A2}} {{unit}}). As the experimental system reached peak values at {{time_point_4}} {{time_unit}}, "
-        "the pooled treatment differences became highly significant (P \u2264 0.01), with {{treatment_A1}} producing the highest "
-        "overall pooled value of {{val_max_late}} {{unit}} (LSD_0.05 = {{lsdval}})."
+        "the pooled treatment differences became highly significant (P \u2264 0.01). Table {{table_num}} shows that {{treatment_A1}} "
+        "produced the highest overall pooled value of {{val_max_late}} {{unit}} (LSD_0.05 = {{lsdval}})."
     ),
     15: (
         "The temporal levels of {{variable_name}} were evaluated over two years to identify when the treatments crossed critical "
@@ -192,7 +299,7 @@ ACADEMIC_TEMPLATES_2Y_30 = {
         "seasons. During the initial stages at {{time_point_1}} and {{time_point_2}} {{time_unit}}, all pooled treatments "
         "maintained high, stable values above the critical threshold of {{threshold_val}} {{unit}}, with no significant "
         "differences observed among them (P > 0.05). A critical transition occurred at {{time_point_3}} {{time_unit}}, where "
-        "the pooled values under the lower-performing treatments dropped below the threshold level. The application of "
+        "the pooled values under the lower-performing treatments began to drop below the threshold level. The application of "
         "{{treatment_A1}} significantly delayed this downward trend in both years, maintaining a pooled value of {{val_A1}} "
         "{{unit}} (well above the threshold), while the lowest-performing treatment fell to {{val_lowest}} {{unit}} "
         "(P \u2264 0.05; LSD_0.05 = {{lsdval}})."
@@ -336,12 +443,12 @@ ACADEMIC_TEMPLATES_2Y_30 = {
     29: (
         "The ultimate output of {{variable_name}} was evaluated over two consecutive years. Table {{table_num}} shows "
         "that the combined ANOVA indicated a non-significant treatment \u00d7 year interaction (P > 0.05), confirming that the "
-        "treatment response was consistent across both seasons. The pooled main effect of {{factor_A}} was significant "
-        "(P \u2264 0.05), with {{treatment_A1}} producing the highest pooled value of {{val_A1}} {{unit}}, while the other "
-        "treatment levels showed minor variations, with {{treatment_A2}} at {{val_A2}} {{unit}} and {{treatment_A3}} at "
-        "{{val_A3}} {{unit}} (LSD_0.05 = {{lsdval}}). The overall pooled grand mean was recorded as {{grand_mean}} {{unit}} "
-        "with a low coefficient of variation (CV = {{cvval}}%), indicating that even small variations among treatment levels "
-        "were successfully separated by the statistical model in the combined analysis."
+        "treatment response was consistent across both seasons. The pooled main effect of {{factor_A}} was significant (P \u2264 "
+        "0.05), with {{treatment_A1}} producing the highest pooled value of {{val_A1}} {{unit}}, while the other treatment "
+        "levels showed minor variations, with {{treatment_A2}} at {{val_A2}} {{unit}} and {{treatment_A3}} at {{val_A3}} {{unit}} "
+        "(LSD_0.05 = {{lsdval}}). The overall pooled grand mean was recorded as {{grand_mean}} {{unit}} with a low coefficient "
+        "of variation (CV = {{cvval}}%), indicating that even small variations among treatment levels were successfully "
+        "separated by the statistical model in the combined analysis."
     ),
     30: (
         "The concluding grade of {{variable_name}} was evaluated over two consecutive seasons ({{year_1}} and {{year_2}}) "
@@ -592,11 +699,11 @@ def extract_time_series_facts_2y(base_name, items, results_data_1, results_data_
     sorted_last_y1 = sorted(means_last_y1.items(), key=lambda x: x[1], reverse=True) if means_last_y1 else []
     sorted_last_y2 = sorted(means_last_y2.items(), key=lambda x: x[1], reverse=True) if means_last_y2 else []
 
-    val_top_1 = sorted_last_y1[0][1] if sorted_last_y1 else 0.0
-    val_lowest_1 = sorted_last_y1[-1][1] if sorted_last_y1 else 0.0
+    treatment_A1_y1, val_top_1 = sorted_last_y1[0] if sorted_last_y1 else ("Control", 0.0)
+    treatment_A_lowest_y1, val_lowest_1 = sorted_last_y1[-1] if sorted_last_y1 else ("Control", 0.0)
 
-    val_top_2 = sorted_last_y2[0][1] if sorted_last_y2 else 0.0
-    val_lowest_2 = sorted_last_y2[-1][1] if sorted_last_y2 else 0.0
+    treatment_A1_y2, val_top_2 = sorted_last_y2[0] if sorted_last_y2 else ("Control", 0.0)
+    treatment_A_lowest_y2, val_lowest_2 = sorted_last_y2[-1] if sorted_last_y2 else ("Control", 0.0)
 
     pooled_means_last = {}
     for g in means_last_y1:
@@ -652,14 +759,17 @@ def extract_time_series_facts_2y(base_name, items, results_data_1, results_data_
         "initial_value": f"{pooled_first_gm:.2f}",
         "peak_value": f"{peak_val:.2f}",
         "end_value": f"{pooled_last_gm:.2f}",
-        "value_A1": f"{val_pooled_top:.2f}",
-        "val_A1": f"{val_pooled_top:.2f}",
-        "val_A2": f"{val_pooled_second:.2f}",
-        "val_lowest": f"{val_pooled_lowest:.2f}",
-        "value_baseline": f"{val_lowest_early:.2f}",
-        "val_baseline": f"{val_lowest_early:.2f}",
-        "value_A1_end": f"{val_pooled_top:.2f}",
-        "value_lowest_end": f"{val_pooled_lowest:.2f}",
+        "value_y1": f"{val_top_1:.2f}",
+        "value_lowest_y1": f"{val_lowest_1:.2f}",
+        "value_y2": f"{val_top_2:.2f}",
+        "value_lowest_y2": f"{val_lowest_2:.2f}",
+        "pooled_grand_mean": f"{pooled_last_gm:.2f}",
+        "gm_y1": f"{first_gm_y1:.2f}",
+        "gm_y2": f"{first_gm_2:.2f}",
+        "val_pooled_A1": f"{val_pooled_top:.2f}",
+        "val_pooled_lowest": f"{val_pooled_lowest:.2f}",
+        "lsdpooled": f"{pooled_lsd:.2f}",
+        "lsd_pooled": f"{pooled_lsd:.2f}",
         "val_max_early": f"{max(pooled_means_first.values()):.2f}" if pooled_means_first else f"{pooled_first_gm:.2f}",
         "val_min_early": f"{min(pooled_means_first.values()):.2f}" if pooled_means_first else f"{pooled_first_gm:.2f}",
         "val_max_late": f"{val_pooled_top:.2f}",
@@ -667,11 +777,12 @@ def extract_time_series_facts_2y(base_name, items, results_data_1, results_data_
         "cvval": f"{res_last_y1.get('cv', 5.0):.2f}",
         "cv_val": f"{res_last_y1.get('cv', 5.0):.2f}",
         "grand_mean_peak": f"{peak_val:.2f}",
+        "val_baseline": f"{val_lowest_early:.2f}",
         "cv_min": f"{min(pooled_cvs):.2f}" if pooled_cvs else "0.0",
         "cv_max": f"{max(pooled_cvs):.2f}" if pooled_cvs else "0.0",
         "num_dates": str(num_dates),
         "sem_min": f"{min(pooled_sems):.2f}" if pooled_sems else "0.0",
-        "sem_max": f"{max(pooled_sems):.2f}" if pooled_sems else "0.0",
+        "sem_max": f"{max(pooled_sems):.2f}" if sems else "0.0",
         "pct_diff_A": f"{pct_diff}",
         "pct_diff_A_late": f"{pct_diff}",
         "deltaA": f"{abs(val_pooled_top - val_pooled_lowest):.2f}",
@@ -756,30 +867,100 @@ def generate_trend_explanation_2y_shuffled(base_name, items, results_data_1, res
     return inject_template_placeholders(raw_template, placeholders)
 
 
-# --- Parameter Grouping Engine for Time-Series ---
-def group_parameters(params):
-    pattern = re.compile(r"^(.*?)[\s_\-]*(\d+)\s*(dat|das|days?|d)?$", re.IGNORECASE)
-    groups = {}
-    for p in params:
-        match = pattern.search(p.strip())
-        if match and match.group(1).strip():
-            base = match.group(1).strip()
-            base = re.sub(r"[\s\-_()]+$", "", base).strip().capitalize()
-            day_num = int(match.group(2))
-            day_str = f"Day {day_num}"
-            if not base:
-                base = "Parameter"
-            groups.setdefault(base, []).append((p, day_num, day_str))
-        else:
-            base = p.strip().capitalize()
-            groups.setdefault(base, []).append((p, 0, ""))
+# --- Styled Excel Exporter (Matches R openxlsx Excel Format Exactly) ---
+def build_multiyear_excel_output(genotype_col, params, genotypes, results_1, results_2, year1_lbl, year2_lbl):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Analysis"
+    ws.sheet_view.showGridLines = True
+    
+    font_bold = Font(name="Arial", size=10, bold=True)
+    font_regular = Font(name="Arial", size=10)
+    align_left = Alignment(horizontal="left", vertical="center")
+    align_center = Alignment(horizontal="center", vertical="center")
+    border_thin_bottom = Border(bottom=Side(style='thin', color='000000'))
+    border_thin_top = Border(top=Side(style='thin', color='000000'))
+    border_medium_bottom = Border(bottom=Side(style='medium', color='000000'))
+    
+    ws.cell(row=3, column=1, value="Genotype").font = font_bold
+    ws.cell(row=3, column=1).alignment = align_left
+    
+    for r_idx, g in enumerate(genotypes, start=4):
+        ws.cell(row=r_idx, column=1, value=g).font = font_regular
+        ws.cell(row=r_idx, column=1).alignment = align_left
+        
+    stats_start_row = 4 + len(genotypes)
+    stats_labels = ["SEM", "P-value", "LSD (0.05)", "CV (%)", "Grand Mean"]
+    for s_idx, label in enumerate(stats_labels):
+        curr_row = stats_start_row + s_idx
+        ws.cell(row=curr_row, column=1, value=label).font = font_bold
+        ws.cell(row=curr_row, column=1).alignment = align_left
+        
+    for i, p in enumerate(params):
+        start_col = i * 3 + 2
+        
+        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=start_col+2)
+        cell_p = ws.cell(row=1, column=start_col, value=p.upper())
+        cell_p.font = font_bold
+        cell_p.alignment = align_center
+        
+        ws.cell(row=2, column=start_col, value=year1_lbl).font = font_bold
+        ws.cell(row=2, column=start_col).alignment = align_center
+        ws.cell(row=2, column=start_col+1, value=year2_lbl).font = font_bold
+        ws.cell(row=2, column=start_col+1).alignment = align_center
+        ws.cell(row=2, column=start_col+2, value="Pooled").font = font_bold
+        ws.cell(row=2, column=start_col+2).alignment = align_center
+        
+        ws.cell(row=3, column=start_col, value="Mean").font = font_bold
+        ws.cell(row=3, column=start_col).alignment = align_center
+        ws.cell(row=3, column=start_col+1, value="Mean").font = font_bold
+        ws.cell(row=3, column=start_col+1).alignment = align_center
+        ws.cell(row=3, column=start_col+2, value="Mean").font = font_bold
+        ws.cell(row=3, column=start_col+2).alignment = align_center
+        
+        r1 = results_1[p]
+        r2 = results_2[p]
+        
+        for r_idx, g in enumerate(genotypes, start=4):
+            val_1 = r1["means_str"].get(g, "0.00")
+            val_2 = r2["means_str"].get(g, "0.00")
+            pooled_val = (r1["means"].get(g, 0.0) + r2["means"].get(g, 0.0)) / 2
+            
+            ws.cell(row=r_idx, column=start_col, value=val_1).font = font_regular
+            ws.cell(row=r_idx, column=start_col).alignment = align_center
+            
+            ws.cell(row=r_idx, column=start_col+1, value=val_2).font = font_regular
+            ws.cell(row=r_idx, column=start_col+1).alignment = align_center
+            
+            ws.cell(row=r_idx, column=start_col+2, value=f"{pooled_val:.2f}").font = font_regular
+            ws.cell(row=r_idx, column=start_col+2).alignment = align_center
+            
+        stats1 = [r1["sem"], r1["p_text"], r1["lsd"], r1["cv"], r1["gm"]]
+        stats2 = [r2["sem"], r2["p_text"], r2["lsd"], r2["cv"], r2["gm"]]
+        
+        for s_idx in range(5):
+            curr_row = stats_start_row + s_idx
+            ws.cell(row=curr_row, column=start_col, value=stats1[s_idx]).font = font_regular
+            ws.cell(row=curr_row, column=start_col).alignment = align_center
+            
+            ws.cell(row=curr_row, column=start_col+1, value=stats2[s_idx]).font = font_regular
+            ws.cell(row=curr_row, column=start_col+1).alignment = align_center
+            
+            ws.cell(row=curr_row, column=start_col+2, value="").font = font_regular
+            ws.cell(row=curr_row, column=start_col+2).alignment = align_center
+            
+    total_cols = len(params) * 3 + 1
+    
+    for col in range(1, total_cols + 1):
+        ws.cell(row=1, column=col).border = border_thin_top
+        ws.cell(row=3, column=col).border = border_thin_bottom
+        ws.cell(row=stats_start_row, column=col).border = border_thin_top
+        ws.cell(row=stats_start_row + 4, column=col).border = border_medium_bottom
+        
+    return wb
 
-    for base in groups:
-        groups[base].sort(key=lambda x: x[1])
-    return groups
 
-
-# --- Word Table Generation Helper ---
+# --- Word Table Generation Copy ---
 def add_multiyear_table_to_docx(doc, params, genotypes, results_1, results_2, year1_lbl, year2_lbl):
     num_cols = len(params) * 3 + 1
     table = doc.add_table(rows=3, cols=num_cols)
