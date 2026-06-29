@@ -78,113 +78,113 @@ def classify_parameter(param):
     """
     Classifies parameters dynamically based on standard agricultural taxonomy,
     explicitly resolving abbreviations (SL, DL, PLWD) first.
+    Returns a hashable tuple: (cat_num, cat_name, subcat_name)
     """
     param_clean = param.strip().lower()
     
     abbrev_map = {
-        "sl": ("III. Quality Parameters (Post-Harvest)", "Shelf-Life Parameters"),
-        "dl": ("III. Quality Parameters (Post-Harvest)", "Shelf-Life Parameters"),
-        "plw": ("III. Quality Parameters (Post-Harvest)", "Shelf-Life Parameters"),
-        "plwd": ("III. Quality Parameters (Post-Harvest)", "Shelf-Life Parameters"),
-        "tss": ("III. Quality Parameters (Post-Harvest)", "Chemical Quality"),
-        "ta": ("III. Quality Parameters (Post-Harvest)", "Chemical Quality"),
-        "ph": ("III. Quality Parameters (Post-Harvest)", "Chemical Quality"),
-        "lai": ("I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
-        "lad": ("I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
-        "sla": ("I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
-        "slw": ("I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
-        "cgr": ("I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
-        "rgr": ("I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
-        "agr": ("I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
-        "nar": ("I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
-        "lar": ("I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
-        "lwr": ("I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
-        "rue": ("I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
-        "hi": ("I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
-        "rwc": ("I. Vegetative Parameters (Growth Parameters) ", "Physiological Parameters"),
-        "spad": ("I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
-        "ndvi": ("I. Vegetative Parameters (Growth Parameters)", "Physiological Parameters"),
-        "pri": ("I. Vegetative Parameters (Growth Parameters)", "Physiological Parameters"),
+        "sl": (3, "III. Quality Parameters (Post-Harvest)", "Shelf-Life Parameters"),
+        "dl": (3, "III. Quality Parameters (Post-Harvest)", "Shelf-Life Parameters"),
+        "plw": (3, "III. Quality Parameters (Post-Harvest)", "Shelf-Life Parameters"),
+        "plwd": (3, "III. Quality Parameters (Post-Harvest)", "Shelf-Life Parameters"),
+        "tss": (3, "III. Quality Parameters (Post-Harvest)", "Chemical Quality"),
+        "ta": (3, "III. Quality Parameters (Post-Harvest)", "Chemical Quality"),
+        "ph": (3, "III. Quality Parameters (Post-Harvest)", "Chemical Quality"),
+        "lai": (1, "I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
+        "lad": (1, "I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
+        "sla": (1, "I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
+        "slw": (1, "I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
+        "cgr": (1, "I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
+        "rgr": (1, "I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
+        "agr": (1, "I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
+        "nar": (1, "I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
+        "lar": (1, "I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
+        "lwr": (1, "I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
+        "rue": (1, "I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
+        "hi": (1, "I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters"),
+        "rwc": (1, "I. Vegetative Parameters (Growth Parameters)", "Physiological Parameters"),
+        "spad": (1, "I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters"),
+        "ndvi": (1, "I. Vegetative Parameters (Growth Parameters)", "Physiological Parameters"),
+        "pri": (1, "I. Vegetative Parameters (Growth Parameters)", "Physiological Parameters"),
     }
     
     # Strip trailing numbers (e.g., PLWD2 -> PLWD, DL4 -> DL)
     base_abbrev = re.sub(r"\d+$", "", param_clean)
     if base_abbrev in abbrev_map:
-        cat_name, subcat_name = abbrev_map[base_abbrev]
-        return {"cat_num": 1 if "Vegetative" in cat_name else (2 if "Reproductive" in cat_name else (3 if "Quality" in cat_name else 4)), "cat_name": cat_name, "subcat_name": subcat_name}
+        return abbrev_map[base_abbrev]
         
     # Category IV: Stress and Health
     if any(x in param_clean for x in ["disease", "pest", "infest", "weed", "mortality", "survival", "stress tolerance", "chlorosis", "wilting"]):
-        return {"cat_num": 4, "cat_name": "IV. Stress and Health Parameters", "subcat_name": "Stress and Health Parameters"}
+        return (4, "IV. Stress and Health Parameters", "Stress and Health Parameters")
         
     # Category III: Quality Parameters (Post-Harvest)
     # Shelf-Life Parameters
     if any(x in param_clean for x in ["plw", "physiological loss", "decay", "shelf life", "shelf-life", "spoilage", "marketability", "firmness retention"]):
-        return {"cat_num": 3, "cat_name": "III. Quality Parameters (Post-Harvest)", "subcat_name": "Shelf-Life Parameters"}
+        return (3, "III. Quality Parameters (Post-Harvest)", "Shelf-Life Parameters")
     # Chemical Quality
     if any(x in param_clean for x in ["tss", "soluble solid", "titratable", "acidity", "ta", "ph", "vitamin c", "ascorbic", "lycopene", "carotene", "anthocyanin", "phenolic", "flavonoid", "antioxidant", "sugar", "dry matter"]):
-        return {"cat_num": 3, "cat_name": "III. Quality Parameters (Post-Harvest)", "subcat_name": "Chemical Quality"}
+        return (3, "III. Quality Parameters (Post-Harvest)", "Chemical Quality")
     # Physical Quality
     if any(x in param_clean for x in ["firmness", "peel thickness", "specific gravity"]) or (any(x in param_clean for x in ["fruit size", "fruit shape", "fruit color"]) and "quality" in param_clean):
-        return {"cat_num": 3, "cat_name": "III. Quality Parameters (Post-Harvest)", "subcat_name": "Physical Quality"}
+        return (3, "III. Quality Parameters (Post-Harvest)", "Physical Quality")
         
     # Category II: Reproductive Parameters
     # Flowering
     if any(x in param_clean for x in ["flower", "flowering", "initiation", "cluster"]):
-        return {"cat_num": 2, "cat_name": "II. Reproductive Parameters", "subcat_name": "Flowering Parameters"}
+        return (2, "II. Reproductive Parameters", "Flowering Parameters")
     # Pollination
     if any(x in param_clean for x in ["pollen", "pollination", "fertilization"]):
-        return {"cat_num": 2, "cat_name": "II. Reproductive Parameters", "subcat_name": "Pollination Parameters"}
+        return (2, "II. Reproductive Parameters", "Pollination Parameters")
     # Fruit Set
     if any(x in param_clean for x in ["fruit set", "fruit retention", "fruit drop"]):
-        return {"cat_num": 2, "cat_name": "II. Reproductive Parameters", "subcat_name": "Fruit Set Parameters"}
+        return (2, "II. Reproductive Parameters", "Fruit Set Parameters")
     # Fruit Yield
     if any(x in param_clean for x in ["marketable", "unmarketable", "yield", "harvest index", "harvest"]):
-        return {"cat_num": 2, "cat_name": "II. Reproductive Parameters", "subcat_name": "Fruit Yield Parameters"}
+        return (2, "II. Reproductive Parameters", "Fruit Yield Parameters")
     # Fruit Growth
     if any(x in param_clean for x in ["fruit length", "fruit diameter", "fruit circumference", "fruit volume", "fruit weight", "fruit shape", "fruit color", "locule", "pericarp", "maturity index"]):
-        return {"cat_num": 2, "cat_name": "II. Reproductive Parameters", "subcat_name": "Fruit Growth Parameters"}
+        return (2, "II. Reproductive Parameters", "Fruit Growth Parameters")
     # Grain Yield
     if any(x in param_clean for x in ["spike", "panicle", "ear", "grain", "straw", "filled grains"]):
-        return {"cat_num": 2, "cat_name": "II. Reproductive Parameters", "subcat_name": "Grain Yield Parameters (Cereal Crops)"}
+        return (2, "II. Reproductive Parameters", "Grain Yield Parameters (Cereal Crops)")
     # Seed
     if any(x in param_clean for x in ["seed"]):
-        return {"cat_num": 2, "cat_name": "II. Reproductive Parameters", "subcat_name": "Seed Parameters"}
+        return (2, "II. Reproductive Parameters", "Seed Parameters")
     # Maturity
     if any(x in param_clean for x in ["maturity", "harvest duration"]):
-        return {"cat_num": 2, "cat_name": "II. Reproductive Parameters", "subcat_name": "Maturity Parameters"}
+        return (2, "II. Reproductive Parameters", "Maturity Parameters")
         
     # Category I: Vegetative Parameters
     # Germination
     if any(x in param_clean for x in ["germination", "emergence", "establishment", "vigor index"]):
-        return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Germination and Establishment"}
+        return (1, "I. Vegetative Parameters (Growth Parameters)", "Germination and Establishment")
     # Leaf Parameters
     if any(x in param_clean for x in ["leaf", "leaves", "lai", "lad", "sla", "slw", "chlorophyll", "carotenoid", "spad", "greenness"]):
-        return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Leaf Parameters"}
+        return (1, "I. Vegetative Parameters (Growth Parameters)", "Leaf Parameters")
     # Branch Parameters
     if any(x in param_clean for x in ["branch"]):
-        return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Branch Parameters"}
+        return (1, "I. Vegetative Parameters (Growth Parameters)", "Branch Parameters")
     # Root Parameters
     if any(x in param_clean for x in ["root"]):
-        return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Root Parameters"}
+        return (1, "I. Vegetative Parameters (Growth Parameters)", "Root Parameters")
     # Biomass Parameters
     if any(x in param_clean for x in ["fresh weight", "dry weight", "biomass"]):
-        return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Biomass Parameters"}
+        return (1, "I. Vegetative Parameters (Growth Parameters)", "Biomass Parameters")
     # Growth Analysis
     if any(x in param_clean for x in ["cgr", "rgr", "agr", "nar", "lar", "lwr", "rue"]):
-        return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Growth Analysis Parameters"}
+        return (1, "I. Vegetative Parameters (Growth Parameters)", "Growth Analysis Parameters")
     # Physiological
     if any(x in param_clean for x in ["photosynthetic", "transpiration", "conductance", "water use", "fluorescence", "relative water", "rwc", "membrane stability", "electrolyte", "canopy temp", "ndvi", "pri", "fv/fm"]):
-        return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Physiological Parameters"}
+        return (1, "I. Vegetative Parameters (Growth Parameters)", "Physiological Parameters")
     # Phenological
     if any(x in param_clean for x in ["phenological", "first leaf", "vegetative maturity"]):
-        return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Phenological Parameters"}
+        return (1, "I. Vegetative Parameters (Growth Parameters)", "Phenological Parameters")
     # Plant Morphology
     if any(x in param_clean for x in ["height", "stem", "collar", "internode", "node", "canopy", "spread", "crown"]):
-        return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Plant Morphology"}
+        return (1, "I. Vegetative Parameters (Growth Parameters)", "Plant Morphology")
         
     # Fallback
-    return {"cat_num": 1, "cat_name": "I. Vegetative Parameters (Growth Parameters)", "subcat_name": "Plant Morphology"}
+    return (1, "I. Vegetative Parameters (Growth Parameters)", "Plant Morphology")
 
 # --- Category Order Sorter Map ---
 SUBCAT_ORDER = {
@@ -475,7 +475,7 @@ def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_c
             f"in {table_label}). This interaction confirms that the regulatory influence of {factor_b_col} "
             f"depends heavily on the baseline level of {factor_a_col}. Among all treatment combinations, "
             f"{comb_top_name} established its position at the statistical apex with {comb_top_val:.2f}^{comb_top_let}, "
-            f"showing statistical parity with other high-performing treatments including {at_par_comb}. Conversely, the lowest "
+            f"showing statistical parity with other high-performing treatments including {at_par_comb_str}. Conversely, the lowest "
             f"performance tier was marked by the combination {comb_low_name} ({comb_low_val:.2f}), representing the "
             f"cumulative severity of stress or untreated control conditions."
         )
@@ -915,124 +915,139 @@ def run_raw_mode(uploaded_file):
                 doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
                 
                 table_counter = 1
-                for cat_name, cat_params in classified_cols.items():
-                    if not cat_params:
-                        continue
+                
+                # Sort categories hierarchically by cat_num
+                sorted_cats = sorted(classified_cols.items(), key=lambda x: x[0][0])
+                
+                for (cat_num, cat_name), subcats in sorted_cats:
+                    cat_title = f"{cat_num} {re.sub(r'^[IV\.]+\s*', '', cat_name)}"
+                    doc.add_heading(cat_title, level=1)
+                    st.write(f"### {cat_title}")
                     
-                    doc.add_heading(cat_name, level=1)
-                    st.write(f"### {cat_name}")
+                    # Sort subcategories based on SUBCAT_ORDER
+                    sorted_subcats = sorted(subcats.items(), key=lambda x: SUBCAT_ORDER.get(x[0], 99))
                     
-                    grouped = group_parameters(cat_params)
-                    
-                    # Step 1: Render and group static parameters (Up to 4)
-                    static_items = []
-                    for base_name, items in sorted(grouped.items()):
-                        if len(items) == 1:
-                            static_items.append(items[0][0])
-                            
-                    static_chunks = [static_items[i:i + 4] for i in range(0, len(static_items), 4)]
-                    
-                    for chunk in static_chunks:
-                        chunk_lbl = f"Table {table_counter}"
+                    for s_idx, (subcat_name, subcat_params) in enumerate(sorted_subcats, start=1):
+                        subcat_title = f"{cat_num}.{s_idx} {subcat_name}"
+                        doc.add_heading(subcat_title, level=2)
+                        st.write(f"#### {subcat_title}")
                         
-                        st.write(f"##### {chunk_lbl}: Integrated Properties")
+                        grouped = group_parameters(subcat_params)
                         
-                        layout_style = table_counter % 3
-                        caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, chunk)
+                        # Step 1: Render and group static parameters (Up to 4)
+                        static_items = []
+                        for base_name, items in sorted(grouped.items()):
+                            if len(items) == 1:
+                                static_items.append(items[0][0])
+                                
+                        static_chunks = [static_items[i:i + 4] for i in range(0, len(static_items), 4)]
                         
-                        if layout_style == 0:
-                            # Style 0: Explanations -> Table -> Caption (Below Table, Plain Format)
-                            for p in chunk:
-                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
-                                st.write(p_text)
-                                doc.add_paragraph(p_text)
-                                
-                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
-                            p_cap = doc.add_paragraph(caption_text)
-                            p_cap.runs[0].font.name = 'Arial'
-                            p_cap.runs[0].font.size = Pt(10)
+                        p_idx = 1
+                        for chunk in static_chunks:
+                            chunk_lbl = f"{cat_num}.{s_idx}.{p_idx}"
+                            p_idx += 1
                             
-                        elif layout_style == 1:
-                            # Style 1: Table -> Caption -> Explanations
-                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
-                            p_cap = doc.add_paragraph(caption_text)
-                            p_cap.runs[0].font.name = 'Arial'
-                            p_cap.runs[0].font.size = Pt(10)
-                            
-                            for p in chunk:
-                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
-                                st.write(p_text)
-                                doc.add_paragraph(p_text)
-                                
-                        else:
-                            # Style 2: Split Narrative (First half explanations -> Table -> Caption -> Second half)
-                            halfway = max(1, len(chunk) // 2)
-                            part1_chunk = chunk[:halfway]
-                            part2_chunk = chunk[halfway:]
-                            
-                            for p in part1_chunk:
-                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
-                                st.write(p_text)
-                                doc.add_paragraph(p_text)
-                                
-                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
-                            p_cap = doc.add_paragraph(caption_text)
-                            p_cap.runs[0].font.name = 'Arial'
-                            p_cap.runs[0].font.size = Pt(10)
-                            
-                            for p in part2_chunk:
-                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
-                                st.write(p_text)
-                                doc.add_paragraph(p_text)
-                                
-                        table_counter += 1
-                        st.write("*(Table and caption rendered below)*")
-                        doc.add_paragraph() # Flowing row spacing
-                        
-                    # Step 2: Render and isolate trend lines
-                    for base_name, items in sorted(grouped.items()):
-                        if len(items) > 1:
-                            trend_lbl = f"Table {table_counter}"
-                            trend_params = [it[0] for it in items]
-                            caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, trend_params)
-                            
-                            p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, factor_b_col, trend_lbl)
+                            st.write(f"##### {chunk_lbl}: Integrated Properties")
                             
                             layout_style = table_counter % 3
+                            caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, chunk)
                             
                             if layout_style == 0:
-                                st.write(p_text)
-                                doc.add_paragraph(p_text)
-                                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                # Style 0: Explanations -> Table -> Caption (Below Table, Plain Format)
+                                for p in chunk:
+                                    p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
+                                    st.write(p_text)
+                                    doc.add_paragraph(p_text)
+                                    
+                                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
                                 p_cap = doc.add_paragraph(caption_text)
                                 p_cap.runs[0].font.name = 'Arial'
                                 p_cap.runs[0].font.size = Pt(10)
                                 
                             elif layout_style == 1:
-                                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                # Style 1: Table -> Caption -> Explanations
+                                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
                                 p_cap = doc.add_paragraph(caption_text)
                                 p_cap.runs[0].font.name = 'Arial'
                                 p_cap.runs[0].font.size = Pt(10)
-                                st.write(p_text)
-                                doc.add_paragraph(p_text)
                                 
+                                for p in chunk:
+                                    p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
+                                    st.write(p_text)
+                                    doc.add_paragraph(p_text)
+                                    
                             else:
-                                part1, part2 = split_text_by_sentence(p_text)
-                                st.write(part1)
-                                doc.add_paragraph(part1)
-                                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                # Style 2: Split Narrative (First half explanations -> Table -> Caption -> Second half)
+                                halfway = max(1, len(chunk) // 2)
+                                part1_chunk = chunk[:halfway]
+                                part2_chunk = chunk[halfway:]
+                                
+                                for p in part1_chunk:
+                                    p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
+                                    st.write(p_text)
+                                    doc.add_paragraph(p_text)
+                                    
+                                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
                                 p_cap = doc.add_paragraph(caption_text)
                                 p_cap.runs[0].font.name = 'Arial'
                                 p_cap.runs[0].font.size = Pt(10)
                                 
-                                if part2:
-                                    st.write(part2)
-                                    doc.add_paragraph(part2)
+                                for p in part2_chunk:
+                                    p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
+                                    st.write(p_text)
+                                    doc.add_paragraph(p_text)
                                     
                             table_counter += 1
-                            st.write("*(Time-series table and caption rendered below)*")
-                            doc.add_paragraph() # Spacing
+                            st.write("*(Table and caption rendered below)*")
+                            doc.add_paragraph() # Flowing row spacing
                             
+                        # Step 2: Render and isolate trend lines
+                        for base_name, items in sorted(grouped.items()):
+                            if len(items) > 1:
+                                trend_lbl = f"{cat_num}.{s_idx}.{p_idx}"
+                                p_idx += 1
+                                
+                                st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
+                                trend_params = [it[0] for it in items]
+                                caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, trend_params)
+                                
+                                p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, factor_b_col, trend_lbl)
+                                
+                                layout_style = table_counter % 3
+                                
+                                if layout_style == 0:
+                                    st.write(p_text)
+                                    doc.add_paragraph(p_text)
+                                    add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                    p_cap = doc.add_paragraph(caption_text)
+                                    p_cap.runs[0].font.name = 'Arial'
+                                    p_cap.runs[0].font.size = Pt(10)
+                                    
+                                elif layout_style == 1:
+                                    add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                    p_cap = doc.add_paragraph(caption_text)
+                                    p_cap.runs[0].font.name = 'Arial'
+                                    p_cap.runs[0].font.size = Pt(10)
+                                    st.write(p_text)
+                                    doc.add_paragraph(p_text)
+                                    
+                                else:
+                                    part1, part2 = split_text_by_sentence(p_text)
+                                    st.write(part1)
+                                    doc.add_paragraph(part1)
+                                    add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                    p_cap = doc.add_paragraph(caption_text)
+                                    p_cap.runs[0].font.name = 'Arial'
+                                    p_cap.runs[0].font.size = Pt(10)
+                                    
+                                    if part2:
+                                        st.write(part2)
+                                        doc.add_paragraph(part2)
+                                        
+                                table_counter += 1
+                                st.write("*(Time-series table and caption rendered below)*")
+                                doc.add_paragraph() # Spacing
+                                
                 bio_doc = io.BytesIO()
                 doc.save(bio_doc)
                 bio_doc.seek(0)
@@ -1094,15 +1109,15 @@ def run_summary_mode_processing(uploaded_file):
         
         classified_cols = {}
         for c in parameters:
-            cat = classify_parameter(c)
-            if cat not in classified_cols:
-                classified_cols[cat] = []
-            classified_cols[cat].append(c)
+            cat_key = classify_parameter(c)
+            if cat_key not in classified_cols:
+                classified_cols[cat_key] = []
+            classified_cols[cat_key].append(c)
             
         st.write("#### Automatically Categorized Parameter Divisions:")
-        for k, v in classified_cols.items():
+        for (cat_num, cat_name, subcat_name), v in sorted(classified_cols.items(), key=lambda x: x[0][0]):
             if v:
-                st.write(f"**{k}:** {', '.join(v)}")
+                st.write(f"**{cat_name} - {subcat_name}:** {', '.join(v)}")
         
         if st.button("Generate Word Document Draft from Direct Output", key="btn_2f_sum_gen"):
             results_data = parse_summarized_table_to_results_2f(
@@ -1115,127 +1130,150 @@ def run_summary_mode_processing(uploaded_file):
             doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
             
             table_counter = 1
-            for cat_name, cat_params in classified_cols.items():
-                if not cat_params:
-                    continue
+            
+            # Restructure flat keys to nested hierarchy: (cat_num, cat_name) -> {subcat_name: [params]}
+            nested_cols = {}
+            for (cat_num, cat_name, subcat_name), params_list in classified_cols.items():
+                cat_key = (cat_num, cat_name)
+                if cat_key not in nested_cols:
+                    nested_cols[cat_key] = {}
+                nested_cols[cat_key][subcat_name] = params_list
                 
-                doc.add_heading(cat_name, level=1)
-                st.write(f"### {cat_name}")
+            sorted_cats = sorted(nested_cols.items(), key=lambda x: x[0][0])
+            
+            for (cat_num, cat_name), subcats in sorted_cats:
+                cat_title = f"{cat_num} {re.sub(r'^[IV\.]+\s*', '', cat_name)}"
+                doc.add_heading(cat_title, level=1)
+                st.write(f"### {cat_title}")
                 
-                grouped = group_parameters(cat_params)
+                sorted_subcats = sorted(subcats.items(), key=lambda x: SUBCAT_ORDER.get(x[0], 99))
                 
-                # Step 1: Render and group static parameters (Up to 4)
-                static_items = []
-                for base_name, items in sorted(grouped.items()):
-                    if len(items) == 1:
-                        static_items.append(items[0][0])
-                        
-                static_chunks = [static_items[i:i + 4] for i in range(0, len(static_items), 4)]
-                
-                for chunk in static_chunks:
-                    chunk_lbl = f"Table {table_counter}"
-                    caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, chunk)
+                for s_idx, (subcat_name, subcat_params) in enumerate(sorted_subcats, start=1):
+                    subcat_title = f"{cat_num}.{s_idx} {subcat_name}"
+                    doc.add_heading(subcat_title, level=2)
+                    st.write(f"#### {subcat_title}")
                     
-                    layout_style = table_counter % 3
+                    grouped = group_parameters(subcat_params)
                     
-                    if layout_style == 0:
-                        for p in chunk:
-                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
-                            st.write(p_text)
-                            doc.add_paragraph(p_text)
-                                    
-                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
-                        
-                        p_cap = doc.add_paragraph(caption_text)
-                        p_cap.runs[0].font.name = 'Arial'
-                        p_cap.runs[0].font.size = Pt(10)
-                        
-                    elif layout_style == 1:
-                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
-                        
-                        p_cap = doc.add_paragraph(caption_text)
-                        p_cap.runs[0].font.name = 'Arial'
-                        p_cap.runs[0].font.size = Pt(10)
-                        
-                        for p in chunk:
-                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
-                            st.write(p_text)
-                            doc.add_paragraph(p_text)
+                    # Step 1: Render and group static parameters (Up to 4)
+                    static_items = []
+                    for base_name, items in sorted(grouped.items()):
+                        if len(items) == 1:
+                            static_items.append(items[0][0])
                             
-                    else:
-                        halfway = max(1, len(chunk) // 2)
-                        part1_chunk = chunk[:halfway]
-                        part2_chunk = chunk[halfway:]
-                        
-                        for p in part1_chunk:
-                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
-                            st.write(p_text)
-                            doc.add_paragraph(p_text)
-                            
-                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
-                        
-                        p_cap = doc.add_paragraph(caption_text)
-                        p_cap.runs[0].font.name = 'Arial'
-                        p_cap.runs[0].font.size = Pt(10)
-                        
-                        for p in part2_chunk:
-                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
-                            st.write(p_text)
-                            doc.add_paragraph(p_text)
-                            
-                    table_counter += 1
-                    st.write("*(Consolidated table placed directly below paragraph)*")
-                    doc.add_paragraph() # Spacing
+                    static_chunks = [static_items[i:i + 4] for i in range(0, len(static_items), 4)]
                     
-                # Step 2: Render and isolate trend lines
-                for base_name, items in sorted(grouped.items()):
-                    if len(items) > 1:
-                        trend_lbl = f"Table {table_counter}"
-                        trend_params = [it[0] for it in items]
-                        caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, trend_params)
+                    p_idx = 1
+                    for chunk in static_chunks:
+                        chunk_lbl = f"{cat_num}.{s_idx}.{p_idx}"
+                        p_idx += 1
                         
-                        p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_label, factor_b_label, trend_lbl)
+                        st.write(f"##### {chunk_lbl}: Integrated Properties")
+                        caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, chunk)
                         
                         layout_style = table_counter % 3
                         
                         if layout_style == 0:
-                            st.write(p_text)
-                            doc.add_paragraph(p_text)
-                            add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                            for p in chunk:
+                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                        
+                            add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
                             
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
                             
                         elif layout_style == 1:
-                            add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                            add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
                             
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
                             
-                            st.write(p_text)
-                            doc.add_paragraph(p_text)
-                            
+                            for p in chunk:
+                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                
                         else:
-                            part1, part2 = split_text_by_sentence(p_text)
-                            st.write(part1)
-                            doc.add_paragraph(part1)
+                            halfway = max(1, len(chunk) // 2)
+                            part1_chunk = chunk[:halfway]
+                            part2_chunk = chunk[halfway:]
                             
-                            add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                            for p in part1_chunk:
+                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                
+                            add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
                             
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
                             
-                            if part2:
-                                st.write(part2)
-                                doc.add_paragraph(part2)
+                            for p in part2_chunk:
+                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
                                 
                         table_counter += 1
-                        st.write("*(Time-series table and caption placed directly below trend paragraph)*")
+                        st.write("*(Consolidated table placed directly below paragraph)*")
                         doc.add_paragraph() # Spacing
                         
+                    # Step 2: Render and isolate trend lines
+                    for base_name, items in sorted(grouped.items()):
+                        if len(items) > 1:
+                            trend_lbl = f"{cat_num}.{s_idx}.{p_idx}"
+                            p_idx += 1
+                            
+                            st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
+                            trend_params = [it[0] for it in items]
+                            caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, trend_params)
+                            
+                            p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_label, factor_b_label, trend_lbl)
+                            
+                            layout_style = table_counter % 3
+                            
+                            if layout_style == 0:
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                                
+                                p_cap = doc.add_paragraph(caption_text)
+                                p_cap.runs[0].font.name = 'Arial'
+                                p_cap.runs[0].font.size = Pt(10)
+                                
+                            elif layout_style == 1:
+                                add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                                
+                                p_cap = doc.add_paragraph(caption_text)
+                                p_cap.runs[0].font.name = 'Arial'
+                                p_cap.runs[0].font.size = Pt(10)
+                                
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                
+                            else:
+                                part1, part2 = split_text_by_sentence(p_text)
+                                st.write(part1)
+                                doc.add_paragraph(part1)
+                                
+                                add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                                
+                                p_cap = doc.add_paragraph(caption_text)
+                                p_cap.runs[0].font.name = 'Arial'
+                                p_cap.runs[0].font.size = Pt(10)
+                                
+                                if part2:
+                                    st.write(part2)
+                                    doc.add_paragraph(part2)
+                                    
+                            table_counter += 1
+                            st.write("*(Time-series table and caption placed directly below trend paragraph)*")
+                            doc.add_paragraph() # Spacing
+                            
             bio_doc = io.BytesIO()
             doc.save(bio_doc)
             bio_doc.seek(0)
