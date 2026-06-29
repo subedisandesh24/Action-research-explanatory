@@ -8,7 +8,7 @@ from scipy.stats import t
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, Inches
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 import openpyxl
@@ -25,8 +25,23 @@ def get_p_val_notation(p_val):
     else:
         return "p > 0.05"
 
+# --- Agronomic Classification Engine ---
+def classify_parameter(param):
+    """
+    Classifies parameters to prevent mixing vegetative and reproductive/quality data.
+    """
+    param_lower = param.lower()
+    veg_keywords = ["height", "leaf", "leaves", "stem", "shoot", "root", "area", "biomass", "vegetative", "width", "length", "sl"]
+    for kw in veg_keywords:
+        if kw in param_lower:
+            return "Vegetative Properties"
+    return "Reproductive, Biochemical, and Quality Properties"
+
 # --- Word Document Table Formatting Helpers ---
 def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
+    """
+    Applies custom padding margins to a python-docx cell.
+    """
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement('w:tcMar')
     for m, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
@@ -36,6 +51,9 @@ def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
     tcPr.append(tcMar)
 
 def set_table_borders(table):
+    """
+    Applies standard clean borders (top and bottom horizontal lines only) to a Word table.
+    """
     tblPr = table._tbl.tblPr
     borders = parse_xml(
         '<w:tblBorders %s>'
@@ -51,8 +69,8 @@ def set_table_borders(table):
 
 def set_header_bottom_border(row_or_cells):
     """
-    Sets the bottom border for a table row. Accepts either a Row object
-    or a raw tuple of cell objects.
+    Sets a bottom border on a row. Accepts either a standard Row object or
+    a raw tuple of python-docx cell objects to prevent 'tuple' attribute crashes.
     """
     if hasattr(row_or_cells, 'cells'):
         cells = row_or_cells.cells
@@ -67,6 +85,7 @@ def set_header_bottom_border(row_or_cells):
         )
         tcPr.append(borders)
 
+# --- Statistical Calculation Helpers ---
 def get_signif_code_val(p):
     if pd.isna(p): return "ns"
     if p < 0.01: return "**"
@@ -125,31 +144,251 @@ def get_cld_letters(means_dict, lsd):
             
     return treatment_letters
 
-# --- Parameter Grouping Engine for Time-Series ---
-def group_parameters(params):
-    pattern = re.compile(r"(.*?)(\d+)\s*(dat|das|days|day|d)?$", re.IGNORECASE)
-    groups = {}
-    for p in params:
-        match = pattern.search(p.strip())
-        if match:
-            base = match.group(1).strip()
-            base = re.sub(r"[\s\-\_\(\)]+$", "", base).strip().capitalize()
-            day_num = int(match.group(2))
-            day_str = f"Day {day_num}"
-            if not base:
-                base = "Parameter"
-            if base not in groups:
-                groups[base] = []
-            groups[base].append((p, day_num, day_str))
+def run_anova_2factor_raw(df, block_col, factor_a_col, factor_b_col, param):
+    df_temp = pd.DataFrame({
+        'rep': df[block_col].astype(str),
+        'factor_a': df[factor_a_col].astype(str),
+        'factor_b': df[factor_b_col].astype(str),
+        'response': pd.to_numeric(df[param], errors='coerce')
+    }).dropna(subset=['response'])
+    
+    formula = "response ~ C(rep) + C(factor_a) * C(factor_b)"
+    model = ols(formula, data=df_temp).fit()
+    anova_table = sm.stats.anova_lm(model, typ=1)
+    
+    df_err = anova_table.loc["Residual", "df"]
+    mse = anova_table.loc["Residual", "mean_sq"]
+    
+    p_a = anova_table.loc["C(factor_a)", "PR(>F)"]
+    p_b = anova_table.loc["C(factor_b)", "PR(>F)"]
+    p_ab = anova_table.loc["C(factor_a):C(factor_b)", "PR(>F)"]
+    
+    grand_mean = df_temp['response'].mean()
+    cv = (np.sqrt(mse) / grand_mean) * 100
+    t_val = t.ppf(0.975, df_err)
+    
+    r = df_temp['rep'].nunique()
+    b_levels = df_temp['factor_b'].nunique()
+    a_levels = df_temp['factor_a'].nunique()
+    
+    means_a = df_temp.groupby('factor_a')['response'].mean().to_dict()
+    sem_a = np.sqrt(mse / (r * b_levels))
+    lsd_a = t_val * np.sqrt((2 * mse) / (r * b_levels))
+    cld_a = get_cld_letters(means_a, lsd_a)
+    
+    means_b = df_temp.groupby('factor_b')['response'].mean().to_dict()
+    sem_b = np.sqrt(mse / (r * a_levels))
+    lsd_b = t_val * np.sqrt((2 * mse) / (r * a_levels))
+    cld_b = get_cld_letters(means_b, lsd_b)
+    
+    df_temp['Combination'] = df_temp['factor_a'] + " × " + df_temp['factor_b']
+    means_comb = df_temp.groupby('Combination')['response'].mean().to_dict()
+    lsd_comb = t_val * np.sqrt((2 * mse) / r)
+    cld_comb = get_cld_letters(means_comb, lsd_comb)
+    
+    sig_a = get_signif_code_val(p_a)
+    sig_b = get_signif_code_val(p_b)
+    sig_ab = get_signif_code_val(p_ab)
+    
+    means_a_str = {}
+    for lvl, val in means_a.items():
+        let = cld_a[lvl] if p_a < 0.05 else ""
+        means_a_str[lvl] = f"{val:.2f}{let}"
+        
+    means_b_str = {}
+    for lvl, val in means_b.items():
+        let = cld_b[lvl] if p_b < 0.05 else ""
+        means_b_str[lvl] = f"{val:.2f}{let}"
+        
+    return {
+        "means_a": means_a, "means_a_str": means_a_str, "sem_a": round(sem_a, 2), "sig_a": sig_a, "lsd_a": round(lsd_a, 2), "p_a": p_a,
+        "means_b": means_b, "means_b_str": means_b_str, "sem_b": round(sem_b, 2), "sig_b": sig_b, "lsd_b": round(lsd_b, 2), "p_b": p_b,
+        "means_comb": means_comb, "cld_comb": cld_comb, "p_ab": p_ab, "sig_ab": sig_ab,
+        "cv": round(cv, 2), "gm": round(grand_mean, 2)
+    }
+
+# --- Dynamic Academic Explanation Selection Engine ---
+def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_col, table_label):
+    p_a, p_b, p_ab = p_data["p_a"], p_data["p_b"], p_data["p_ab"]
+    p_notation_a = get_p_val_notation(p_a)
+    p_notation_b = get_p_val_notation(p_b)
+    p_notation_int = get_p_val_notation(p_ab)
+    
+    sorted_a = sorted(p_data["means_a"].items(), key=lambda x: x[1], reverse=True)
+    top_a, top_val_a = sorted_a[0]
+    low_a, _ = sorted_a[-1]
+    top_let_a = p_data["means_a_str"][top_a].replace(f"{top_val_a:.2f}", "")
+    
+    sorted_b = sorted(p_data["means_b"].items(), key=lambda x: x[1], reverse=True)
+    top_b, top_val_b = sorted_b[0]
+    low_b, _ = sorted_b[-1]
+    top_let_b = p_data["means_b_str"][top_b].replace(f"{top_val_b:.2f}", "")
+    
+    sorted_comb = sorted(p_data["means_comb"].items(), key=lambda x: x[1], reverse=True)
+    comb_top_name, comb_top_val = sorted_comb[0]
+    comb_low_name, comb_low_val = sorted_comb[-1]
+    comb_top_let = p_data["cld_comb"].get(comb_top_name, "")
+    
+    # Parity Groups Lists
+    at_par_a_list = []
+    for lvl, val in sorted_a[1:]:
+        let = p_data["means_a_str"][lvl].replace(f"{val:.2f}", "")
+        if top_let_a and let and any(char in top_let_a for char in let):
+            at_par_a_list.append(f"**{lvl}** ({val:.2f}^{let})")
+    at_par_a_str = ", ".join(at_par_a_list) if at_par_a_list else "no other levels"
+    
+    at_par_b_list = []
+    for lvl, val in sorted_b[1:]:
+        let = p_data["means_b_str"][lvl].replace(f"{val:.2f}", "")
+        if top_let_b and let and any(char in top_let_b for char in let):
+            at_par_b_list.append(f"**{lvl}** ({val:.2f}^{let})")
+    at_par_b_str = ", ".join(at_par_b_list) if at_par_b_list else "no other levels"
+    if p_b >= 0.05:
+        at_par_b_str = "all evaluated levels"
+        
+    at_par_comb_list = []
+    for combo, val in sorted_comb[1:]:
+        let = p_data["cld_comb"].get(combo, "")
+        if comb_top_let and let and any(char in comb_top_let for char in let):
+            at_par_comb_list.append(f"**{combo}** ({val:.2f}^{let})")
+    at_par_comb_str = ", ".join(at_par_comb_list) if at_par_comb_list else "no other combinations"
+
+    if p_ab < 0.05:
+        # Significant interaction effect
+        para = (
+            f"Regarding the parameter **{param_name}**, the statistical evaluation revealed a highly significant "
+            f"interaction effect between **{factor_a_col}** and **{factor_b_col}** ({p_notation_int}) (as summarized "
+            f"in **{table_label}**). This interaction confirms that the regulatory influence of **{factor_b_col}** "
+            f"depends heavily on the baseline level of **{factor_a_col}**. Among all treatment combinations, "
+            f"**{comb_top_name}** established its position at the statistical apex with {comb_top_val:.2f}^{comb_top_let}, "
+            f"showing statistical parity with other high-performing treatments including {at_par_comb}. Conversely, the lowest "
+            f"performance tier was marked by the combination **{comb_low_name}** ({comb_low_val:.2f}), representing the "
+            f"cumulative severity of stress or untreated control conditions."
+        )
+    else:
+        # Non-significant interaction effect (Independent main effects)
+        part_a = ""
+        if p_a >= 0.05:
+            part_a = f"the main effect of **{factor_a_col}** was nonsignificant ({p_notation_a}) on **{param_name}**, suggesting stable and uniform behavior across levels."
         else:
-            base = p.strip().capitalize()
-            if base not in groups:
-                groups[base] = []
-            groups[base].append((p, 0, ""))
+            part_a = f"the main effect of **{factor_a_col}** was highly significant ({p_notation_a}) on **{param_name}**. The maximum value was registered by treatment **{top_a}** ({top_val_a:.2f}^{top_let_a}), which established statistical parity with {at_par_a_str}, while **{low_a}** marked the minimum performance."
             
-    for base in groups:
-        groups[base].sort(key=lambda x: x[1])
-    return groups
+        part_b = ""
+        if p_b >= 0.05:
+            part_b = f"Similarly, the main effect of **{factor_b_col}** was nonsignificant ({p_notation_b}) at this interval, indicating comparable performance across all evaluated rates."
+        else:
+            part_b = f"Simultaneously, the treatment factor **{factor_b_col}** exerted a highly significant ({p_notation_b}) response, wherein **{top_b}** led the application levels with {top_val_b:.2f}^{top_let_b} ({at_par_b_str}), whereas **{low_b}** marked the minimum baseline limit around the grand mean of {p_data['gm']:.2f}."
+            
+        para = (
+            f"For the parameter **{param_name}**, the interaction effect (**{factor_a_col}** × **{factor_b_col}**) "
+            f"was completely nonsignificant ({p_notation_int}), confirming that the treatment factors operated independently of each other. "
+            f"Specifically, as detailed in **{table_label}**, {part_a} {part_b}"
+        )
+    return para
+
+def generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, factor_b_col, table_label):
+    first_item = items[0]
+    last_item = items[-1]
+    
+    first_param, _, first_day_str = first_item
+    last_param, _, last_day_str = last_item
+    
+    p_first = results_data[first_param]
+    p_last = results_data[last_param]
+    
+    first_gm = p_first["gm"]
+    last_gm = p_last["gm"]
+    direction = "upward" if last_gm >= first_gm else "downward"
+    
+    p_notation_int_last = get_p_val_notation(p_last["p_ab"])
+    
+    sorted_comb_last = sorted(p_last["means_comb"].items(), key=lambda x: x[1], reverse=True)
+    comb_top_name, comb_top_val = sorted_comb_last[0]
+    comb_low_name, comb_low_val = sorted_comb_last[-1]
+    comb_top_let = p_last["cld_comb"].get(comb_top_name, "")
+    
+    any_sig_ab = any(results_data[it[0]]["p_ab"] < 0.05 for it in items)
+    if any_sig_ab:
+        sig_days = [it[2] for it in items if results_data[it[0]]["p_ab"] < 0.05]
+        interaction_evolution = (
+            f"Notably, the interaction effect between **{factor_a_col}** and **{factor_b_col}** demonstrated clear temporal dependencies "
+            f"over the storage/trial duration, transitioning from nonsignificant at the early phase to highly significant ({p_notation_int_last}) "
+            f"during later stages ({', '.join(sig_days)}). At the final evaluation interval ({last_day_str}), the treatment combination "
+            f"**{comb_top_name}** yielded the peak value of {comb_top_val:.2f}^{comb_top_let}, while **{comb_low_name}** marked the lowest "
+            f"limit of performance ({comb_low_val:.2f})."
+        )
+    else:
+        interaction_evolution = (
+            f"The interaction effect between **{factor_a_col}** and **{factor_b_col}** remained consistently nonsignificant across all "
+            f"assessment intervals, showing that both factors regulated the **{base_name}** trend independently."
+        )
+        
+    para = (
+        f"Regarding **{base_name}**, the trait exhibited a highly defined, time-dependent {direction} trend over the course of the trial, "
+        f"as shown in **{table_label}**. The grand mean transitioned from {first_gm:.2f} at {first_day_str} and progressively shifted to {last_gm:.2f} "
+        f"by {last_day_str}. {interaction_evolution}"
+    )
+    return para
+
+# --- Summarized Table Parser Engine ---
+def parse_summarized_table_to_results_2f(df_raw, idx_A, idx_B, idx_cv, idx_interaction, idx_grand, 
+                                         idx_A_sem, idx_A_f, idx_A_lsd, idx_B_sem, idx_B_f, idx_B_lsd,
+                                         factor_a_levels, factor_b_levels, parameters):
+    results_data = {}
+    for param in parameters:
+        col_idx = df_raw.iloc[0].tolist().index(param)
+        
+        f_val_A = str(df_raw.iloc[idx_A_f, col_idx]).strip().lower()
+        f_val_B = str(df_raw.iloc[idx_B_f, col_idx]).strip().lower()
+        f_val_AB = str(df_raw.iloc[idx_interaction, col_idx]).strip().lower()
+        
+        p_a = 0.01 if "**" in f_val_A else (0.04 if "*" in f_val_A else 0.5)
+        p_b = 0.01 if "**" in f_val_B else (0.04 if "*" in f_val_B else 0.5)
+        p_ab = 0.01 if "**" in f_val_AB else (0.04 if "*" in f_val_AB else 0.5)
+        
+        # Factor A
+        means_a = {}
+        means_a_str = {}
+        for i, lvl in enumerate(factor_a_levels):
+            num, let = parse_dmrt_value(df_raw.iloc[idx_A + 1 + i, col_idx])
+            try:
+                val = float(num)
+                means_a[lvl] = val
+                means_a_str[lvl] = f"{val:.2f}{let}"
+            except ValueError:
+                means_a[lvl] = 0.0
+                means_a_str[lvl] = "0.00"
+                
+        # Factor B
+        means_b = {}
+        means_b_str = {}
+        for i, lvl in enumerate(factor_b_levels):
+            num, let = parse_dmrt_value(df_raw.iloc[idx_B + 1 + i, col_idx])
+            try:
+                val = float(num)
+                means_b[lvl] = val
+                means_b_str[lvl] = f"{val:.2f}{let}"
+            except ValueError:
+                means_b[lvl] = 0.0
+                means_b_str[lvl] = "0.00"
+                
+        gm_val = 0.0
+        try: gm_val = float(df_raw.iloc[idx_grand, col_idx])
+        except ValueError: pass
+        
+        # Combinations representation for Summarized Mode
+        means_comb = {f"{a} × {b}": (means_a[a] + means_b[b])/2 for a in factor_a_levels for b in factor_b_levels}
+        cld_comb = {k: "" for k in means_comb}
+        
+        results_data[param] = {
+            "means_a": means_a, "means_a_str": means_a_str, "sem_a": df_raw.iloc[idx_A_sem, col_idx], 
+            "sig_a": get_signif_code_val(p_a), "lsd_a": df_raw.iloc[idx_A_lsd, col_idx], "p_a": p_a,
+            "means_b": means_b, "means_b_str": means_b_str, "sem_b": df_raw.iloc[idx_B_sem, col_idx], 
+            "sig_b": get_signif_code_val(p_b), "lsd_b": df_raw.iloc[idx_B_lsd, col_idx], "p_b": p_b,
+            "means_comb": means_comb, "cld_comb": cld_comb, "p_ab": p_ab, "sig_ab": get_signif_code_val(p_ab),
+            "cv": df_raw.iloc[idx_cv, col_idx], "gm": gm_val
+        }
+    return results_data
 
 # --- Styled Excel Exporter ---
 def build_styled_excel(factor_a_col, factor_b_col, params, levels_a, levels_b, results_dict):
@@ -203,9 +442,9 @@ def build_styled_excel(factor_a_col, factor_b_col, params, levels_a, levels_b, r
         ws.cell(row=r, column=1, value=lvl).font = font_regular
         ws.cell(row=r, column=1).alignment = align_left
         
-    ws.cell(row=row_sem_a, column=1, value="SEm(±)").font = font_regular
+    ws.cell(row=row_sem_a, column=1, value="Sem").font = font_regular
     ws.cell(row=row_sem_a, column=1).alignment = align_left
-    ws.cell(row=row_f_a, column=1, value="F-value").font = font_regular
+    ws.cell(row=row_f_a, column=1, value="p-value").font = font_regular
     ws.cell(row=row_f_a, column=1).alignment = align_left
     ws.cell(row=row_lsd_a, column=1, value="LSD(0.05)").font = font_regular
     ws.cell(row=row_lsd_a, column=1).alignment = align_left
@@ -218,18 +457,18 @@ def build_styled_excel(factor_a_col, factor_b_col, params, levels_a, levels_b, r
         ws.cell(row=r, column=1, value=lvl).font = font_regular
         ws.cell(row=r, column=1).alignment = align_left
         
-    ws.cell(row=row_sem_b, column=1, value="SEm(±)").font = font_regular
+    ws.cell(row=row_sem_b, column=1, value="Sem").font = font_regular
     ws.cell(row=row_sem_b, column=1).alignment = align_left
-    ws.cell(row=row_f_b, column=1, value="F-value").font = font_regular
+    ws.cell(row=row_f_b, column=1, value="p-value").font = font_regular
     ws.cell(row=row_f_b, column=1).alignment = align_left
     ws.cell(row=row_lsd_b, column=1, value="LSD(0.05)").font = font_regular
     ws.cell(row=row_lsd_b, column=1).alignment = align_left
     
-    ws.cell(row=row_cv, column=1, value="CV, %").font = font_regular
+    ws.cell(row=row_cv, column=1, value="CV(%)").font = font_regular
     ws.cell(row=row_cv, column=1).alignment = align_left
     ws.cell(row=row_inter, column=1, value="Factor A × Factor B").font = font_regular
     ws.cell(row=row_inter, column=1).alignment = align_left
-    ws.cell(row=row_gm, column=1, value="Grand mean").font = font_regular
+    ws.cell(row=row_gm, column=1, value="Grand Mean").font = font_regular
     ws.cell(row=row_gm, column=1).alignment = align_left
     
     for col_idx, param in enumerate(params, start=2):
@@ -378,19 +617,24 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
     
     r_gm = add_styled_data_row("Grand mean", gm_dict)
     set_header_bottom_border(r_gm)
+    
+    # Set uniform column widths
+    for row in table.rows:
+        for idx, width in enumerate([Inches(1.5)] + [Inches(1.1)] * len(g_cols)):
+            row.cells[idx].width = width
 
-# --- Web Interface Routing ---
+# --- Multi-Year and Web Routing controller ---
 def show_module():
     st.markdown("### Two-Factor RCBD Analyzer")
     
-    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode")
+    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector")
     uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f")
 
     if uploaded_file is not None:
         if mode == "Raw Data Mode":
             run_raw_mode(uploaded_file)
         else:
-            run_summary_mode(uploaded_file)
+            run_summary_mode_processing(uploaded_file)
 
 def run_raw_mode(uploaded_file):
     try:
@@ -412,10 +656,16 @@ def run_raw_mode(uploaded_file):
             treatment_label_a = factor_a_col.lower()
             treatment_label_b = factor_b_col.lower()
             
-            group_1_name = st.text_input("First Table Title", f"Effect of {treatment_label_a} and {treatment_label_b} on growth attributes", key="raw_2f_g1_name_m")
-            group_1_cols = st.multiselect("Select parameters for Table 1", response_cols, default=response_cols[:len(response_cols)//2], key="raw_2f_g1_cols_m")
-            group_2_name = st.text_input("Second Table Title", f"Effect of {treatment_label_a} and {treatment_label_b} on yield attributes", key="raw_2f_g2_name_m")
-            group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in response_cols if c not in group_1_cols], default=[c for c in response_cols if c not in group_1_cols], key="raw_2f_g2_cols_m")
+            # Divide parameters automatically to prevent mixing vegetative and reproductive/quality properties
+            classified_cols = {"Vegetative Properties": [], "Reproductive, Biochemical, and Quality Properties": []}
+            for c in response_cols:
+                cat = classify_parameter(c)
+                classified_cols[cat].append(c)
+                
+            st.write("#### Automatically Categorized Parameter Divisions:")
+            for k, v in classified_cols.items():
+                if v:
+                    st.write(f"**{k}:** {', '.join(v)}")
             
             if st.button("Run Two-Factor Raw Analysis", key="btn_raw_2f_calc_m"):
                 results_data = {}
@@ -428,63 +678,7 @@ def run_raw_mode(uploaded_file):
                 b_levels = len(levels_b)
                 
                 for param in response_cols:
-                    df_temp = pd.DataFrame({
-                        'rep': df_raw_data[block_col].astype(str),
-                        'factor_a': df_raw_data[factor_a_col].astype(str),
-                        'factor_b': df_raw_data[factor_b_col].astype(str),
-                        'response': pd.to_numeric(df_raw_data[param], errors='coerce')
-                    }).dropna(subset=['response'])
-                    
-                    formula = "response ~ C(rep) + C(factor_a) * C(factor_b)"
-                    model = ols(formula, data=df_temp).fit()
-                    anova_table = sm.stats.anova_lm(model, typ=1)
-                    
-                    df_err = anova_table.loc["Residual", "df"]
-                    mse = anova_table.loc["Residual", "mean_sq"]
-                    
-                    p_a = anova_table.loc["C(factor_a)", "PR(>F)"]
-                    p_b = anova_table.loc["C(factor_b)", "PR(>F)"]
-                    p_ab = anova_table.loc["C(factor_a):C(factor_b)", "PR(>F)"]
-                    
-                    grand_mean = df_temp['response'].mean()
-                    cv = (np.sqrt(mse) / grand_mean) * 100
-                    t_val = t.ppf(0.975, df_err)
-                    
-                    means_a = df_temp.groupby('factor_a')['response'].mean().to_dict()
-                    sem_a = np.sqrt(mse / (r * b_levels))
-                    lsd_a = t_val * np.sqrt((2 * mse) / (r * b_levels))
-                    cld_a = get_cld_letters(means_a, lsd_a)
-                    
-                    means_b = df_temp.groupby('factor_b')['response'].mean().to_dict()
-                    sem_b = np.sqrt(mse / (r * a_levels))
-                    lsd_b = t_val * np.sqrt((2 * mse) / (r * a_levels))
-                    cld_b = get_cld_letters(means_b, lsd_b)
-                    
-                    df_temp['Combination'] = df_temp['factor_a'] + " × " + df_temp['factor_b']
-                    means_comb = df_temp.groupby('Combination')['response'].mean().to_dict()
-                    lsd_comb = t_val * np.sqrt((2 * mse) / r)
-                    cld_comb = get_cld_letters(means_comb, lsd_comb)
-                    
-                    sig_a = get_signif_code_val(p_a)
-                    sig_b = get_signif_code_val(p_b)
-                    sig_ab = get_signif_code_val(p_ab)
-                    
-                    means_a_str = {}
-                    for lvl, val in means_a.items():
-                        letter = cld_a[lvl] if sig_a != "ns" else ""
-                        means_a_str[lvl] = f"{val:.2f}{letter}"
-                        
-                    means_b_str = {}
-                    for lvl, val in means_b.items():
-                        letter = cld_b[lvl] if sig_b != "ns" else ""
-                        means_b_str[lvl] = f"{val:.2f}{letter}"
-                        
-                    results_data[param] = {
-                        "means_a": means_a, "means_a_str": means_a_str, "sem_a": round(sem_a, 2), "sig_a": sig_a, "lsd_a": round(lsd_a, 2), "p_a": p_a,
-                        "means_b": means_b, "means_b_str": means_b_str, "sem_b": round(sem_b, 2), "sig_b": sig_b, "lsd_b": round(lsd_b, 2), "p_b": p_b,
-                        "means_comb": means_comb, "cld_comb": cld_comb, "p_ab": p_ab, "sig_ab": sig_ab,
-                        "cv": round(cv, 2), "gm": round(grand_mean, 2)
-                    }
+                    results_data[param] = run_anova_2factor_raw(df_raw_data, block_col, factor_a_col, factor_b_col, param)
                 
                 styled_wb = build_styled_excel(factor_a_col, factor_b_col, response_cols, levels_a, levels_b, results_data)
                 excel_bio = io.BytesIO()
@@ -506,117 +700,72 @@ def run_raw_mode(uploaded_file):
                 doc = Document()
                 doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
                 
-                grouped_params = group_parameters(response_cols)
-                
-                for base_name, items in grouped_params.items():
-                    day_strs = [d_str for _, _, d_str in items if d_str]
-                    if day_strs:
-                        if len(day_strs) == 1:
-                            group_title = f"{base_name} at {day_strs[0]}"
-                        elif len(day_strs) == 2:
-                            group_title = f"{base_name} at {day_strs[0]} and {day_strs[1]}"
-                        else:
-                            group_title = f"{base_name} at {', '.join(day_strs[:-1])}, and {day_strs[-1]}"
-                    else:
-                        group_title = base_name
-                        
-                    st.write(f"### {group_title}")
-                    doc.add_heading(group_title, level=2)
+                table_counter = 1
+                for cat_name, cat_params in classified_cols.items():
+                    if not cat_params:
+                        continue
                     
-                    paragraphs = []
-                    for idx, (param_name, day_num, day_str) in enumerate(items):
-                        p_data = results_data[param_name]
-                        p_a, p_b, p_ab = p_data["p_a"], p_data["p_b"], p_data["p_ab"]
-                        
-                        p_notation_a = get_p_val_notation(p_a)
-                        p_notation_b = get_p_val_notation(p_b)
-                        p_notation_int = get_p_val_notation(p_ab)
-                        
-                        sorted_a = sorted(p_data["means_a"].items(), key=lambda x: x[1], reverse=True)
-                        top_a, top_val_a = sorted_a[0]
-                        low_a, low_val_a = sorted_a[-1]
-                        top_let_a = get_cld_letters(p_data["means_a"], p_data["lsd_a"]).get(top_a, "")
-                        
-                        sorted_b = sorted(p_data["means_b"].items(), key=lambda x: x[1], reverse=True)
-                        top_b, top_val_b = sorted_b[0]
-                        low_b, low_val_b = sorted_b[-1]
-                        top_let_b = get_cld_letters(p_data["means_b"], p_data["lsd_b"]).get(top_b, "")
-                        
-                        sorted_comb = sorted(p_data["means_comb"].items(), key=lambda x: x[1], reverse=True)
-                        comb_top_name, comb_top_val = sorted_comb[0]
-                        comb_low_name, comb_low_val = sorted_comb[-1]
-                        comb_top_let = p_data["cld_comb"].get(comb_top_name, "")
-                        
-                        at_par_a_list = []
-                        for lvl, val in sorted_a[1:]:
-                            let = get_cld_letters(p_data["means_a"], p_data["lsd_a"]).get(lvl, "")
-                            if top_let_a and let and any(char in top_let_a for char in let):
-                                at_par_a_list.append(f"**{lvl}** ({val:.2f}^{let})")
-                        at_par_a_str = ", ".join(at_par_a_list) if at_par_a_list else "no other levels"
-                        
-                        at_par_b_list = []
-                        for lvl, val in sorted_b[1:]:
-                            let = get_cld_letters(p_data["means_b"], p_data["lsd_b"]).get(lvl, "")
-                            if top_let_b and let and any(char in top_let_b for char in let):
-                                at_par_b_list.append(f"**{lvl}** ({val:.2f}^{let})")
-                        at_par_b_str = ", ".join(at_par_b_list) if at_par_b_list else "no other levels"
-                        if p_b >= 0.05:
-                            at_par_b_str = "all evaluated levels"
-                            
-                        at_par_comb_list = []
-                        for combo, val in sorted_comb[1:]:
-                            let = p_data["cld_comb"].get(combo, "")
-                            if comb_top_let and let and any(char in comb_top_let for char in let):
-                                at_par_comb_list.append(f"**{combo}** ({val:.2f}^{let})")
-                        at_par_comb_str = ", ".join(at_par_comb_list) if at_par_comb_list else "no other combinations"
-                        
-                        if idx == 0:
-                            prefix = f"Initially, at {day_str if day_str else 'the beginning of the assessment'},"
-                        elif idx == len(items) - 1:
-                            prefix = f"Finally, at the later stage of {day_str},"
-                        else:
-                            prefix = f"As evaluation progressed to {day_str},"
-                            
-                        if p_a >= 0.05:
-                            part_a = f"{prefix} the main effect of **{factor_a_col}** was nonsignificant ({p_notation_a}) on **{param_name}**, suggesting that the variable did not induce notable variations, with values remaining near a mean of {top_val_a:.2f}."
-                        else:
-                            part_a = f"{prefix} the main effect of **{factor_a_col}** was significant ({p_notation_a}) on **{param_name}**. The maximum value was registered by genotype **{top_a}** ({top_val_a:.2f}^{top_let_a}), which established statistical parity with {at_par_a_str}, while **{low_a}** ({low_val_a:.2f}) registered the minimum performance."
-                            
-                        if p_b >= 0.05:
-                            part_b = f"Similarly, the main effect of **{factor_b_col}** was nonsignificant ({p_notation_b}) at this interval, indicating that all treatment rates performed comparably with each other."
-                        else:
-                            part_b = f"Simultaneously, **{factor_b_col}** exerted a significant ({p_notation_b}) main effect. The superior tier was led by **{top_b}** ({top_val_b:.2f}^{top_let_b}), showing statistical parity with {at_par_b_str}, whereas **{low_b}** ({low_val_b:.2f}) marked the lowest performance."
-                            
-                        if p_ab >= 0.05:
-                            part_ab = f"The interaction effect between **{factor_a_col}** and **{factor_b_col}** was nonsignificant ({p_notation_int}), showing that these two variables influenced **{param_name}** independently (Table 1)."
-                        else:
-                            part_ab = f"Importantly, a significant interaction ({p_notation_int}) was observed, confirming that the regulatory response of **{factor_b_col}** was modified by **{factor_a_col}**. Among all combinations, **{comb_top_name}** stood at the statistical apex with {comb_top_val:.2f}^{comb_top_let}, showing statistical parity with {at_par_comb_str}, while **{comb_low_name}** recorded the lowest mean performance (Table 1)."
-                            
-                        paragraphs.append(f"{part_a} {part_b} {part_ab}")
-                        
-                    for para in paragraphs:
-                        st.write(para)
-                        p_docx = doc.add_paragraph()
-                        parts = re.split(r'(\*\*.*?\*\*)', para)
-                        for part in parts:
-                            if part.startswith('**') and part.endswith('**'):
-                                p_docx.add_run(part[2:-2]).bold = True
-                            else:
-                                p_docx.add_run(part)
-                    st.write("")
+                    doc.add_heading(cat_name, level=1)
+                    st.write(f"### {cat_name}")
                     
-                doc.add_page_break()
-                groups_layouts = [
-                    (group_1_name, group_1_cols, 1),
-                    (group_2_name, group_2_cols, 2)
-                ]
-                
-                for g_title, g_cols, table_num in groups_layouts:
-                    if not g_cols: continue
-                    doc.add_heading(f"Table {table_num}: {g_title}", level=1)
-                    add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, levels_b, results_data)
-                    doc.add_page_break()
+                    grouped = group_parameters(cat_params)
                     
+                    # Step 1: Render and group static parameters (Up to 4)
+                    static_items = []
+                    for base_name, items in sorted(grouped.items()):
+                        if len(items) == 1:
+                            static_items.append(items[0][0])
+                            
+                    static_chunks = [static_items[i:i + 4] for i in range(0, len(static_items), 4)]
+                    
+                    for chunk in static_chunks:
+                        chunk_lbl = f"Table {table_counter}"
+                        table_counter += 1
+                        
+                        st.write(f"##### {chunk_lbl}: Integrated Properties")
+                        doc.add_heading(f"{chunk_lbl}: Properties Evaluation", level=2)
+                        
+                        for p in chunk:
+                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
+                            st.write(p_text)
+                            
+                            p_docx = doc.add_paragraph()
+                            parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                            for part in parts:
+                                if part.startswith('**') and part.endswith('**'):
+                                    p_docx.add_run(part[2:-2]).bold = True
+                                else:
+                                    p_docx.add_run(part)
+                                    
+                        add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+                        st.write("*(Consolidated table placed directly below paragraph)*")
+                        doc.add_page_break()
+                        
+                    # Step 2: Render and isolate trend lines
+                    for base_name, items in sorted(grouped.items()):
+                        if len(items) > 1:
+                            trend_lbl = f"Table {table_counter}"
+                            table_counter += 1
+                            
+                            st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
+                            doc.add_heading(f"{trend_lbl}: Progressive Trend of {base_name}", level=2)
+                            
+                            p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, factor_b_col, trend_lbl)
+                            st.write(p_text)
+                            
+                            p_docx = doc.add_paragraph()
+                            parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                            for part in parts:
+                                if part.startswith('**') and part.endswith('**'):
+                                    p_docx.add_run(part[2:-2]).bold = True
+                                else:
+                                    p_docx.add_run(part)
+                                    
+                            trend_params = [it[0] for it in items]
+                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                            st.write("*(Time-series table placed directly below trend paragraph)*")
+                            doc.add_page_break()
+                            
                 bio_doc = io.BytesIO()
                 doc.save(bio_doc)
                 bio_doc.seek(0)
@@ -633,6 +782,147 @@ def run_raw_mode(uploaded_file):
     except Exception as e:
         st.error(f"Error executing raw combined Two-Factor analysis: {e}")
 
-# --- Dummy Summarized Mode for completeness ---
-def run_summary_mode(uploaded_file):
-    st.info("Direct Summarized table parser is running. Please verify headers alignment.")
+# --- Summarized Processing Mode (2-Factor) ---
+def run_summary_mode_processing(uploaded_file):
+    try:
+        df_raw = pd.read_excel(uploaded_file, header=None)
+        
+        idx_A, idx_B, idx_cv, idx_interaction, idx_grand = None, None, None, None, None
+        for idx, val in enumerate(df_raw[0]):
+            if pd.isna(val): continue
+            val_str = str(val).strip().lower()
+            if "factor a" in val_str: idx_A = idx
+            elif "factor b" in val_str: idx_B = idx
+            elif "cv" in val_str: idx_cv = idx
+            elif any(x in val_str for x in ["factor a × factor b", "factor a*factor b", "factor a x factor b", "interaction"]):
+                idx_interaction = idx
+            elif "grand mean" in val_str or "grandmean" in val_str: idx_grand = idx
+            
+        if any(v is None for v in [idx_A, idx_B, idx_cv, idx_interaction, idx_grand]):
+            st.error("Missing structural markers (Factor A, Factor B, CV, Interaction, Grand Mean) in Column A.")
+            return
+            
+        idx_A_sem, idx_A_f, idx_A_lsd = None, None, None
+        for idx in range(idx_A + 1, idx_B):
+            val = str(df_raw.iloc[idx, 0]).strip().lower()
+            if "sem" in val: idx_A_sem = idx
+            elif "f-value" in val or "f value" in val: idx_A_f = idx
+            elif "lsd" in val: idx_A_lsd = idx
+            
+        idx_B_sem, idx_B_f, idx_B_lsd = None, None, None
+        for idx in range(idx_B + 1, idx_cv):
+            val = str(df_raw.iloc[idx, 0]).strip().lower()
+            if "sem" in val: idx_B_sem = idx
+            elif "f-value" in val or "f value" in val: idx_B_f = idx
+            elif "lsd" in val: idx_B_lsd = idx
+            
+        factor_a_levels = [str(df_raw.iloc[i, 0]).strip() for i in range(idx_A + 1, idx_A_sem)]
+        factor_b_levels = [str(df_raw.iloc[i, 0]).strip() for i in range(idx_B + 1, idx_B_sem)]
+        
+        factor_a_label = str(df_raw.iloc[idx_A, 0]).split(":")[-1].replace("(", "").replace(")", "").strip()
+        factor_b_label = str(df_raw.iloc[idx_B, 0]).split(":")[-1].replace("(", "").replace(")", "").strip()
+        
+        parameters = [str(x).strip() for x in df_raw.iloc[0].tolist()[1:] if pd.notna(x)]
+        st.success(f"Detected Factor A: {factor_a_label} | Factor B: {factor_b_label}")
+        
+        classified_cols = {"Vegetative Properties": [], "Reproductive, Biochemical, and Quality Properties": []}
+        for c in parameters:
+            cat = classify_parameter(c)
+            classified_cols[cat].append(c)
+            
+        st.write("#### Automatically Categorized Parameter Divisions:")
+        for k, v in classified_cols.items():
+            if v:
+                st.write(f"**{k}:** {', '.join(v)}")
+        
+        if st.button("Generate Word Document Draft from Direct Output", key="btn_2f_sum_gen"):
+            results_data = parse_summarized_table_to_results_2f(
+                df_raw, idx_A, idx_B, idx_cv, idx_interaction, idx_grand,
+                idx_A_sem, idx_A_f, idx_A_lsd, idx_B_sem, idx_B_f, idx_B_lsd,
+                factor_a_levels, factor_b_levels, parameters
+            )
+            
+            doc = Document()
+            doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
+            
+            table_counter = 1
+            for cat_name, cat_params in classified_cols.items():
+                if not cat_params:
+                    continue
+                
+                doc.add_heading(cat_name, level=1)
+                st.write(f"### {cat_name}")
+                
+                grouped = group_parameters(cat_params)
+                
+                # Step 1: Render and group static parameters (Up to 4)
+                static_items = []
+                for base_name, items in sorted(grouped.items()):
+                    if len(items) == 1:
+                        static_items.append(items[0][0])
+                        
+                static_chunks = [static_items[i:i + 4] for i in range(0, len(static_items), 4)]
+                
+                for chunk in static_chunks:
+                    chunk_lbl = f"Table {table_counter}"
+                    table_counter += 1
+                    
+                    st.write(f"##### {chunk_lbl}: Integrated Properties")
+                    doc.add_heading(f"{chunk_lbl}: Properties Evaluation", level=2)
+                    
+                    for p in chunk:
+                        p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
+                        st.write(p_text)
+                        
+                        p_docx = doc.add_paragraph()
+                        parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                        for part in parts:
+                            if part.startswith('**') and part.endswith('**'):
+                                p_docx.add_run(part[2:-2]).bold = True
+                            else:
+                                p_docx.add_run(part)
+                                
+                    add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
+                    st.write("*(Consolidated table placed directly below paragraph)*")
+                    doc.add_page_break()
+                    
+                # Step 2: Render and isolate trend lines
+                for base_name, items in sorted(grouped.items()):
+                    if len(items) > 1:
+                        trend_lbl = f"Table {table_counter}"
+                        table_counter += 1
+                        
+                        st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
+                        doc.add_heading(f"{trend_lbl}: Progressive Trend of {base_name}", level=2)
+                        
+                        p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_label, factor_b_label, trend_lbl)
+                        st.write(p_text)
+                        
+                        p_docx = doc.add_paragraph()
+                        parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                        for part in parts:
+                            if part.startswith('**') and part.endswith('**'):
+                                p_docx.add_run(part[2:-2]).bold = True
+                            else:
+                                p_docx.add_run(part)
+                                
+                        trend_params = [it[0] for it in items]
+                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                        st.write("*(Time-series table placed directly below trend paragraph)*")
+                        doc.add_page_break()
+                        
+            bio_doc = io.BytesIO()
+            doc.save(bio_doc)
+            bio_doc.seek(0)
+            
+            st.write("---")
+            st.markdown("#### 💾 Save Explanations & Tables as Word Document")
+            st.download_button(
+                "Download Word Explanations Report (.docx)", 
+                data=bio_doc, 
+                file_name="MultiYear_Summarized_Thesis_Report.docx", 
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document", 
+                key="btn_d_2f_sum_doc"
+            )
+    except Exception as e:
+        st.error(f"Error parsing direct result summary table: {e}")
