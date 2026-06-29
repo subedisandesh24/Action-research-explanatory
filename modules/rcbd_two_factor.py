@@ -76,11 +76,43 @@ def get_p_val_notation(p_val):
 # --- Agronomic Classification Engine ---
 def classify_parameter(param):
     """
-    Classifies parameters dynamically based on the exact user-provided taxonomy.
+    Classifies parameters dynamically based on standard agricultural taxonomy,
+    explicitly resolving abbreviations (SL, DL, PLWD) first.
     """
     param_clean = param.strip().lower()
     
-    # Category IV: Stress and Health Parameters
+    abbrev_map = {
+        "sl": "III. Quality Parameters (Post-Harvest) - Shelf-Life Parameters",
+        "dl": "III. Quality Parameters (Post-Harvest) - Shelf-Life Parameters",
+        "plw": "III. Quality Parameters (Post-Harvest) - Shelf-Life Parameters",
+        "plwd": "III. Quality Parameters (Post-Harvest) - Shelf-Life Parameters",
+        "tss": "III. Quality Parameters (Post-Harvest) - Chemical Quality",
+        "ta": "III. Quality Parameters (Post-Harvest) - Chemical Quality",
+        "ph": "III. Quality Parameters (Post-Harvest) - Chemical Quality",
+        "lai": "I. Vegetative Parameters (Growth Parameters) - Leaf Parameters",
+        "lad": "I. Vegetative Parameters (Growth Parameters) - Leaf Parameters",
+        "sla": "I. Vegetative Parameters (Growth Parameters) - Leaf Parameters",
+        "slw": "I. Vegetative Parameters (Growth Parameters) - Leaf Parameters",
+        "cgr": "I. Vegetative Parameters (Growth Parameters) - Growth Analysis Parameters",
+        "rgr": "I. Vegetative Parameters (Growth Parameters) - Growth Analysis Parameters",
+        "agr": "I. Vegetative Parameters (Growth Parameters) - Growth Analysis Parameters",
+        "nar": "I. Vegetative Parameters (Growth Parameters) - Growth Analysis Parameters",
+        "lar": "I. Vegetative Parameters (Growth Parameters) - Growth Analysis Parameters",
+        "lwr": "I. Vegetative Parameters (Growth Parameters) - Growth Analysis Parameters",
+        "rue": "I. Vegetative Parameters (Growth Parameters) - Growth Analysis Parameters",
+        "hi": "I. Vegetative Parameters (Growth Parameters) - Growth Analysis Parameters",
+        "rwc": "I. Vegetative Parameters (Growth Parameters) - Physiological Parameters",
+        "spad": "I. Vegetative Parameters (Growth Parameters) - Leaf Parameters",
+        "ndvi": "I. Vegetative Parameters (Growth Parameters) - Physiological Parameters",
+        "pri": "I. Vegetative Parameters (Growth Parameters) - Physiological Parameters",
+    }
+    
+    # Strip timepoints (e.g., PLWD2 -> PLWD)
+    base_abbrev = re.sub(r"\d+$", "", param_clean)
+    if base_abbrev in abbrev_map:
+        return abbrev_map[base_abbrev]
+        
+    # Category IV: Stress and Health
     if any(x in param_clean for x in ["disease", "pest", "infest", "weed", "mortality", "survival", "stress tolerance", "chlorosis", "wilting"]):
         return "IV. Stress and Health Parameters"
         
@@ -121,7 +153,7 @@ def classify_parameter(param):
     if any(x in param_clean for x in ["maturity", "harvest duration"]):
         return "II. Reproductive Parameters - Maturity Parameters"
         
-    # Category I: Vegetative Parameters (Growth Parameters)
+    # Category I: Vegetative Parameters
     # Germination
     if any(x in param_clean for x in ["germination", "emergence", "establishment", "vigor index"]):
         return "I. Vegetative Parameters (Growth Parameters) - Germination and Establishment"
@@ -181,7 +213,7 @@ def set_header_bottom_border(row_or_cells):
     if hasattr(row_or_cells, 'cells'):
         cells = row_or_cells.cells
     else:
-        cells = row_or_cells  # Passed cell tuple
+        cells = row_or_cells
     for cell in cells:
         tcPr = cell._tc.get_or_add_tcPr()
         borders = parse_xml(
@@ -362,6 +394,129 @@ def run_anova_2factor_raw(df, block_col, factor_a_col, factor_b_col, param):
         "means_comb": means_comb, "cld_comb": cld_comb, "p_ab": p_ab, "sig_ab": sig_ab,
         "cv": round(cv, 2), "gm": round(grand_mean, 2)
     }
+
+# --- Dynamic Academic Explanation Selection Engine ---
+def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_col, table_label):
+    p_a, p_b, p_ab = p_data["p_a"], p_data["p_b"], p_data["p_ab"]
+    p_notation_a = get_p_val_notation(p_a)
+    p_notation_b = get_p_val_notation(p_b)
+    p_notation_int = get_p_val_notation(p_ab)
+    
+    sorted_a = sorted(p_data["means_a"].items(), key=lambda x: x[1], reverse=True)
+    top_a, top_val_a = sorted_a[0]
+    low_a, _ = sorted_a[-1]
+    top_let_a = p_data["means_a_str"][top_a].replace(f"{top_val_a:.2f}", "")
+    
+    sorted_b = sorted(p_data["means_b"].items(), key=lambda x: x[1], reverse=True)
+    top_b, top_val_b = sorted_b[0]
+    low_b, _ = sorted_b[-1]
+    top_let_b = p_data["means_b_str"][top_b].replace(f"{top_val_b:.2f}", "")
+    
+    sorted_comb = sorted(p_data["means_comb"].items(), key=lambda x: x[1], reverse=True)
+    comb_top_name, comb_top_val = sorted_comb[0]
+    comb_low_name, comb_low_val = sorted_comb[-1]
+    comb_top_let = p_data["cld_comb"].get(comb_top_name, "")
+    
+    # Parity Groups Lists (Formatted as plain text, no bold brackets or backticks)
+    at_par_a_list = []
+    for lvl, val in sorted_a[1:]:
+        let = p_data["means_a_str"][lvl].replace(f"{val:.2f}", "")
+        if top_let_a and let and any(char in top_let_a for char in let):
+            at_par_a_list.append(f"{lvl} ({val:.2f}^{let})")
+    at_par_a_str = ", ".join(at_par_a_list) if at_par_a_list else "no other levels"
+    
+    at_par_b_list = []
+    for lvl, val in sorted_b[1:]:
+        let = p_data["means_b_str"][lvl].replace(f"{val:.2f}", "")
+        if top_let_b and let and any(char in top_let_b for char in let):
+            at_par_b_list.append(f"{lvl} ({val:.2f}^{let})")
+    at_par_b_str = ", ".join(at_par_b_list) if at_par_b_list else "no other levels"
+    if p_b >= 0.05:
+        at_par_b_str = "all evaluated levels"
+        
+    at_par_comb_list = []
+    for combo, val in sorted_comb[1:]:
+        let = p_data["cld_comb"].get(combo, "")
+        if comb_top_let and let and any(char in comb_top_let for char in let):
+            at_par_comb_list.append(f"{combo} ({val:.2f}^{let})")
+    at_par_comb_str = ", ".join(at_par_comb_list) if at_par_comb_list else "no other combinations"
+
+    if p_ab < 0.05:
+        # Significant interaction effect
+        para = (
+            f"Regarding the parameter {param_name}, the statistical evaluation revealed a highly significant "
+            f"interaction effect between {factor_a_col} and {factor_b_col} ({p_notation_int}) (as summarized "
+            f"in {table_label}). This interaction confirms that the regulatory influence of {factor_b_col} "
+            f"depends heavily on the baseline level of {factor_a_col}. Among all treatment combinations, "
+            f"{comb_top_name} established its position at the statistical apex with {comb_top_val:.2f}^{comb_top_let}, "
+            f"showing statistical parity with other high-performing treatments including {at_par_comb}. Conversely, the lowest "
+            f"performance tier was marked by the combination {comb_low_name} ({comb_low_val:.2f}), representing the "
+            f"cumulative severity of stress or untreated control conditions."
+        )
+    else:
+        # Non-significant interaction effect (Independent main effects)
+        part_a = ""
+        if p_a >= 0.05:
+            part_a = f"the main effect of {factor_a_col} was nonsignificant ({p_notation_a}) on {param_name}, suggesting stable and uniform behavior across levels."
+        else:
+            part_a = f"the main effect of {factor_a_col} was highly significant ({p_notation_a}) on {param_name}. The maximum value was registered by treatment {top_a} ({top_val_a:.2f}^{top_let_a}), which established statistical parity with {at_par_a_str}, while {low_a} marked the minimum performance."
+            
+        part_b = ""
+        if p_b >= 0.05:
+            part_b = f"Similarly, the main effect of {factor_b_col} was nonsignificant ({p_notation_b}) at this interval, indicating comparable performance across all evaluated rates."
+        else:
+            part_b = f"Simultaneously, the treatment factor {factor_b_col} exerted a highly significant ({p_notation_b}) response, wherein {top_b} led the application levels with {top_val_b:.2f}^{top_let_b} ({at_par_b_str}), whereas {low_b} marked the minimum baseline limit around the grand mean of {p_data['gm']:.2f}."
+        
+        para = (
+            f"For the parameter {param_name}, the interaction effect ({factor_a_col} × {factor_b_col}) "
+            f"was completely nonsignificant ({p_notation_int}), confirming that the treatment factors operated independently of each other. "
+            f"Specifically, as detailed in {table_label}, {part_a} {part_b}"
+        )
+    return para
+
+def generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, factor_b_col, table_label):
+    first_item = items[0]
+    last_item = items[-1]
+    
+    first_param, _, first_day_str = first_item
+    last_param, _, last_day_str = last_item
+    
+    p_first = results_data[first_param]
+    p_last = results_data[last_param]
+    
+    first_gm = p_first["gm"]
+    last_gm = p_last["gm"]
+    direction = "upward" if last_gm >= first_gm else "downward"
+    
+    p_notation_int_last = get_p_val_notation(p_last["p_ab"])
+    
+    sorted_comb_last = sorted(p_last["means_comb"].items(), key=lambda x: x[1], reverse=True)
+    comb_top_name, comb_top_val = sorted_comb_last[0]
+    comb_low_name, comb_low_val = sorted_comb_last[-1]
+    comb_top_let = p_last["cld_comb"].get(comb_top_name, "")
+    
+    any_sig_ab = any(results_data[it[0]]["p_ab"] < 0.05 for it in items)
+    if any_sig_ab:
+        sig_days = [it[2] for it in items if results_data[it[0]]["p_ab"] < 0.05]
+        interaction_evolution = (
+            f"Notably, the interaction effect between {factor_a_col} and {factor_b_col} demonstrated clear temporal dependencies "
+            f"over the storage/trial duration, transitioning from nonsignificant at the early phase to highly significant ({p_notation_int_last}) "
+            f"during later stages ({', '.join(sig_days)}). At the final evaluation interval ({last_day_str}), the treatment combination "
+            f"{comb_top_name} yielded the peak value of {comb_top_val:.2f}^{comb_top_let}, while {comb_low_name} marked the lowest "
+            f"limit of performance ({comb_low_val:.2f})."
+        )
+    else:
+        interaction_evolution = (
+            f"The interaction effect between {factor_a_col} and {factor_b_col} remained consistently nonsignificant across all "
+            f"assessment intervals, showing that both factors regulated the {base_name} trend independently."
+        )
+        
+    para = (
+        f"Regarding {base_name}, the trait exhibited a highly defined, time-dependent {direction} trend over the course of the trial, "
+        f"as shown in {table_label}. The grand mean transitioned from {first_gm:.2f} at {first_day_str} and progressively shifted to {last_gm:.2f} "
+        f"by {last_day_str}. {interaction_evolution}"
+    )
+    return para
 
 # --- Summarized Table Parser Engine ---
 def parse_summarized_table_to_results_2f(df_raw, idx_A, idx_B, idx_cv, idx_interaction, idx_grand, 
@@ -658,7 +813,7 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
 def show_module():
     st.markdown("### Two-Factor RCBD Analyzer")
     
-    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_mult")
+    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_two")
     uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f_two")
 
     if uploaded_file is not None:
@@ -757,19 +912,16 @@ def run_raw_mode(uploaded_file):
                         st.write(f"##### {chunk_lbl}: Integrated Properties")
                         
                         layout_style = table_counter % 3
-                        
-                        # Generate dynamic flat table caption text
                         caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, chunk)
                         
                         if layout_style == 0:
-                            # Style 0: Explanations -> Table -> Caption (Below Table)
+                            # Style 0: Explanations -> Table -> Caption (Below Table, Plain Format)
                             for p in chunk:
                                 p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
                                 st.write(p_text)
                                 doc.add_paragraph(p_text)
                                 
                             add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
-                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
@@ -777,7 +929,6 @@ def run_raw_mode(uploaded_file):
                         elif layout_style == 1:
                             # Style 1: Table -> Caption -> Explanations
                             add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
-                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
@@ -799,7 +950,6 @@ def run_raw_mode(uploaded_file):
                                 doc.add_paragraph(p_text)
                                 
                             add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
-                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
@@ -810,8 +960,8 @@ def run_raw_mode(uploaded_file):
                                 doc.add_paragraph(p_text)
                                 
                         table_counter += 1
-                        st.write("*(Table and plain caption rendered below)*")
-                        doc.add_paragraph() # Single row spacing
+                        st.write("*(Table and caption rendered below)*")
+                        doc.add_paragraph() # Flowing row spacing
                         
                     # Step 2: Render and isolate trend lines
                     for base_name, items in sorted(grouped.items()):
@@ -830,18 +980,15 @@ def run_raw_mode(uploaded_file):
                                 st.write(p_text)
                                 doc.add_paragraph(p_text)
                                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
-                                
                                 p_cap = doc.add_paragraph(caption_text)
                                 p_cap.runs[0].font.name = 'Arial'
                                 p_cap.runs[0].font.size = Pt(10)
                                 
                             elif layout_style == 1:
                                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
-                                
                                 p_cap = doc.add_paragraph(caption_text)
                                 p_cap.runs[0].font.name = 'Arial'
                                 p_cap.runs[0].font.size = Pt(10)
-                                
                                 st.write(p_text)
                                 doc.add_paragraph(p_text)
                                 
@@ -849,9 +996,7 @@ def run_raw_mode(uploaded_file):
                                 part1, part2 = split_text_by_sentence(p_text)
                                 st.write(part1)
                                 doc.add_paragraph(part1)
-                                
                                 add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
-                                
                                 p_cap = doc.add_paragraph(caption_text)
                                 p_cap.runs[0].font.name = 'Arial'
                                 p_cap.runs[0].font.size = Pt(10)
@@ -861,7 +1006,7 @@ def run_raw_mode(uploaded_file):
                                     doc.add_paragraph(part2)
                                     
                             table_counter += 1
-                            st.write("*(Time-series table and plain caption rendered below)*")
+                            st.write("*(Time-series table and caption rendered below)*")
                             doc.add_paragraph() # Spacing
                             
                 bio_doc = io.BytesIO()
@@ -965,8 +1110,6 @@ def run_summary_mode_processing(uploaded_file):
                 
                 for chunk in static_chunks:
                     chunk_lbl = f"Table {table_counter}"
-                    
-                    st.write(f"##### {chunk_lbl}: Integrated Properties")
                     caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, chunk)
                     
                     layout_style = table_counter % 3
@@ -978,14 +1121,12 @@ def run_summary_mode_processing(uploaded_file):
                             doc.add_paragraph(p_text)
                                     
                         add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
-                        
                         p_cap = doc.add_paragraph(caption_text)
                         p_cap.runs[0].font.name = 'Arial'
                         p_cap.runs[0].font.size = Pt(10)
                         
                     elif layout_style == 1:
                         add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
-                        
                         p_cap = doc.add_paragraph(caption_text)
                         p_cap.runs[0].font.name = 'Arial'
                         p_cap.runs[0].font.size = Pt(10)
@@ -1006,7 +1147,6 @@ def run_summary_mode_processing(uploaded_file):
                             doc.add_paragraph(p_text)
                             
                         add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
-                        
                         p_cap = doc.add_paragraph(caption_text)
                         p_cap.runs[0].font.name = 'Arial'
                         p_cap.runs[0].font.size = Pt(10)
@@ -1024,8 +1164,6 @@ def run_summary_mode_processing(uploaded_file):
                 for base_name, items in sorted(grouped.items()):
                     if len(items) > 1:
                         trend_lbl = f"Table {table_counter}"
-                        
-                        st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
                         trend_params = [it[0] for it in items]
                         caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, trend_params)
                         
@@ -1037,18 +1175,15 @@ def run_summary_mode_processing(uploaded_file):
                             st.write(p_text)
                             doc.add_paragraph(p_text)
                             add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
-                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
                             
                         elif layout_style == 1:
                             add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
-                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
-                            
                             st.write(p_text)
                             doc.add_paragraph(p_text)
                             
@@ -1056,9 +1191,7 @@ def run_summary_mode_processing(uploaded_file):
                             part1, part2 = split_text_by_sentence(p_text)
                             st.write(part1)
                             doc.add_paragraph(part1)
-                            
                             add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
-                            
                             p_cap = doc.add_paragraph(caption_text)
                             p_cap.runs[0].font.name = 'Arial'
                             p_cap.runs[0].font.size = Pt(10)
@@ -1068,7 +1201,7 @@ def run_summary_mode_processing(uploaded_file):
                                 doc.add_paragraph(part2)
                                 
                         table_counter += 1
-                        st.write("*(Time-series table and plain caption placed directly below trend paragraph)*")
+                        st.write("*(Time-series table and caption placed directly below trend paragraph)*")
                         doc.add_paragraph() # Spacing
                         
             bio_doc = io.BytesIO()
