@@ -4,6 +4,7 @@ import numpy as np
 import re
 import io
 import string
+import random
 from scipy.stats import t
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
@@ -408,6 +409,41 @@ ACADEMIC_TEMPLATES_30 = {
     )
 }
 
+# --- Shuffling Categories Mapping ---
+SINGLE_DAY_TEMPLATES = {
+    "interaction": [16, 23],
+    "both_significant": [17, 22, 24, 25, 26, 28, 30],
+    "factor_a_significant": [18, 27],
+    "factor_b_significant": [19],
+    "non_significant": [20, 21, 29]
+}
+
+TIME_SERIES_TEMPLATES = {
+    "interaction": [1, 3, 12, 14],
+    "upward_trend": [7, 9, 10, 13],
+    "downward_trend": [2, 6, 15],
+    "general": [4, 5, 8, 11]
+}
+
+
+class TemplatePool:
+    """Manages thread-safe dynamic draws of shuffled templates within structured categories."""
+    def __init__(self, templates_dict):
+        self.initial_pool = {k: list(v) for k, v in templates_dict.items()}
+        self.pool = {k: list(v) for k, v in templates_dict.items()}
+        self.shuffle_all()
+
+    def shuffle_all(self):
+        for k in self.pool:
+            random.shuffle(self.pool[k])
+
+    def get_template_id(self, category):
+        if category not in self.pool or not self.pool[category]:
+            self.pool[category] = list(self.initial_pool[category])
+            random.shuffle(self.pool[category])
+        return self.pool[category].pop(0)
+
+
 # ==============================================================================
 # Hierarchical numbering for the Word report (1 / 1.1 / 1.1.1) + table numbering
 # ==============================================================================
@@ -453,7 +489,6 @@ SUB_CATEGORY_ORDER = {
 
 class ReportNumberer:
     """Generates continuous 1 / 1.1 / 1.1.1 style headings and continuous Table N numbers."""
-
     def __init__(self):
         self.major_num = 0
         self.sub_num = 0
@@ -501,9 +536,7 @@ def get_p_val_notation(p_val):
 
 # --- Agronomic Classification Engine ---
 def classify_parameter(param):
-    """
-    Classifies parameters dynamically based on standard agricultural taxonomy.
-    """
+    """Classifies parameters dynamically based on standard agricultural taxonomy."""
     param_clean = param.strip().lower()
 
     abbrev_map = {
@@ -532,7 +565,6 @@ def classify_parameter(param):
         "pri": ("Vegetative Parameters", "Physiological Parameters"),
     }
 
-    # Strip trailing numbers (e.g., PLWD2 -> PLWD, DL4 -> DL)
     base_abbrev = re.sub(r"\d+$", "", param_clean)
     if base_abbrev in abbrev_map:
         return abbrev_map[base_abbrev]
@@ -657,7 +689,7 @@ def set_header_bottom_border(row_or_cells):
         tcPr.append(tcBorders)
 
 
-# --- Dynamic Table Caption Generator (Varieties of Wordings) ---
+# --- Dynamic Table Caption Generator ---
 def generate_table_caption(table_num, factor_a, factor_b, variables_list):
     vars_txt = ", ".join(variables_list)
     if len(variables_list) > 2:
@@ -695,7 +727,7 @@ def group_parameters(params):
     return groups
 
 
-# --- Statistical Calculation Helpers ---
+# --- Statistical Separation Engines ---
 def get_signif_code_val(p):
     if pd.isna(p):
         return "ns"
@@ -887,236 +919,29 @@ def parse_summarized_table_to_results_2f(df_raw, idx_A, idx_B, idx_cv, idx_inter
     return results_data
 
 
-# --- Template Variable Injection Helper ---
-def inject_template_placeholders(template_text, placeholders_dict):
-    """Safely substitutes bracket markers in the template with calculated results."""
-    for key, val in placeholders_dict.items():
-        template_text = template_text.replace("{{" + key + "}}", str(val))
-    template_text = re.sub(r"\{\{.*?\}\}", "", template_text)
-    return template_text
-
-
-# --- Parameter Fact Extraction Helpers ---
-def extract_single_day_facts(parameter, res, factor_a_col, factor_b_col, table_label):
-    means_a = res["means_a"]
-    means_b = res["means_b"]
-    means_comb = res["means_comb"]
-    means_a_str = res["means_a_str"]
-    means_b_str = res["means_b_str"]
-
-    sorted_a = sorted(means_a.items(), key=lambda x: x[1], reverse=True)
-    sorted_b = sorted(means_b.items(), key=lambda x: x[1], reverse=True)
-    sorted_comb = sorted(means_comb.items(), key=lambda x: x[1], reverse=True)
-
-    treatment_A1, val_A1 = sorted_a[0] if sorted_a else ("Control", 0.0)
-    treatment_A2, val_A2 = sorted_a[1] if len(sorted_a) > 1 else (treatment_A1, val_A1)
-    treatment_A3, val_A3 = sorted_a[2] if len(sorted_a) > 2 else (treatment_A2, val_A2)
-    val_lowest = sorted_a[-1][1] if sorted_a else 0.0
-    val_min_A = val_lowest
-    val_max_A = val_A1
-
-    treatment_B1, val_B1 = sorted_b[0] if sorted_b else ("Control", 0.0)
-    treatment_B2, val_B2 = sorted_b[-1] if sorted_b else ("Control", 0.0)
-
-    treatment_baseline = sorted_a[-1][0] if sorted_a else "Control"
-    value_baseline = val_lowest
-
-    max_val = sorted_comb[0][1] if sorted_comb else 0.0
-    min_val = sorted_comb[-1][1] if sorted_comb else 0.0
-
-    sem_val = res.get("sem_a", 0.1)
-    sem_A = res.get("sem_a", 0.1)
-    sem_B = res.get("sem_b", 0.1)
-    lsd_A = res.get("lsd_a", 0.1)
-    lsd_B = res.get("lsd_b", 0.1)
-    cv_val = res.get("cv", 5.0)
-    grand_mean = res.get("gm", 0.0)
-
-    pct_diff_A = round(((val_max_A - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
-    pct_diff_A2 = round(((val_A2 - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
-    pct_diff_A3 = round(((val_A3 - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
-    pct_diff_B = round(((val_B1 - val_B2) / (val_B2 if val_B2 != 0 else 1.0)) * 100, 2)
-
-    return {
-        "variable_name": parameter,
-        "table_num": table_label.replace("Table ", ""),
-        "factor_A": factor_a_col,
-        "factor_B": factor_b_col,
-        "treatment_A1": treatment_A1,
-        "val_A1": f"{val_A1:.2f}",
-        "treatment_A2": treatment_A2,
-        "val_A2": f"{val_A2:.2f}",
-        "treatment_A3": treatment_A3,
-        "val_A3": f"{val_A3:.2f}",
-        "val_lowest": f"{val_lowest:.2f}",
-        "val_min_A": f"{val_min_A:.2f}",
-        "val_max_A": f"{val_max_A:.2f}",
-        "treatment_B1": treatment_B1,
-        "val_B1": f"{val_B1:.2f}",
-        "treatment_B2": treatment_B2,
-        "val_B2": f"{val_B2:.2f}",
-        "treatment_baseline": treatment_baseline,
-        "value_baseline": f"{value_baseline:.2f}",
-        "max_val": f"{max_val:.2f}",
-        "min_val": f"{min_val:.2f}",
-        "grand_mean": f"{grand_mean:.2f}",
-        "sem_val": f"{sem_val}",
-        "sem_A": f"{sem_A}",
-        "sem_B": f"{sem_B}",
-        "lsd_A": f"{lsd_A}",
-        "lsd_B": f"{lsd_B}",
-        "cv_val": f"{cv_val}",
-        "pct_diff_A": f"{pct_diff_A}",
-        "pct_diff_A2": f"{pct_diff_A2}",
-        "pct_diff_A3": f"{pct_diff_A3}",
-        "pct_diff_B": f"{pct_diff_B}",
-        "val_B": f"{(val_B1 + val_B2)/2:.2f}",
-        "unit": "", 
-    }
-
-
-def extract_time_series_facts(base_name, items, results_data, factor_a_col, factor_b_col, table_label):
-    first_param, first_day_num, first_day_str = items[0]
-    last_param, last_day_num, last_day_str = items[-1]
-
-    num_dates = len(items)
-    time_unit = "days"
-    if any(x in first_param.lower() for x in ["das", "dat"]):
-        time_unit = "DAS" if "das" in first_param.lower() else "DAT"
-
-    first_gm = results_data[first_param]["gm"]
-    last_gm = results_data[last_param]["gm"]
-
-    tps = [it[2] for it in items]
-    while len(tps) < 5:
-        tps.append(tps[-1] if tps else "terminal phase")
-
-    cvs = [results_data[it[0]]["cv"] for it in items]
-    sems = [results_data[it[0]]["sem_a"] for it in items]
-
-    res_last = results_data[last_param]
-    sorted_a_last = sorted(res_last["means_a"].items(), key=lambda x: x[1], reverse=True)
-    sorted_b_last = sorted(res_last["means_b"].items(), key=lambda x: x[1], reverse=True)
-    sorted_comb_last = sorted(res_last["means_comb"].items(), key=lambda x: x[1], reverse=True)
-
-    treatment_A1, val_A1 = sorted_a_last[0] if sorted_a_last else ("Control", 0.0)
-    treatment_A2, val_A2 = sorted_a_last[1] if len(sorted_a_last) > 1 else (treatment_A1, val_A1)
-    val_lowest = sorted_a_last[-1][1] if sorted_a_last else 0.0
-
-    treatment_B1, val_B1 = sorted_b_last[0] if sorted_b_last else ("Control", 0.0)
-    treatment_B2, val_B2 = sorted_b_last[-1] if sorted_b_last else ("Control", 0.0)
-
-    treatment_baseline = sorted_a_last[-1][0] if sorted_a_last else "Control"
-    value_baseline = val_lowest
-
-    max_val = sorted_comb_last[0][1] if sorted_comb_last else 0.0
-    min_val = sorted_comb_last[-1][1] if sorted_comb_last else 0.0
-
-    peak_val = max(results_data[it[0]]["gm"] for it in items)
-
-    val_min_A = sorted_a_last[-1][1] if sorted_a_last else 1.0
-    val_max_A = sorted_a_last[0][1] if sorted_a_last else 1.0
-    pct_diff_A = round(((val_max_A - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
-    pct_diff_B = round(((val_B1 - val_B2) / (val_B2 if val_B2 != 0 else 1.0)) * 100, 2)
-
-    return {
-        "variable_name": base_name,
-        "num_intervals": str(num_dates),
-        "start_time": first_day_str.replace("Day ", "").strip(),
-        "end_time": last_day_str.replace("Day ", "").strip(),
-        "time_unit": time_unit,
-        "table_num": table_label.replace("Table ", ""),
-        "factor_A": factor_a_col,
-        "factor_B": factor_b_col,
-        "time_point_1": tps[0],
-        "time_point_2": tps[1],
-        "time_point_3": tps[2],
-        "time_point_4": tps[3],
-        "time_point_5": tps[4],
-        "grand_mean_early": f"{first_gm:.2f}",
-        "grand_mean": f"{last_gm:.2f}",
-        "unit": "",
-        "treatment_B1": treatment_B1,
-        "value_B1": f"{val_B1:.2f}",
-        "treatment_B2": treatment_B2,
-        "value_B2": f"{val_B2:.2f}",
-        "val_B1": f"{val_B1:.2f}",
-        "val_B2": f"{val_B2:.2f}",
-        "treatment_A1": treatment_A1,
-        "value_A1": f"{val_A1:.2f}",
-        "val_A1": f"{val_A1:.2f}",
-        "treatment_A2": treatment_A2,
-        "val_A2": f"{val_A2:.2f}",
-        "val_lowest": f"{val_lowest:.2f}",
-        "treatment_baseline": treatment_baseline,
-        "value_baseline": f"{value_baseline:.2f}",
-        "val_baseline": f"{value_baseline:.2f}",
-        "initial_value": f"{first_gm:.2f}",
-        "peak_value": f"{peak_val:.2f}",
-        "end_value": f"{last_gm:.2f}",
-        "total_days": str(abs(last_day_num - first_day_num)) if last_day_num != first_day_num else "30",
-        "max_val": f"{max_val:.2f}",
-        "min_val": f"{min_val:.2f}",
-        "val_minA": f"{sorted_a_last[-1][1]:.2f}" if sorted_a_last else "0.00",
-        "val_minB": f"{sorted_b_last[-1][1]:.2f}" if sorted_b_last else "0.00",
-        "avg_val": f"{np.mean([results_data[it[0]]['gm'] for it in items]):.2f}",
-        "mean_early": f"{first_gm:.2f}",
-        "grand_mean_peak": f"{peak_val:.2f}",
-        "cv_min": f"{min(cvs):.2f}" if cvs else "0.0",
-        "cv_max": f"{max(cvs):.2f}" if cvs else "0.0",
-        "num_dates": str(num_dates),
-        "sem_min": f"{min(sems):.2f}" if sems else "0.0",
-        "sem_max": f"{max(sems):.2f}" if sems else "0.0",
-        "pct_diff_A": f"{pct_diff_A}",
-        "pct_diff_A_late": f"{pct_diff_A}",
-        "pct_diff_B": f"{pct_diff_B}",
-        "deltaA": f"{abs(val_max_A - val_min_A):.2f}",
-        "deltaB": f"{abs(val_B1 - val_B2):.2f}",
-        "sub_parameter_1": f"{base_name} - Part 1",
-        "sub_parameter_2": f"{base_name} - Part 2",
-        "gm_1": f"{first_gm:.2f}",
-        "gm_2": f"{results_data[items[1][0]]['gm']:.2f}" if len(items) > 1 else f"{first_gm:.2f}",
-        "val_inter_1": f"{max_val:.2f}",
-        "val_inter_2": f"{(max_val + min_val)/2:.2f}",
-        "range_early": f"{abs(sorted_comb_last[0][1] - sorted_comb_last[-1][1]) * 0.2:.2f}",
-        "range_mid_A": f"{abs(val_max_A - val_min_A) * 0.8:.2f}",
-        "range_mid_B": f"{abs(val_B1 - val_B2) * 0.8:.2f}",
-        "range_late_A": f"{abs(val_max_A - val_min_A):.2f}",
-        "range_late_B": f"{abs(val_B1 - val_B2):.2f}",
-        "threshold_val": f"{last_gm * 0.8:.2f}",
-        "lsdval": f"{res_last.get('lsd_a', 0.1)}",
-        "lsdB": f"{res_last.get('lsd_b', 0.1)}",
-        "lsdA": f"{res_last.get('lsd_a', 0.1)}",
-    }
-
-
-# ==============================================================================
-# Academic explanation generators (built from ACADEMIC_TEMPLATES_30)
-# ==============================================================================
-def generate_two_factor_explanation(parameter, res, factor_a_col, factor_b_col, table_label):
+# --- Academic Explanation Generators with Shuffled Pools ---
+def generate_two_factor_explanation_shuffled(parameter, res, factor_a_col, factor_b_col, table_label, pool):
     p_a, p_b, p_ab = res["p_a"], res["p_b"], res["p_ab"]
     placeholders = extract_single_day_facts(parameter, res, factor_a_col, factor_b_col, table_label)
 
-    # Dynamic format shifting to ensure we don't always use the exact same layout
+    # Route dynamically to shuffled category blocks
     if p_ab < 0.05:
-        tpl_idx = 16 if (hash(parameter) % 2 == 0) else 23
+        category = "interaction"
     elif p_a < 0.05 and p_b < 0.05:
-        templates_both_sig = [17, 22, 24, 25, 26, 28, 30]
-        tpl_idx = templates_both_sig[hash(parameter) % len(templates_both_sig)]
+        category = "both_significant"
     elif p_a < 0.05 and p_b >= 0.05:
-        templates_a_sig = [18, 27]
-        tpl_idx = templates_a_sig[hash(parameter) % len(templates_a_sig)]
+        category = "factor_a_significant"
     elif p_a >= 0.05 and p_b < 0.05:
-        tpl_idx = 19
+        category = "factor_b_significant"
     else:
-        templates_none_sig = [20, 21, 29]
-        tpl_idx = templates_none_sig[hash(parameter) % len(templates_none_sig)]
+        category = "non_significant"
 
+    tpl_idx = pool.get_template_id(category)
     raw_template = ACADEMIC_TEMPLATES_30[tpl_idx]
     return inject_template_placeholders(raw_template, placeholders)
 
 
-def generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, factor_b_col, table_label):
+def generate_trend_explanation_2f_shuffled(base_name, items, results_data, factor_a_col, factor_b_col, table_label, pool):
     first_param, _, _ = items[0]
     last_param, _, _ = items[-1]
 
@@ -1128,19 +953,17 @@ def generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, 
     placeholders = extract_time_series_facts(base_name, items, results_data, factor_a_col, factor_b_col, table_label)
 
     if p_ab_last < 0.05:
-        templates_int = [1, 3, 12, 14]
-        tpl_idx = templates_int[hash(base_name) % len(templates_int)]
+        category = "interaction"
     elif direction_up:
-        templates_up = [4, 7, 9, 10, 13]
-        tpl_idx = templates_up[hash(base_name) % len(templates_up)]
+        category = "upward_trend"
     else:
-        templates_down = [2, 6, 15]
-        tpl_idx = templates_down[hash(base_name) % len(templates_down)]
+        category = "downward_trend"
 
-    if hash(base_name) % 10 == 0:
-        templates_other = [5, 8, 11]
-        tpl_idx = templates_other[hash(base_name) % len(templates_other)]
+    # Occasionally pull a general trend to increase formatting diversity
+    if random.random() < 0.25:
+        category = "general"
 
+    tpl_idx = pool.get_template_id(category)
     raw_template = ACADEMIC_TEMPLATES_30[tpl_idx]
     return inject_template_placeholders(raw_template, placeholders)
 
@@ -1329,7 +1152,6 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
                 p_val.runs[0].font.size = Pt(10)
         return row_cells
 
-    # Factor A Section
     add_styled_header_row(f"Factor A: {factor_a_col}")
     for lvl in sorted(levels_a):
         lvl_dict = {p: results_data[p]["means_a_str"][lvl] for p in g_cols}
@@ -1344,7 +1166,6 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
     r_last_a = add_styled_data_row("LSD(0.05)", lsd_a_dict)
     set_header_bottom_border(r_last_a)
 
-    # Factor B Section
     add_styled_header_row(f"Factor B: {factor_b_col}")
     for lvl in sorted(levels_b):
         lvl_dict = {p: results_data[p]["means_b_str"][lvl] for p in g_cols}
@@ -1359,7 +1180,6 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
     r_last_b = add_styled_data_row("LSD(0.05)", lsd_b_dict)
     set_header_bottom_border(r_last_b)
 
-    # Metrics Rows
     cv_dict = {p: results_data[p]["cv"] for p in g_cols}
     sig_ab_dict = {p: results_data[p]["sig_ab"] for p in g_cols}
     gm_dict = {p: results_data[p]["gm"] for p in g_cols}
@@ -1373,7 +1193,6 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
     r_gm = add_styled_data_row("Grand mean", gm_dict)
     set_header_bottom_border(r_gm)
 
-    # Apply responsive widths
     for row in table.rows:
         row.cells[0].width = Inches(1.5)
         for idx in range(1, len(g_cols) + 1):
@@ -1388,10 +1207,15 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
     Produces a Document with clustered parameters:
     Groups up to 4 static single parameters under the same category to produce
     cohesive narrative paragraphs and multi-column tables.
+    Includes active template shuffling to prevent layout fatigue.
     """
     doc = Document()
     doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
     numberer = ReportNumberer()
+
+    # Thread-safe fresh shuffling pools instantiated for this report build run
+    single_day_pool = TemplatePool(SINGLE_DAY_TEMPLATES)
+    time_series_pool = TemplatePool(TIME_SERIES_TEMPLATES)
 
     ordered_majors = [m for m in MAJOR_CATEGORY_ORDER if m in classified_cols]
     ordered_majors += [m for m in classified_cols if m not in ordered_majors]
@@ -1415,16 +1239,15 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
 
             grouped = group_parameters(cat_params)
 
-            # Separate static parameters vs time-series/trend parameters
+            # Separate static parameters vs time-series parameters
             static_items = [items[0][0] for base_name, items in sorted(grouped.items()) if len(items) == 1]
             time_series_items = {base_name: items for base_name, items in sorted(grouped.items()) if len(items) > 1}
 
-            # 1. Clustered static parameters (grouped in chunks of up to 4 for publications)
+            # 1. Clustered static parameters (grouped in chunks of up to 4)
             chunk_size = 4
             for i in range(0, len(static_items), chunk_size):
                 chunk = static_items[i:i + chunk_size]
 
-                # Dynamic title combining chunk elements
                 chunk_title_str = ", ".join(chunk)
                 if len(chunk) > 2:
                     chunk_title_str = f"{', '.join(chunk[:-1])} and {chunk[-1]}"
@@ -1435,20 +1258,26 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                 table_n = numberer.next_table()
                 table_label = f"Table {table_n}"
 
-                # Generate varied narrative with dynamic transitions
+                # Dynamic, shuffled sentence transition array
+                transitions = [
+                    " Concurrently, regarding the performance of {param}: ",
+                    " In terms of {param}, the statistical analysis indicated that: ",
+                    " Evaluated parallel to other traits, {param} showed that: ",
+                    " Moving onto {param}, the results revealed: ",
+                    " Likewise, for the parameter {param}, the data showed: ",
+                    " Additionally, an examination of {param} indicated: "
+                ]
+                random.shuffle(transitions)
+
                 explanations = []
                 for idx, p in enumerate(chunk):
-                    p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, table_label)
+                    p_text = generate_two_factor_explanation_shuffled(
+                        p, results_data[p], factor_a_col, factor_b_col, table_label, single_day_pool
+                    )
                     
                     if idx > 0:
-                        transitions = [
-                            " Concurrently, regarding the performance of {param}: ",
-                            " In terms of {param}, the statistical analysis indicated that: ",
-                            " Evaluated parallel to other traits, {param} showed that: ",
-                            " Moving onto {param}, the results revealed: "
-                        ]
-                        transition = transitions[(hash(p) + idx) % len(transitions)].format(param=p)
-                        # Clean up repetitive starts to make flow natural
+                        transition = transitions[idx % len(transitions)].format(param=p)
+                        # Clean prefix repetitions gracefully
                         p_text = re.sub(
                             r"^(The terminal value of\s+|The terminal measurement of\s+|The final ratio of the system components at terminal harvest was\s+)", 
                             "", p_text, flags=re.IGNORECASE
@@ -1473,7 +1302,7 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                 st.write(f"*{table_label} rendered below*")
                 doc.add_paragraph()
 
-            # 2. Time-series parameter groups (already chronological, up to 4 days tracked together)
+            # 2. Time-series parameter groups (chronological progression, up to 4 intervals)
             for base_name, items in sorted(time_series_items.items()):
                 param_title = numberer.param(doc, base_name)
                 st.write(f"**{param_title}**")
@@ -1482,8 +1311,9 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                 table_label = f"Table {table_n}"
                 trend_params = [it[0] for it in items]
 
-                p_text = generate_trend_explanation_2f(base_name, items, results_data,
-                                                         factor_a_col, factor_b_col, table_label)
+                p_text = generate_trend_explanation_2f_shuffled(
+                    base_name, items, results_data, factor_a_col, factor_b_col, table_label, time_series_pool
+                )
                 st.write(p_text)
                 doc.add_paragraph(p_text)
 
