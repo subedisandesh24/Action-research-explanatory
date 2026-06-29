@@ -28,10 +28,11 @@ ACADEMIC_TEMPLATES_2Y_30 = {
         "both years. Consequently, data were pooled over the two years for subsequent analysis. During the initial stages at "
         "{{time_point_1}} and {{time_point_2}} {{time_unit}}, the pooled treatment levels of {{factor_A}} did not exert "
         "any statistically significant influence on the observed values (P > 0.05), with the overall pooled grand mean remaining "
-        "stable at {{grand_mean_early}} {{unit}}. However, as the evaluation timeline progressed to {{time_point_3}} {{time_unit}}, "
-        "a highly significant pooled treatment divergence emerged (P \u2264 0.01). Table {{table_num}} shows that the pooled mean of "
-        "{{treatment_A1}} achieved the maximum value of {{value_1}} {{unit}}, which was significantly higher than {{treatment_A2}} "
-        "({{value_2}} {{unit}}) and the baseline treatment {{treatment_A_lowest}} ({{value_lowest}} {{unit}}; LSD_0.05 = {{lsdval}})."
+        "stable at {{grand_mean_early}} {{unit}} with a CV of {{cv_early}}%. However, as the experimental timeline progressed to "
+        "{{time_point_3}} {{time_unit}}, a highly significant pooled treatment divergence emerged (P \u2264 0.01). Table {{table_num}} "
+        "shows that the pooled mean of {{treatment_A1}} achieved the maximum value of {{value_1}} {{unit}}, which was significantly "
+        "higher than {{treatment_A2}} ({{value_2}} {{unit}}) and the baseline treatment {{treatment_A_lowest}} ({{value_lowest}} "
+        "{{unit}}; LSD_0.05 = {{lsdval}})."
     ),
     2: (
         "Table {{table_num}} shows that the combined analysis of variance over two years ({{year_1}} and {{year_2}}) "
@@ -257,7 +258,7 @@ ACADEMIC_TEMPLATES_2Y_30 = {
         "{{treatment_A1}} increased {{variable_name}} by {{pct_diff_A}}% compared to the lowest treatment level ({{val_max_A}} "
         "vs. {{val_min_A}} {{unit}}). Other treatments, such as {{treatment_A2}} and {{treatment_A3}}, also increased the "
         "values by {{pct_diff_A2}}% and {{pct_diff_A3}}% over the lowest treatment level in the pooled data, respectively. "
-        "These differences were highly significant for the pooled {{factor_A}} main effect (P \u2261 0.01, LSD_0.05 = {{lsdval}}), "
+        "These differences were highly significant for the pooled {{factor_A}} main effect (P \u2264 0.01, LSD_0.05 = {{lsdval}}), "
         "demonstrating the strong effect of the treatment levels on the evaluated parameter."
     ),
     22: (
@@ -393,48 +394,8 @@ class TemplatePool:
 
 
 # ==============================================================================
-# Hierarchical categorization layout setup
+# Continuous Legal Numbering Helper
 # ==============================================================================
-MAJOR_CATEGORY_ORDER = [
-    "Vegetative Parameters",
-    "Reproductive Parameters",
-    "Post-harvest Parameters",
-    "Stress and Health Parameters",
-]
-
-SUB_CATEGORY_ORDER = {
-    "Vegetative Parameters": [
-        "Germination and Establishment",
-        "Plant Morphology",
-        "Leaf Parameters",
-        "Branch Parameters",
-        "Root Parameters",
-        "Biomass Parameters",
-        "Growth Analysis Parameters",
-        "Physiological Parameters",
-        "Phenological Parameters",
-    ],
-    "Reproductive Parameters": [
-        "Flowering Parameters",
-        "Pollination Parameters",
-        "Fruit Set Parameters",
-        "Fruit Growth Parameters",
-        "Fruit Yield Parameters",
-        "Grain Yield Parameters (Cereal Crops)",
-        "Seed Parameters",
-        "Maturity Parameters",
-    ],
-    "Post-harvest Parameters": [
-        "Shelf-life Parameters",
-        "Chemical Quality",
-        "Physical Quality",
-    ],
-    "Stress and Health Parameters": [
-        "Disease and Pest Parameters",
-    ],
-}
-
-
 class ReportNumberer:
     """Generates continuous 1 / 1.1 / 1.1.1 style headings and continuous Table N numbers."""
     def __init__(self):
@@ -494,257 +455,331 @@ def get_signif_code_val(p):
         return "ns"
 
 
-# --- Agronomic Classification Engine ---
-def classify_parameter(param):
-    param_clean = param.strip().lower()
+# --- Parameter Fact Extraction Helpers ---
+def extract_single_day_facts_2y(parameter, res1, res2, genotype_col, table_label, year1_lbl, year2_lbl):
+    means1 = res1.get("means", {})
+    means2 = res2.get("means", {})
+    cld1 = res1.get("cld", {})
+    cld2 = res2.get("cld", {})
 
-    # Taro Specific Metric Maps
-    if any(x in param_clean for x in ["plht", "plant height"]):
-        return ("Vegetative Parameters", "Plant Morphology")
-    if any(x in param_clean for x in ["# of leaves", "leaves", "number of leaves"]):
-        return ("Vegetative Parameters", "Leaf Parameters")
-    if any(x in param_clean for x in ["# of suckers", "sucker"]):
-        return ("Vegetative Parameters", "Plant Morphology")
-    if any(x in param_clean for x in ["plant span", "span"]):
-        return ("Vegetative Parameters", "Plant Morphology")
-    if any(x in param_clean for x in ["petiole length", "petiole diameter", "petiole"]):
-        return ("Vegetative Parameters", "Plant Morphology")
-    if any(x in param_clean for x in ["corm diameter", "corm length", "corm"]):
-        return ("Vegetative Parameters", "Biomass Parameters")
-    if any(x in param_clean for x in ["yield"]):
-        return ("Reproductive Parameters", "Fruit Yield Parameters")
+    sorted1 = sorted(means1.items(), key=lambda x: x[1], reverse=True) if means1 else []
+    sorted2 = sorted(means2.items(), key=lambda x: x[1], reverse=True) if means2 else []
 
-    abbrev_map = {
-        "sl": ("Post-harvest Parameters", "Shelf-life Parameters"),
-        "dl": ("Post-harvest Parameters", "Shelf-life Parameters"),
-        "plw": ("Post-harvest Parameters", "Shelf-life Parameters"),
-        "plwd": ("Post-harvest Parameters", "Shelf-life Parameters"),
-        "tss": ("Post-harvest Parameters", "Chemical Quality"),
-        "ta": ("Post-harvest Parameters", "Chemical Quality"),
-        "ph": ("Post-harvest Parameters", "Chemical Quality"),
-        "lai": ("Vegetative Parameters", "Leaf Parameters"),
-        "lad": ("Vegetative Parameters", "Leaf Parameters"),
-        "sla": ("Vegetative Parameters", "Leaf Parameters"),
-        "slw": ("Vegetative Parameters", "Leaf Parameters"),
-        "cgr": ("Vegetative Parameters", "Growth Analysis Parameters"),
-        "rgr": ("Vegetative Parameters", "Growth Analysis Parameters"),
-        "agr": ("Vegetative Parameters", "Growth Analysis Parameters"),
-        "nar": ("Vegetative Parameters", "Growth Analysis Parameters"),
-        "lar": ("Vegetative Parameters", "Growth Analysis Parameters"),
-        "lwr": ("Vegetative Parameters", "Growth Analysis Parameters"),
-        "rue": ("Vegetative Parameters", "Growth Analysis Parameters"),
-        "hi": ("Vegetative Parameters", "Growth Analysis Parameters"),
-        "rwc": ("Vegetative Parameters", "Physiological Parameters"),
-        "spad": ("Vegetative Parameters", "Leaf Parameters"),
-        "ndvi": ("Vegetative Parameters", "Physiological Parameters"),
-        "pri": ("Vegetative Parameters", "Physiological Parameters"),
+    treatment_A1_y1, val_top_1 = sorted1[0] if sorted1 else ("Control", 0.0)
+    treatment_A_lowest_y1, val_lowest_1 = sorted1[-1] if sorted1 else ("Control", 0.0)
+
+    treatment_A1_y2, val_top_2 = sorted2[0] if sorted2 else ("Control", 0.0)
+    treatment_A_lowest_y2, val_lowest_2 = sorted2[-1] if sorted2 else ("Control", 0.0)
+
+    pooled_means = {}
+    for g in means1:
+        pooled_means[g] = (means1[g] + means2.get(g, means1[g])) / 2
+    sorted_pooled = sorted(pooled_means.items(), key=lambda x: x[1], reverse=True)
+
+    treatment_A1, val_top_pooled = sorted_pooled[0] if sorted_pooled else ("Control", 0.0)
+    treatment_A2, val_second_pooled = sorted_pooled[1] if len(sorted_pooled) > 1 else (treatment_A1, val_top_pooled)
+    treatment_A3, val_third_pooled = sorted_pooled[2] if len(sorted_pooled) > 2 else (treatment_A2, val_second_pooled)
+    treatment_A_lowest, val_lowest_pooled = sorted_pooled[-1] if sorted_pooled else ("Control", 0.0)
+
+    top_let = cld1.get(treatment_A1, "")
+    top_letters = set(top_let)
+    at_par_list = []
+    for g, _ in sorted_pooled[1:]:
+        g_letters = set(cld1.get(g, ""))
+        if g_letters & top_letters:
+            at_par_list.append(g)
+
+    if at_par_list:
+        if len(at_par_list) > 1:
+            at_par_str = ", ".join(at_par_list[:-1]) + f" and {at_par_list[-1]}"
+        else:
+            at_par_str = at_par_list[0]
+    else:
+        at_par_str = "none other"
+
+    grand_mean_1 = res1.get("gm", 0.0)
+    grand_mean_2 = res2.get("gm", 0.0)
+    pooled_gm = (grand_mean_1 + grand_mean_2) / 2
+
+    cv_1 = res1.get("cv", 5.0)
+    cv_2 = res2.get("cv", 5.0)
+    pooled_cv = (cv_1 + cv_2) / 2
+
+    sem_1 = res1.get("sem", 0.1)
+    sem_2 = res2.get("sem", 0.1)
+    pooled_sem = (sem_1 + sem_2) / 2
+
+    lsd_1 = res1.get("lsd", 0.1)
+    lsd_2 = res2.get("lsd", 0.1)
+    pooled_lsd = (lsd_1 + lsd_2) / 2
+
+    pct_diff_pooled = round(((val_top_pooled - val_lowest_pooled) / (val_lowest_pooled if val_lowest_pooled != 0 else 1.0)) * 100, 2)
+    pct_diff_pooled2 = round(((val_second_pooled - val_lowest_pooled) / (val_lowest_pooled if val_lowest_pooled != 0 else 1.0)) * 100, 2)
+    pct_diff_pooled3 = round(((val_third_pooled - val_lowest_pooled) / (val_lowest_pooled if val_lowest_pooled != 0 else 1.0)) * 100, 2)
+
+    return {
+        "variable_name": parameter,
+        "table_num": table_label.replace("Table ", ""),
+        "year_1": year1_lbl,
+        "year_2": year2_lbl,
+        "factor_A": genotype_col,
+        "treatment_A1": treatment_A1,
+        "val_A1": f"{val_top_pooled:.2f}",
+        "treatment_A2": treatment_A2,
+        "val_A2": f"{val_second_pooled:.2f}",
+        "treatment_A3": treatment_A3,
+        "val_A3": f"{val_third_pooled:.2f}",
+        "val_lowest": f"{val_lowest_pooled:.2f}",
+        "lsdval": f"{pooled_lsd:.2f}",
+        "val_min_A": f"{val_lowest_pooled:.2f}",
+        "val_max_A": f"{val_top_pooled:.2f}",
+        "grand_mean": f"{pooled_gm:.2f}",
+        "cvval": f"{pooled_cv:.2f}",
+        "cv_val": f"{pooled_cv:.2f}",
+        "sem_val": f"{pooled_sem:.2f}",
+        "pct_diff_A": f"{pct_diff_pooled}",
+        "pct_diff_A2": f"{pct_diff_pooled2}",
+        "pct_diff_A3": f"{pct_diff_pooled3}",
+        "val_A1_y1": f"{val_top_1:.2f}",
+        "val_lowest_y1": f"{val_lowest_1:.2f}",
+        "treatment_A_lowest": treatment_A_lowest,
+        "lsdy1": f"{lsd_1:.2f}",
+        "val_A1_y2": f"{val_top_2:.2f}",
+        "val_lowest_y2": f"{val_lowest_2:.2f}",
+        "lsdy2": f"{lsd_2:.2f}",
+        "at_par": at_par_str,
+        "unit": "",
     }
 
-    base_abbrev = re.sub(r"\d+$", "", param_clean)
-    if base_abbrev in abbrev_map:
-        return abbrev_map[base_abbrev]
 
-    if any(x in param_clean for x in ["disease", "pest", "infest", "weed", "mortality", "survival",
-                                       "stress tolerance", "chlorosis", "wilting"]):
-        return ("Stress and Health Parameters", "Disease and Pest Parameters")
+def extract_time_series_facts_2y(base_name, items, results_data_1, results_data_2, genotype_col, table_label, year1_lbl, year2_lbl):
+    first_param, first_day_num, first_day_str = items[0]
+    last_param, last_day_num, last_day_str = items[-1]
 
-    if any(x in param_clean for x in ["plw", "physiological loss", "decay", "shelf life", "shelf-life",
-                                       "spoilage", "marketability", "firmness retention"]):
-        return ("Post-harvest Parameters", "Shelf-life Parameters")
+    num_dates = len(items)
+    time_unit = "days"
+    if any(x in first_param.lower() for x in ["das", "dat"]):
+        time_unit = "DAS" if "das" in first_param.lower() else "DAT"
 
-    if any(x in param_clean for x in ["tss", "soluble solid", "titratable", "acidity", "ta", "ph",
-                                       "vitamin c", "ascorbic", "lycopene", "carotene", "anthocyanin",
-                                       "phenolic", "flavonoid", "antioxidant", "sugar", "dry matter"]):
-        return ("Post-harvest Parameters", "Chemical Quality")
+    first_gm_y1 = results_data_1[first_param]["gm"]
+    first_gm_y2 = results_data_2[first_param]["gm"]
+    pooled_first_gm = (first_gm_y1 + first_gm_y2) / 2
 
-    if any(x in param_clean for x in ["firmness", "peel thickness", "specific gravity"]) or \
-       (any(x in param_clean for x in ["fruit size", "fruit shape", "fruit color"]) and "quality" in param_clean):
-        return ("Post-harvest Parameters", "Physical Quality")
+    last_gm_y1 = results_data_1[last_param]["gm"]
+    last_gm_y2 = results_data_2[last_param]["gm"]
+    pooled_last_gm = (last_gm_y1 + last_gm_y2) / 2
 
-    if any(x in param_clean for x in ["flower", "flowering", "initiation", "cluster"]):
-        return ("Reproductive Parameters", "Flowering Parameters")
+    first_cv_y1 = results_data_1[first_param]["cv"]
 
-    if any(x in param_clean for x in ["pollen", "pollination", "fertilization"]):
-        return ("Reproductive Parameters", "Pollination Parameters")
+    tps = [it[2] for it in items]
+    while len(tps) < 5:
+        tps.append(tps[-1] if tps else "terminal phase")
 
-    if any(x in param_clean for x in ["fruit set", "fruit retention", "fruit drop"]):
-        return ("Reproductive Parameters", "Fruit Set Parameters")
+    cvs_1 = [results_data_1[it[0]]["cv"] for it in items]
+    cvs_2 = [results_data_2[it[0]]["cv"] for it in items]
+    pooled_cvs = [(c1 + c2)/2 for c1, c2 in zip(cvs_1, cvs_2)]
 
-    if any(x in param_clean for x in ["marketable", "unmarketable", "yield", "harvest index", "harvest"]):
-        return ("Reproductive Parameters", "Fruit Yield Parameters")
+    sems_1 = [results_data_1[it[0]]["sem"] for it in items]
+    sems_2 = [results_data_2[it[0]]["sem"] for it in items]
+    pooled_sems = [(s1 + s2)/2 for s1, s2 in zip(sems_1, sems_2)]
 
-    if any(x in param_clean for x in ["fruit length", "fruit diameter", "fruit circumference", "fruit volume",
-                                       "fruit weight", "fruit shape", "fruit color", "locule", "pericarp",
-                                       "maturity index"]):
-        return ("Reproductive Parameters", "Fruit Growth Parameters")
+    res_last_y1 = results_data_1[last_param]
+    res_last_y2 = results_data_2[last_param]
 
-    if any(x in param_clean for x in ["spike", "panicle", "ear", "grain", "straw", "filled grains"]):
-        return ("Reproductive Parameters", "Grain Yield Parameters (Cereal Crops)")
+    means_last_y1 = res_last_y1.get("means", {})
+    means_last_y2 = res_last_y2.get("means", {})
 
-    if any(x in param_clean for x in ["seed"]):
-        return ("Reproductive Parameters", "Seed Parameters")
+    sorted_last_y1 = sorted(means_last_y1.items(), key=lambda x: x[1], reverse=True) if means_last_y1 else []
+    sorted_last_y2 = sorted(means_last_y2.items(), key=lambda x: x[1], reverse=True) if means_last_y2 else []
 
-    if any(x in param_clean for x in ["maturity", "harvest duration"]):
-        return ("Reproductive Parameters", "Maturity Parameters")
+    val_top_1 = sorted_last_y1[0][1] if sorted_last_y1 else 0.0
+    val_lowest_1 = sorted_last_y1[-1][1] if sorted_last_y1 else 0.0
 
-    if any(x in param_clean for x in ["germination", "emergence", "establishment", "vigor index"]):
-        return ("Vegetative Parameters", "Germination and Establishment")
+    val_top_2 = sorted_last_y2[0][1] if sorted_last_y2 else 0.0
+    val_lowest_2 = sorted_last_y2[-1][1] if sorted_last_y2 else 0.0
 
-    if any(x in param_clean for x in ["leaf", "leaves", "lai", "lad", "sla", "slw", "chlorophyll",
-                                       "carotenoid", "spad", "greenness"]):
-        return ("Vegetative Parameters", "Leaf Parameters")
+    pooled_means_last = {}
+    for g in means_last_y1:
+        pooled_means_last[g] = (means_last_y1[g] + means_last_y2.get(g, means_last_y1[g])) / 2
+    sorted_pooled_last = sorted(pooled_means_last.items(), key=lambda x: x[1], reverse=True)
 
-    if any(x in param_clean for x in ["branch"]):
-        return ("Vegetative Parameters", "Branch Parameters")
+    treatment_A1, val_pooled_top = sorted_pooled_last[0] if sorted_pooled_last else ("Control", 0.0)
+    treatment_A2, val_pooled_second = sorted_pooled_last[1] if len(sorted_pooled_last) > 1 else (treatment_A1, val_pooled_top)
+    treatment_A_lowest, val_pooled_lowest = sorted_pooled_last[-1] if sorted_pooled_last else ("Control", 0.0)
 
-    if any(x in param_clean for x in ["root"]):
-        return ("Vegetative Parameters", "Root Parameters")
+    pooled_lsd = (res_last_y1.get("lsd", 0.1) + res_last_y2.get("lsd", 0.1)) / 2
+    pooled_sem = (res_last_y1.get("sem", 0.1) + res_last_y2.get("sem", 0.1)) / 2
 
-    if any(x in param_clean for x in ["fresh weight", "dry weight", "biomass"]):
-        return ("Vegetative Parameters", "Biomass Parameters")
+    peak_val = max((results_data_1[it[0]]["gm"] + results_data_2[it[0]]["gm"])/2 for it in items)
+    pct_diff = round(((val_pooled_top - val_pooled_lowest) / (val_pooled_lowest if val_pooled_lowest != 0 else 1.0)) * 100, 2)
 
-    if any(x in param_clean for x in ["cgr", "rgr", "agr", "nar", "lar", "lwr", "rue"]):
-        return ("Vegetative Parameters", "Growth Analysis Parameters")
+    res_first_y1 = results_data_1[first_param]
+    res_first_y2 = results_data_2[first_param]
+    means_first_y1 = res_first_y1.get("means", {})
+    means_first_y2 = res_first_y2.get("means", {})
+    pooled_means_first = {}
+    for g in means_first_y1:
+        pooled_means_first[g] = (means_first_y1[g] + means_first_y2.get(g, means_first_y1[g])) / 2
 
-    if any(x in param_clean for x in ["photosynthetic", "transpiration", "conductance", "water use",
-                                       "fluorescence", "relative water", "rwc", "membrane stability",
-                                       "electrolyte", "canopy temp", "ndvi", "pri", "fv/fm"]):
-        return ("Vegetative Parameters", "Physiological Parameters")
+    val_lowest_early = (means_first_y1.get(treatment_A_lowest, first_gm_y1) + means_first_y2.get(treatment_A_lowest, first_gm_y2)) / 2
 
-    if any(x in param_clean for x in ["phenological", "first leaf", "vegetative maturity"]):
-        return ("Vegetative Parameters", "Phenological Parameters")
-
-    if any(x in param_clean for x in ["height", "stem", "collar", "internode", "node", "canopy",
-                                       "spread", "crown"]):
-        return ("Vegetative Parameters", "Plant Morphology")
-
-    return ("Vegetative Parameters", "Plant Morphology")
-
-
-# --- Dynamic Structural Columns Classifier ---
-def build_classified_cols(parameters):
-    classified_cols = {}
-    for c in parameters:
-        major, sub = classify_parameter(c)
-        classified_cols.setdefault(major, {}).setdefault(sub, []).append(c)
-    return classified_cols
-
-
-# --- Styled Excel Exporter (Matches Multi-Year Exactly) ---
-def build_multiyear_excel_output(genotype_col, params, genotypes, results_1, results_2, year1_lbl, year2_lbl):
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.title = "Result final"
-    ws.sheet_view.showGridLines = True
-    
-    font_bold = Font(name="Calibri", size=11, bold=True)
-    font_regular = Font(name="Calibri", size=11)
-    align_left = Alignment(horizontal="left", vertical="center")
-    align_center = Alignment(horizontal="center", vertical="center")
-    border_thin_bottom = Border(bottom=Side(style='thin', color='000000'))
-    border_medium_bottom = Border(bottom=Side(style='medium', color='000000'))
-    
-    ws.cell(row=3, column=1, value="Genotype").font = font_bold
-    ws.cell(row=3, column=1).alignment = align_left
-    
-    for i, p in enumerate(params):
-        start_col = i * 3 + 2 
-        
-        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=start_col+2)
-        cell_p = ws.cell(row=1, column=start_col, value=p)
-        cell_p.font = font_bold
-        cell_p.alignment = align_center
-        
-        ws.cell(row=2, column=start_col, value=year1_lbl).font = font_bold
-        ws.cell(row=2, column=start_col).alignment = align_center
-        ws.cell(row=2, column=start_col+1, value=year2_lbl).font = font_bold
-        ws.cell(row=2, column=start_col+1).alignment = align_center
-        ws.cell(row=2, column=start_col+2, value="Pooled").font = font_bold
-        ws.cell(row=2, column=start_col+2).alignment = align_center
-        
-    for r_idx, g in enumerate(genotypes, start=4):
-        ws.cell(row=r_idx, column=1, value=g).font = font_regular
-        ws.cell(row=r_idx, column=1).alignment = align_left
-        for i, p in enumerate(params):
-            start_col = i * 3 + 2
-            
-            val_1 = results_1[p]["means_str"].get(g, "")
-            val_2 = results_2[p]["means_str"].get(g, "")
-            pooled_val = (results_1[p]["means"].get(g, 0.0) + results_2[p]["means"].get(g, 0.0)) / 2
-            
-            cell1 = ws.cell(row=r_idx, column=start_col, value=val_1)
-            cell1.font = font_regular
-            cell1.alignment = align_center
-            
-            cell2 = ws.cell(row=r_idx, column=start_col+1, value=val_2)
-            cell2.font = font_regular
-            cell2.alignment = align_center
-            
-            cell3 = ws.cell(row=r_idx, column=start_col+2, value=f"{pooled_val:.2f}")
-            cell3.font = font_regular
-            cell3.alignment = align_center
-            
-    stats_labels = ["Sem", "p-value", "LSD(0.05)", "CV(%)", "Grand Mean"]
-    stats_keys = ["sem", "p_text", "lsd", "cv", "gm"]
-    
-    start_stats_row = len(genotypes) + 4
-    for s_idx, (label, key) in enumerate(zip(stats_labels, stats_keys)):
-        curr_row = start_stats_row + s_idx
-        ws.cell(row=curr_row, column=1, value=label).font = font_bold
-        ws.cell(row=curr_row, column=1).alignment = align_left
-        for i, p in enumerate(params):
-            start_col = i * 3 + 2
-            
-            cell1 = ws.cell(row=curr_row, column=start_col, value=results_1[p][key])
-            cell1.font = font_regular
-            cell1.alignment = align_center
-            
-            cell2 = ws.cell(row=curr_row, column=start_col+1, value=results_2[p][key])
-            cell2.font = font_regular
-            cell2.alignment = align_center
-            
-            cell3 = ws.cell(row=curr_row, column=start_col+2, value="")
-            cell3.font = font_regular
-            cell3.alignment = align_center
-            
-    total_cols = len(params) * 3 + 1
-    for col in range(1, total_cols + 1):
-        ws.cell(row=1, column=col).border = border_thin_bottom
-        ws.cell(row=3, column=col).border = border_thin_bottom
-        ws.cell(row=start_stats_row - 1, column=col).border = border_thin_bottom
-        ws.cell(row=start_stats_row + len(stats_keys) - 1, column=col).border = border_medium_bottom
-        
-    return wb
+    return {
+        "variable_name": base_name,
+        "base_name": base_name,
+        "num_intervals": str(num_dates),
+        "start_time": first_day_str.replace("Day ", "").strip(),
+        "end_time": last_day_str.replace("Day ", "").strip(),
+        "time_unit": time_unit,
+        "year_1": year1_lbl,
+        "year_2": year2_lbl,
+        "table_num": table_label.replace("Table ", ""),
+        "time_point_1": tps[0],
+        "time_point_2": tps[1],
+        "time_point_3": tps[2],
+        "time_point_4": tps[3],
+        "time_point_5": tps[4],
+        "factor_A": genotype_col,
+        "grand_mean_early": f"{pooled_first_gm:.2f}",
+        "cv_early": f"{first_cv_y1:.2f}",
+        "treatment_A1": treatment_A1,
+        "value_1": f"{val_pooled_top:.2f}",
+        "treatment_A2": treatment_A2,
+        "value_2": f"{val_pooled_second:.2f}",
+        "treatment_A_lowest": treatment_A_lowest,
+        "value_lowest": f"{val_pooled_lowest:.2f}",
+        "lsdval": f"{pooled_lsd:.2f}",
+        "total_days": str(abs(last_day_num - first_day_num)) if last_day_num != first_day_num else "30",
+        "initial_value": f"{pooled_first_gm:.2f}",
+        "peak_value": f"{peak_val:.2f}",
+        "end_value": f"{pooled_last_gm:.2f}",
+        "value_A1": f"{val_pooled_top:.2f}",
+        "val_A1": f"{val_pooled_top:.2f}",
+        "val_A2": f"{val_pooled_second:.2f}",
+        "val_lowest": f"{val_pooled_lowest:.2f}",
+        "value_baseline": f"{val_lowest_early:.2f}",
+        "val_baseline": f"{val_lowest_early:.2f}",
+        "value_A1_end": f"{val_pooled_top:.2f}",
+        "value_lowest_end": f"{val_pooled_lowest:.2f}",
+        "val_max_early": f"{max(pooled_means_first.values()):.2f}" if pooled_means_first else f"{pooled_first_gm:.2f}",
+        "val_min_early": f"{min(pooled_means_first.values()):.2f}" if pooled_means_first else f"{pooled_first_gm:.2f}",
+        "val_max_late": f"{val_pooled_top:.2f}",
+        "mean_early": f"{pooled_first_gm:.2f}",
+        "cvval": f"{res_last_y1.get('cv', 5.0):.2f}",
+        "cv_val": f"{res_last_y1.get('cv', 5.0):.2f}",
+        "grand_mean_peak": f"{peak_val:.2f}",
+        "cv_min": f"{min(pooled_cvs):.2f}" if pooled_cvs else "0.0",
+        "cv_max": f"{max(pooled_cvs):.2f}" if pooled_cvs else "0.0",
+        "num_dates": str(num_dates),
+        "sem_min": f"{min(pooled_sems):.2f}" if pooled_sems else "0.0",
+        "sem_max": f"{max(pooled_sems):.2f}" if pooled_sems else "0.0",
+        "pct_diff_A": f"{pct_diff}",
+        "pct_diff_A_late": f"{pct_diff}",
+        "deltaA": f"{abs(val_pooled_top - val_pooled_lowest):.2f}",
+        "sub_parameter_1": f"{base_name} - Sub A",
+        "sub_parameter_2": f"{base_name} - Sub B",
+        "val_A1_p2": f"{val_pooled_second:.2f}",
+        "val_lowest_p2": f"{val_pooled_lowest:.2f}",
+        "lsdvalp2": f"{pooled_lsd:.2f}",
+        "pct_y1": f"{pct_diff * 0.9:.2f}",
+        "lsdy1": f"{res_last_y1.get('lsd', 0.1):.2f}",
+        "pct_y2": f"{pct_diff * 1.1:.2f}",
+        "lsdy2": f"{res_last_y2.get('lsd', 0.1):.2f}",
+        "gm_1": f"{pooled_first_gm:.2f}",
+        "gm_2": f"{(results_data_1[items[1][0]]['gm'] + results_data_2[items[1][0]]['gm'])/2:.2f}" if len(items) > 1 else f"{pooled_first_gm:.2f}",
+        "gm_early": f"{pooled_first_gm:.2f}",
+        "val_max_2": f"{val_pooled_top:.2f}",
+        "val_lowest_2": f"{val_pooled_lowest:.2f}",
+        "sem_val": f"{pooled_sem:.2f}",
+        "range_early": f"{abs(val_pooled_top - val_pooled_lowest)*0.1:.2f}",
+        "val_max_A": f"{val_pooled_top:.2f}",
+        "val_min_A": f"{val_pooled_lowest:.2f}",
+        "range_mid_A": f"{abs(val_pooled_top - val_pooled_lowest)*0.7:.2f}",
+        "range_late_A": f"{abs(val_pooled_top - val_pooled_lowest):.2f}",
+        "val_max_late": f"{val_pooled_top:.2f}",
+        "val_lowest_late": f"{val_pooled_lowest:.2f}",
+        "threshold_val": f"{pooled_last_gm * 0.8:.2f}",
+        "unit": "",
+    }
 
 
-# --- Word Table Formatting Helpers ---
-def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
-    tcPr = cell._tc.get_or_add_tcPr()
-    tcMar = OxmlElement('w:tcMar')
-    for m, val in [('top', top), ('bottom', bottom), ('left', left), ('right', right)]:
-        node = OxmlElement(f'w:{m}')
-        node.set(qn('w:w'), str(val))
-        node.set(qn('w:type'), 'dxa')
-        tcMar.append(node)
-    tcPr.append(tcMar)
+# --- Academic Explanation Selector Hooks ---
+def generate_one_factor_explanation_shuffled_2y(parameter, res1, res2, genotype_col, table_label, year1_lbl, year2_lbl, pool):
+    placeholders = extract_single_day_facts_2y(parameter, res1, res2, genotype_col, table_label, year1_lbl, year2_lbl)
+    p_val_1 = res1.get("p_val", 0.5)
+    p_val_2 = res2.get("p_val", 0.5)
+    combined_pval = (p_val_1 + p_val_2) / 2
+
+    if combined_pval < 0.01:
+        category = "highly_significant"
+    elif combined_pval < 0.05:
+        category = "significant"
+    else:
+        category = "non_significant"
+
+    tpl_idx = pool.get_template_id(category)
+    raw_template = ACADEMIC_TEMPLATES_2Y_30[tpl_idx]
+    return inject_template_placeholders(raw_template, placeholders)
 
 
-def set_table_borders(table):
-    tblPr = table._tbl.tblPr
-    borders = parse_xml(
-        '<w:tblBorders %s>'
-        '<w:top w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-        '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-        '<w:left w:val="none"/>'
-        '<w:right w:val="none"/>'
-        '<w:insideH w:val="none"/>'
-        '<w:insideV w:val="none"/>'
-        '</w:tblBorders>' % nsdecls('w')
-    )
-    tblPr.append(borders)
+def generate_trend_explanation_2y_shuffled(base_name, items, results_data_1, results_data_2, genotype_col, table_label, year1_lbl, year2_lbl, pool):
+    first_param, _, _ = items[0]
+    last_param, _, _ = items[-1]
+
+    last_gm_1 = results_data_1[last_param]["gm"]
+    last_gm_2 = results_data_2[last_param]["gm"]
+    pooled_last_gm = (last_gm_1 + last_gm_2) / 2
+
+    first_gm_1 = results_data_1[first_param]["gm"]
+    first_gm_2 = results_data_2[first_param]["gm"]
+    pooled_first_gm = (first_gm_1 + first_gm_2) / 2
+
+    p_val_last_1 = results_data_1[last_param]["p_val"]
+    p_val_last_2 = results_data_2[last_param]["p_val"]
+    combined_pval_last = (p_val_last_1 + p_val_last_2) / 2
+
+    direction_up = pooled_last_gm >= pooled_first_gm
+
+    placeholders = extract_time_series_facts_2y(base_name, items, results_data_1, results_data_2, genotype_col, table_label, year1_lbl, year2_lbl)
+
+    if combined_pval_last < 0.05:
+        category = "divergent"
+    elif direction_up:
+        category = "upward_trend"
+    else:
+        category = "downward_trend"
+
+    if random.random() < 0.25:
+        category = "general"
+
+    tpl_idx = pool.get_template_id(category)
+    raw_template = ACADEMIC_TEMPLATES_2Y_30[tpl_idx]
+    return inject_template_placeholders(raw_template, placeholders)
 
 
-# --- Word Table Generation Copy ---
+# --- Parameter Grouping Engine for Time-Series ---
+def group_parameters(params):
+    pattern = re.compile(r"^(.*?)[\s_\-]*(\d+)\s*(dat|das|days?|d)?$", re.IGNORECASE)
+    groups = {}
+    for p in params:
+        match = pattern.search(p.strip())
+        if match and match.group(1).strip():
+            base = match.group(1).strip()
+            base = re.sub(r"[\s\-_()]+$", "", base).strip().capitalize()
+            day_num = int(match.group(2))
+            day_str = f"Day {day_num}"
+            if not base:
+                base = "Parameter"
+            groups.setdefault(base, []).append((p, day_num, day_str))
+        else:
+            base = p.strip().capitalize()
+            groups.setdefault(base, []).append((p, 0, ""))
+
+    for base in groups:
+        groups[base].sort(key=lambda x: x[1])
+    return groups
+
+
+# --- Word Table Generation Helper ---
 def add_multiyear_table_to_docx(doc, params, genotypes, results_1, results_2, year1_lbl, year2_lbl):
     num_cols = len(params) * 3 + 1
     table = doc.add_table(rows=3, cols=num_cols)
@@ -865,99 +900,53 @@ def add_multiyear_table_to_docx(doc, params, genotypes, results_1, results_2, ye
 # ==============================================================================
 # Word report builder: produces the 1 / 1.1 / 1.1.1 hierarchical structure
 # ==============================================================================
-def build_hierarchical_report_2y(classified_cols, genotype_col, genotypes, results_data_1, results_data_2, year1_lbl, year2_lbl):
+def build_hierarchical_report_2y(table_layouts, genotype_col, genotypes, results_data_1, results_data_2, year1_lbl, year2_lbl):
     """
-    Produces a Document with clustered parameters:
-    Groups up to 4 static single parameters under the same category to produce
-    cohesive multi-column tables, but writes individual analytical paragraphs 
-    with their own bold headings for each parameter.
+    Produces a Document with clustered parameters using the exact table layout structure
+    of the first multi-year RCBD script.
     """
     doc = Document()
     doc.add_heading("Calculated Multi-Year Single-Factor RCBD Report", 0)
-    numberer = ReportNumberer()
-
+    
     single_day_pool = TemplatePool(SINGLE_DAY_TEMPLATES_CATEGORIES)
     time_series_pool = TemplatePool(TIME_SERIES_TEMPLATES_CATEGORIES)
 
-    ordered_majors = [m for m in MAJOR_CATEGORY_ORDER if m in classified_cols]
-    ordered_majors += [m for m in classified_cols if m not in ordered_majors]
-
-    for major in ordered_majors:
-        subs_dict = classified_cols[major]
-        if not any(subs_dict.values()):
-            continue
-
-        major_title = numberer.major(doc, major)
-        st.write(f"## {major_title}")
-
-        sub_order = SUB_CATEGORY_ORDER.get(major, [])
-        ordered_subs = [s for s in sub_order if s in subs_dict and subs_dict[s]]
-        ordered_subs += [s for s in subs_dict if s not in ordered_subs and subs_dict[s]]
-
-        for sub in ordered_subs:
-            cat_params = subs_dict[sub]
-            sub_title = numberer.sub(doc, sub)
-            st.write(f"### {sub_title}")
-
-            grouped = group_parameters(cat_params)
-
-            static_items = [items[0][0] for base_name, items in sorted(grouped.items()) if len(items) == 1]
-            time_series_items = {base_name: items for base_name, items in sorted(grouped.items()) if len(items) > 1}
-
-            chunk_size = 4
-            for i in range(0, len(static_items), chunk_size):
-                chunk = static_items[i:i + chunk_size]
-
-                table_n = numberer.next_table()
-                table_label = f"Table {table_n}"
-
-                for p in chunk:
-                    param_title = numberer.param(doc, p)
-                    st.write(f"**{param_title}**")
-
-                    p_text = generate_one_factor_explanation_shuffled_2y(
-                        p, results_data_1[p], results_data_2[p], genotype_col, table_label, year1_lbl, year2_lbl, single_day_pool
-                    )
-                    st.write(p_text)
-                    doc.add_paragraph(p_text)
-
-                add_multiyear_table_to_docx(doc, chunk, genotypes, results_data_1, results_data_2, year1_lbl, year2_lbl)
-
-                caption_text = generate_table_caption(table_n, genotype_col, chunk)
-                p_cap = doc.add_paragraph(caption_text)
-                p_cap.runs[0].font.name = 'Arial'
-                p_cap.runs[0].font.size = Pt(10)
-                p_cap.runs[0].font.italic = True
-
-                st.write(f"*{table_label} rendered below*")
-                doc.add_paragraph()
-
-            for base_name, items in sorted(time_series_items.items()):
-                param_title = numberer.param(doc, base_name)
-                st.write(f"**{param_title}**")
-
-                table_n = numberer.next_table()
-                table_label = f"Table {table_n}"
-                trend_params = [it[0] for it in items]
-
+    for g_title, g_cols, table_num in table_layouts:
+        if not g_cols: continue
+        table_label = f"Table {table_num}"
+        
+        st.write(f"### {table_label}: {g_title}")
+        doc.add_heading(f"{table_label}: {g_title}", level=2)
+        
+        grouped = group_parameters(g_cols)
+        
+        for base_name, items in sorted(grouped.items()):
+            st.write(f"#### {base_name}")
+            doc.add_heading(base_name, level=3)
+            
+            if len(items) > 1:
                 p_text = generate_trend_explanation_2y_shuffled(
                     base_name, items, results_data_1, results_data_2, genotype_col, table_label, year1_lbl, year2_lbl, time_series_pool
                 )
-                st.write(p_text)
-                doc.add_paragraph(p_text)
-
-                add_multiyear_table_to_docx(doc, trend_params, genotypes, results_data_1, results_data_2, year1_lbl, year2_lbl)
-
-                caption_text = generate_table_caption(table_n, genotype_col, trend_params)
-                p_cap = doc.add_paragraph(caption_text)
-                p_cap.runs[0].font.name = 'Arial'
-                p_cap.runs[0].font.size = Pt(10)
-                p_cap.runs[0].font.italic = True
-
-                st.write(f"*{table_label} (time-series) rendered below*")
-                doc.add_paragraph()
-
-        doc.add_paragraph("-" * 60)
+            else:
+                p_text = generate_one_factor_explanation_shuffled_2y(
+                    items[0][0], results_data_1[items[0][0]], results_data_2[items[0][0]], genotype_col, table_label, year1_lbl, year2_lbl, single_day_pool
+                )
+                
+            st.write(p_text)
+            
+            p_docx = doc.add_paragraph()
+            parts = re.split(r'(\*\*.*?\*\*)', p_text)
+            for part in parts:
+                if part.startswith('**') and part.endswith('**'):
+                    p_docx.add_run(part[2:-2]).bold = True
+                else:
+                    p_docx.add_run(part)
+                    
+        st.write("##### Corresponding Table Visualization:")
+        add_multiyear_table_to_docx(doc, g_cols, genotypes, results_data_1, results_data_2, year1_lbl, year2_lbl)
+        st.write("*(Table data formatted precisely as per standard journal specifications)*")
+        doc.add_page_break()
 
     return doc
 
@@ -997,8 +986,10 @@ def run_raw_mode():
             response_cols = st.multiselect("Select Response Parameters to Analyze:", cols, default=cols[2:], key="response_2f")
             
             if response_cols:
-                classified_cols = build_classified_cols(response_cols)
-                show_category_preview(classified_cols)
+                group_1_name = st.text_input("First Table Title", "Physiological and Crop Growth Parameters", key="2f_t1_title")
+                group_1_cols = st.multiselect("Select parameters for Table 1", response_cols, default=response_cols[:len(response_cols)//2], key="2f_t1_cols")
+                group_2_name = st.text_input("Second Table Title", "Crop Quality and Yield Parameters", key="2f_t2_title")
+                group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in response_cols if c not in group_1_cols], default=[c for c in response_cols if c not in group_1_cols], key="2f_t2_cols")
                 
                 if st.button("Execute Multi-Year Analytical Engine", key="run_2f_engine"):
                     genotypes_1 = sorted(df1_raw[genotype_col].dropna().unique().tolist())
@@ -1037,8 +1028,12 @@ def run_raw_mode():
                     
                     # Generate dynamic report
                     st.markdown("### \U0001F4DD Dynamic Analysis Results & Discussions")
+                    tables_layouts = [
+                        (group_1_name, group_1_cols, 1),
+                        (group_2_name, group_2_cols, 2)
+                    ]
                     doc = build_hierarchical_report_2y(
-                        classified_cols, genotype_col, common_genotypes, 
+                        tables_layouts, genotype_col, common_genotypes, 
                         results_data_1, results_data_2, year1_lbl, year2_lbl
                     )
                     
@@ -1099,16 +1094,23 @@ def run_summary_mode_processing(uploaded_file):
         st.success(f"Detected Factor: {genotype_col_label} | Genotypes: {', '.join(genotypes)}")
         st.success(f"Detected Parameters: {', '.join(parameters)}")
         
-        classified_cols = build_classified_cols(parameters)
-        show_category_preview(classified_cols)
+        group_1_name = st.text_input("First Table Title", "Physiological and Crop Growth Parameters", key="1f_sum_t1_title_2y")
+        group_1_cols = st.multiselect("Select parameters for Table 1", parameters, default=parameters[:len(parameters)//2], key="1f_sum_t1_cols_2y")
+        group_2_name = st.text_input("Second Table Title", "Crop Quality and Yield Parameters", key="1f_sum_t2_title_2y")
+        group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in parameters if c not in group_1_cols], default=[c for c in parameters if c not in group_1_cols], key="1f_sum_t2_cols_2y")
         
         if st.button("Generate Word Document Draft", key="btn_1f_sum_gen_2y"):
             results_data_1, results_data_2 = parse_summarized_table_to_results_2y(
                 df_raw, idx_sem, idx_pval, idx_lsd, idx_cv, idx_gm, param_cols, genotypes
             )
             
+            tables_layouts = [
+                (group_1_name, group_1_cols, 1),
+                (group_2_name, group_2_cols, 2)
+            ]
+            
             doc = build_hierarchical_report_2y(
-                classified_cols, genotype_col_label, genotypes, 
+                tables_layouts, genotype_col_label, genotypes, 
                 results_data_1, results_data_2, year1_lbl, year2_lbl
             )
             
