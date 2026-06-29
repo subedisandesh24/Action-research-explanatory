@@ -205,6 +205,16 @@ def generate_table_caption(table_num, factor_a, factor_b, variables_list):
     ]
     return captions[table_num % len(captions)]
 
+# --- Fluent Explanation Splitter ---
+def split_text_by_sentence(text):
+    sentences = re.split(r'(?<=\.)\s+', text)
+    if len(sentences) > 1:
+        mid = len(sentences) // 2
+        part1 = " ".join(sentences[:mid])
+        part2 = " ".join(sentences[mid:])
+        return part1, part2
+    return text, ""
+
 # --- Parameter Grouping Engine for Time-Series ---
 def group_parameters(params):
     pattern = re.compile(r"(.*?)(\d+)\s*(dat|das|days|day|d)?$", re.IGNORECASE)
@@ -644,11 +654,11 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
         for idx, width in enumerate([Inches(1.5)] + [Inches(1.1)] * len(g_cols)):
             row.cells[idx].width = width
 
-# --- Web Interface Routing controller ---
+# --- Web Interface Routing and Multi-Year controller ---
 def show_module():
     st.markdown("### Two-Factor RCBD Analyzer")
     
-    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_two")
+    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_mult")
     uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f_two")
 
     if uploaded_file is not None:
@@ -678,9 +688,11 @@ def run_raw_mode(uploaded_file):
             treatment_label_b = factor_b_col.lower()
             
             # Divide parameters automatically to prevent mixing vegetative and reproductive/quality properties
-            classified_cols = {"Vegetative Properties": [], "Reproductive, Biochemical, and Quality Properties": []}
+            classified_cols = {}
             for c in response_cols:
                 cat = classify_parameter(c)
+                if cat not in classified_cols:
+                    classified_cols[cat] = []
                 classified_cols[cat].append(c)
                 
             st.write("#### Automatically Categorized Parameter Divisions:")
@@ -744,20 +756,62 @@ def run_raw_mode(uploaded_file):
                         
                         st.write(f"##### {chunk_lbl}: Integrated Properties")
                         
-                        for p in chunk:
-                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
-                            st.write(p_text)
-                            doc.add_paragraph(p_text)
-                                    
-                        add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+                        layout_style = table_counter % 3
                         
-                        # Set caption directly below the table
+                        # Generate dynamic flat table caption text
                         caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, chunk)
-                        doc.add_paragraph(caption_text)
                         
+                        if layout_style == 0:
+                            # Style 0: Explanations -> Table -> Caption (Below Table)
+                            for p in chunk:
+                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                
+                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+                            
+                            p_cap = doc.add_paragraph(caption_text)
+                            p_cap.runs[0].font.name = 'Arial'
+                            p_cap.runs[0].font.size = Pt(10)
+                            
+                        elif layout_style == 1:
+                            # Style 1: Table -> Caption -> Explanations
+                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+                            
+                            p_cap = doc.add_paragraph(caption_text)
+                            p_cap.runs[0].font.name = 'Arial'
+                            p_cap.runs[0].font.size = Pt(10)
+                            
+                            for p in chunk:
+                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                
+                        else:
+                            # Style 2: Split Narrative (First half explanations -> Table -> Caption -> Second half)
+                            halfway = max(1, len(chunk) // 2)
+                            part1_chunk = chunk[:halfway]
+                            part2_chunk = chunk[halfway:]
+                            
+                            for p in part1_chunk:
+                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                
+                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+                            
+                            p_cap = doc.add_paragraph(caption_text)
+                            p_cap.runs[0].font.name = 'Arial'
+                            p_cap.runs[0].font.size = Pt(10)
+                            
+                            for p in part2_chunk:
+                                p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                
                         table_counter += 1
-                        st.write("*(Consolidated table and plain caption placed directly below paragraph)*")
-                        doc.add_paragraph() # Row spacing
+                        st.write("*(Table and plain caption rendered below)*")
+                        doc.add_paragraph() # Single row spacing
                         
                     # Step 2: Render and isolate trend lines
                     for base_name, items in sorted(grouped.items()):
@@ -765,20 +819,49 @@ def run_raw_mode(uploaded_file):
                             trend_lbl = f"Table {table_counter}"
                             
                             st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
+                            trend_params = [it[0] for it in items]
+                            caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, trend_params)
                             
                             p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, factor_b_col, trend_lbl)
-                            st.write(p_text)
-                            doc.add_paragraph(p_text)
+                            
+                            layout_style = table_counter % 3
+                            
+                            if layout_style == 0:
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                
+                                p_cap = doc.add_paragraph(caption_text)
+                                p_cap.runs[0].font.name = 'Arial'
+                                p_cap.runs[0].font.size = Pt(10)
+                                
+                            elif layout_style == 1:
+                                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                
+                                p_cap = doc.add_paragraph(caption_text)
+                                p_cap.runs[0].font.name = 'Arial'
+                                p_cap.runs[0].font.size = Pt(10)
+                                
+                                st.write(p_text)
+                                doc.add_paragraph(p_text)
+                                
+                            else:
+                                part1, part2 = split_text_by_sentence(p_text)
+                                st.write(part1)
+                                doc.add_paragraph(part1)
+                                
+                                add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                                
+                                p_cap = doc.add_paragraph(caption_text)
+                                p_cap.runs[0].font.name = 'Arial'
+                                p_cap.runs[0].font.size = Pt(10)
+                                
+                                if part2:
+                                    st.write(part2)
+                                    doc.add_paragraph(part2)
                                     
-                            trend_params = [it[0] for it in items]
-                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
-                            
-                            # Set caption directly below the table
-                            caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, trend_params)
-                            doc.add_paragraph(caption_text)
-                            
                             table_counter += 1
-                            st.write("*(Time-series table and plain caption placed directly below trend paragraph)*")
+                            st.write("*(Time-series table and plain caption rendered below)*")
                             doc.add_paragraph() # Spacing
                             
                 bio_doc = io.BytesIO()
@@ -840,9 +923,11 @@ def run_summary_mode_processing(uploaded_file):
         parameters = [str(x).strip() for x in df_raw.iloc[0].tolist()[1:] if pd.notna(x)]
         st.success(f"Detected Factor A: {factor_a_label} | Factor B: {factor_b_label}")
         
-        classified_cols = {"Vegetative Properties": [], "Reproductive, Biochemical, and Quality Properties": []}
+        classified_cols = {}
         for c in parameters:
             cat = classify_parameter(c)
+            if cat not in classified_cols:
+                classified_cols[cat] = []
             classified_cols[cat].append(c)
             
         st.write("#### Automatically Categorized Parameter Divisions:")
@@ -882,18 +967,55 @@ def run_summary_mode_processing(uploaded_file):
                     chunk_lbl = f"Table {table_counter}"
                     
                     st.write(f"##### {chunk_lbl}: Integrated Properties")
-                    
-                    for p in chunk:
-                        p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
-                        st.write(p_text)
-                        doc.add_paragraph(p_text)
-                                
-                    add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
-                    
-                    # Set caption directly below the table
                     caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, chunk)
-                    doc.add_paragraph(caption_text)
                     
+                    layout_style = table_counter % 3
+                    
+                    if layout_style == 0:
+                        for p in chunk:
+                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
+                            st.write(p_text)
+                            doc.add_paragraph(p_text)
+                                    
+                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
+                        
+                        p_cap = doc.add_paragraph(caption_text)
+                        p_cap.runs[0].font.name = 'Arial'
+                        p_cap.runs[0].font.size = Pt(10)
+                        
+                    elif layout_style == 1:
+                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
+                        
+                        p_cap = doc.add_paragraph(caption_text)
+                        p_cap.runs[0].font.name = 'Arial'
+                        p_cap.runs[0].font.size = Pt(10)
+                        
+                        for p in chunk:
+                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
+                            st.write(p_text)
+                            doc.add_paragraph(p_text)
+                            
+                    else:
+                        halfway = max(1, len(chunk) // 2)
+                        part1_chunk = chunk[:halfway]
+                        part2_chunk = chunk[halfway:]
+                        
+                        for p in part1_chunk:
+                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
+                            st.write(p_text)
+                            doc.add_paragraph(p_text)
+                            
+                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
+                        
+                        p_cap = doc.add_paragraph(caption_text)
+                        p_cap.runs[0].font.name = 'Arial'
+                        p_cap.runs[0].font.size = Pt(10)
+                        
+                        for p in part2_chunk:
+                            p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
+                            st.write(p_text)
+                            doc.add_paragraph(p_text)
+                            
                     table_counter += 1
                     st.write("*(Consolidated table placed directly below paragraph)*")
                     doc.add_paragraph() # Spacing
@@ -904,20 +1026,49 @@ def run_summary_mode_processing(uploaded_file):
                         trend_lbl = f"Table {table_counter}"
                         
                         st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
+                        trend_params = [it[0] for it in items]
+                        caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, trend_params)
                         
                         p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_label, factor_b_label, trend_lbl)
-                        st.write(p_text)
-                        doc.add_paragraph(p_text)
+                        
+                        layout_style = table_counter % 3
+                        
+                        if layout_style == 0:
+                            st.write(p_text)
+                            doc.add_paragraph(p_text)
+                            add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                            
+                            p_cap = doc.add_paragraph(caption_text)
+                            p_cap.runs[0].font.name = 'Arial'
+                            p_cap.runs[0].font.size = Pt(10)
+                            
+                        elif layout_style == 1:
+                            add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                            
+                            p_cap = doc.add_paragraph(caption_text)
+                            p_cap.runs[0].font.name = 'Arial'
+                            p_cap.runs[0].font.size = Pt(10)
+                            
+                            st.write(p_text)
+                            doc.add_paragraph(p_text)
+                            
+                        else:
+                            part1, part2 = split_text_by_sentence(p_text)
+                            st.write(part1)
+                            doc.add_paragraph(part1)
+                            
+                            add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                            
+                            p_cap = doc.add_paragraph(caption_text)
+                            p_cap.runs[0].font.name = 'Arial'
+                            p_cap.runs[0].font.size = Pt(10)
+                            
+                            if part2:
+                                st.write(part2)
+                                doc.add_paragraph(part2)
                                 
-                        trend_params = [it[0] for it in items]
-                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
-                        
-                        # Set caption directly below the table
-                        caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, trend_params)
-                        doc.add_paragraph(caption_text)
-                        
                         table_counter += 1
-                        st.write("*(Time-series table placed directly below trend paragraph)*")
+                        st.write("*(Time-series table and plain caption placed directly below trend paragraph)*")
                         doc.add_paragraph() # Spacing
                         
             bio_doc = io.BytesIO()
