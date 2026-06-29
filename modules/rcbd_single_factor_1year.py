@@ -339,6 +339,7 @@ TIME_SERIES_TEMPLATES_CATEGORIES = {
     "general": [8, 12, 14]
 }
 
+
 # ==============================================================================
 # Dynamic Shuffling Class Pool
 # ==============================================================================
@@ -448,6 +449,18 @@ def get_p_val_notation(p_val):
         return "p < 0.05"
     else:
         return "p > 0.05"
+
+
+# --- Significance Code Value Helper ---
+def get_signif_code_val(p):
+    if pd.isna(p):
+        return "ns"
+    if p < 0.01:
+        return "**"
+    elif p < 0.05:
+        return "*"
+    else:
+        return "ns"
 
 
 # --- Agronomic Classification Engine ---
@@ -642,17 +655,6 @@ def group_parameters(params):
 
 
 # --- Statistical Calculation Helpers ---
-def get_signif_code_val(p):
-    if pd.isna(p):
-        return "ns"
-    if p < 0.01:
-        return "**"
-    elif p < 0.05:
-        return "*"
-    else:
-        return "ns"
-
-
 def parse_dmrt_value(val):
     if pd.isna(val):
         return "", ""
@@ -871,7 +873,7 @@ def extract_single_day_facts_1f(parameter, res, genotype_col, table_label):
 
 def extract_time_series_facts_1f(base_name, items, results_data, genotype_col, table_label):
     first_param, first_day_num, first_day_str = items[0]
-    last_param, last_day_num, last_day_str = items[-1]
+    last_param, _, last_day_str = items[-1]
 
     num_dates = len(items)
     time_unit = "days"
