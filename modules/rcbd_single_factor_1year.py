@@ -8,14 +8,14 @@ from scipy.stats import t
 import statsmodels.api as sm
 from statsmodels.formula.api import ols
 from docx import Document
-from docx.shared import Pt
+from docx.shared import Pt, Inches
 from docx.oxml import OxmlElement, parse_xml
 from docx.oxml.ns import nsdecls, qn
 import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side
 
 # ==============================================================================
-# DATABASE OF 20 VERBOSE, HIGH-STANDARD ACADEMIC DISCUSSION TEMPLATES (NO BACKTICKS)
+# DATABASE OF 20 VERBOSE, HIGH-STANDARD ACADEMIC DISCUSSION TEMPLATES
 # ==============================================================================
 ACADEMIC_TEMPLATES_1Y = {
     "temp_1_sig_yield": (
@@ -123,7 +123,7 @@ ACADEMIC_TEMPLATES_1Y = {
     ),
     "temp_14_stabilization_trend": (
         "Regarding the temporal progression of **{base_name}**, a progressive stabilization pattern was observed in the latter half of the "
-        "trial, as shown in **{table_label}**. The values changed sharply from {first_day} to {mid_day}, but stabilized by {last_day}, "
+        "trial, as shown in **{table_label}**. The values changed sharply from {first_day} to {mid_day}', but stabilized by {last_day}, "
         "where genotype **{top_g}** ({top_val}^{top_let}) maintained its statistical lead. This stabilization indicates that the physiological "
         "processes regulating **{base_name}** reached an equilibrium, with **{top_g}** maintaining a superior baseline, proving its long-term "
         "physiological stability under the experimental conditions."
@@ -168,6 +168,18 @@ ACADEMIC_TEMPLATES_1Y = {
     )
 }
 
+# --- Agronomic Classification Engine ---
+def classify_parameter(param):
+    """
+    Classifies parameters to prevent mixing vegetative and reproductive data.
+    """
+    param_lower = param.lower()
+    veg_keywords = ["height", "leaf", "leaves", "stem", "shoot", "root", "area", "biomass", "vegetative", "width", "length", "sl"]
+    for kw in veg_keywords:
+        if kw in param_lower:
+            return "Vegetative Properties"
+    return "Reproductive, Biochemical, and Quality Properties"
+
 # --- Word Document Table Formatting Helpers ---
 def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
     """
@@ -207,7 +219,7 @@ def set_header_bottom_border(row_or_cells):
     if hasattr(row_or_cells, 'cells'):
         cells = row_or_cells.cells
     else:
-        cells = row_or_cells  # Cell tuple
+        cells = row_or_cells  # Passed cell tuple
     for cell in cells:
         tcPr = cell._tc.get_or_add_tcPr()
         borders = parse_xml(
@@ -217,11 +229,16 @@ def set_header_bottom_border(row_or_cells):
         )
         tcPr.append(borders)
 
+def set_table_col_widths(table, col_widths):
+    """
+    Ensures uniform table cell dimensions across columns.
+    """
+    for row in table.rows:
+        for i, width in enumerate(col_widths):
+            row.cells[i].width = width
+
 # --- Standard P-Value Academic Notation Mapper ---
 def get_p_val_notation(p_val):
-    """
-    Converts raw float p-values into clean academic notations.
-    """
     if p_val < 0.001:
         return "p < 0.001"
     elif p_val < 0.01:
@@ -231,164 +248,7 @@ def get_p_val_notation(p_val):
     else:
         return "p > 0.05"
 
-# --- Parameter Grouping Engine for Time-Series/Trend-Line Analysis ---
-def group_parameters(params):
-    pattern = re.compile(r"(.*?)(\d+)\s*(dat|das|days|day|d)?$", re.IGNORECASE)
-    groups = {}
-    for p in params:
-        match = pattern.search(p.strip())
-        if match:
-            base = match.group(1).strip()
-            base = re.sub(r"[\s\-\_\(\)]+$", "", base).strip().capitalize()
-            day_num = int(match.group(2))
-            day_str = f"Day {day_num}"
-            if not base:
-                base = "Parameter"
-            if base not in groups:
-                groups[base] = []
-            groups[base].append((p, day_num, day_str))
-        else:
-            base = p.strip().capitalize()
-            if base not in groups:
-                groups[base] = []
-            groups[base].append((p, 0, ""))
-            
-    for base in groups:
-        groups[base].sort(key=lambda x: x[1])
-    return groups
-
-# --- Dynamic Academic Explanation Selection Engine ---
-def generate_single_trend_explanation(base_name, items, results_data, table_label):
-    first_item = items[0]
-    last_item = items[-1]
-    
-    first_param, _, first_day_str = first_item
-    last_param, _, last_day_str = last_item
-    
-    p_first = results_data[first_param]
-    p_last = results_data[last_param]
-    
-    first_gm = p_first["gm"]
-    last_gm = p_last["gm"]
-    
-    direction = "upward" if last_gm >= first_gm else "downward"
-    
-    sorted_last = sorted(p_last["means"].items(), key=lambda x: x[1], reverse=True)
-    top_last, top_val_last = sorted_last[0]
-    low_last, low_val_last = sorted_last[-1]
-    top_let_last = p_last["means_str"][top_last].replace(f"{top_val_last:.2f}", "")
-    
-    if direction == "upward" and p_first["p_val"] >= 0.05 and p_last["p_val"] < 0.05:
-        template = ACADEMIC_TEMPLATES_1Y["temp_11_late_onset_divergence"]
-        return template.format(
-            base_name=base_name, first_day=first_day_str, last_day=last_day_str,
-            first_p=get_p_val_notation(p_first['p_val']), last_p=get_p_val_notation(p_last['p_val']),
-            top_g=top_last, top_val=f"{top_val_last:.2f}", top_let=top_let_last, table_label=table_label
-        )
-    elif direction == "downward" and p_first["p_val"] < 0.05 and p_last["p_val"] >= 0.05:
-        template = ACADEMIC_TEMPLATES_1Y["temp_12_early_onset_convergence"]
-        return template.format(
-            base_name=base_name, first_day=first_day_str, last_day=last_day_str,
-            first_p=get_p_val_notation(p_first['p_val']), last_p=get_p_val_notation(p_last['p_val']),
-            table_label=table_label
-        )
-    elif p_first["p_val"] >= 0.05 and p_last["p_val"] >= 0.05:
-        template = ACADEMIC_TEMPLATES_1Y["temp_13_uniform_trend"]
-        return template.format(
-            base_name=base_name, first_gm=f"{first_gm:.2f}", last_gm=f"{last_gm:.2f}",
-            last_p=get_p_val_notation(p_last['p_val']), table_label=table_label
-        )
-    elif "decay" in base_name.lower() or "rot" in base_name.lower():
-        template = ACADEMIC_TEMPLATES_1Y["temp_15_decay_progression"]
-        return template.format(
-            base_name=base_name, first_gm=f"{first_gm:.2f}", last_gm=f"{last_gm:.2f}",
-            last_p=get_p_val_notation(p_last['p_val']), top_g=top_last, top_val=f"{top_val_last:.2f}",
-            top_let=top_let_last, low_g=low_last, table_label=table_label
-        )
-    elif direction == "upward":
-        template = ACADEMIC_TEMPLATES_1Y["temp_9_progressive_upward_trend"]
-        first_sig_txt = "significant" if p_first["p_val"] < 0.05 else "nonsignificant"
-        last_sig_txt = get_p_val_notation(p_last['p_val'])
-        return template.format(
-            base_name=base_name, first_gm=f"{first_gm:.2f}", last_gm=f"{last_gm:.2f}",
-            first_day=first_day_str, last_day=last_day_str, first_sig=first_sig_txt,
-            last_sig=last_sig_txt, top_g=top_last, top_val=f"{top_val_last:.2f}",
-            top_let=top_let_last, table_label=table_label
-        )
-    else:
-        template = ACADEMIC_TEMPLATES_1Y["temp_10_progressive_decline_trend"]
-        return template.format(
-            base_name=base_name, first_gm=f"{first_gm:.2f}", last_gm=f"{last_gm:.2f}",
-            first_day=first_day_str, last_day=last_day_str, last_p=get_p_val_notation(p_last['p_val']),
-            top_g=top_last, top_val=f"{top_val_last:.2f}", top_let=top_let_last, low_g=low_last,
-            table_label=table_label
-        )
-
-def generate_single_explanation(param_name, p_data, table_label):
-    p_val = p_data["p_val"]
-    
-    sorted_means = sorted(p_data["means"].items(), key=lambda x: x[1], reverse=True)
-    top_g, top_val_g = sorted_means[0]
-    low_g, low_val_g = sorted_means[-1]
-    top_let_g = p_data["means_str"][top_g].replace(f"{top_val_g:.2f}", "")
-    
-    at_par_list = []
-    for genotype, val in sorted_means[1:]:
-        let = p_data["means_str"][genotype].replace(f"{val:.2f}", "")
-        if top_let_g and let and any(char in top_let_g for char in let):
-            at_par_list.append(f"**{genotype}** ({val:.2f}^{let})")
-    at_par_str = ", ".join(at_par_list) if at_par_list else "no other genotypes"
-    
-    if p_val >= 0.05:
-        template = ACADEMIC_TEMPLATES_1Y["temp_4_homogeneous"]
-        return template.format(
-            parameter=param_name, p_val_notation=get_p_val_notation(p_val), grand_mean=f"{p_data['gm']:.2f}", table_label=table_label
-        )
-    elif len(sorted_means) >= 3 and not at_par_list:
-        second_g, second_val = sorted_means[1]
-        template = ACADEMIC_TEMPLATES_1Y["temp_3_strict_superiority"]
-        return template.format(
-            parameter=param_name, p_val_notation=get_p_val_notation(p_val), top_g=top_g, top_val=f"{top_val_g:.2f}",
-            top_let=top_let_g, second_g=second_g, second_val=f"{second_val:.2f}", table_label=table_label
-        )
-    elif "yield" in param_name.lower() or "weight" in param_name.lower() or "output" in param_name.lower():
-        template = ACADEMIC_TEMPLATES_1Y["temp_1_sig_yield"]
-        return template.format(
-            parameter=param_name, p_val_notation=get_p_val_notation(p_val), top_g=top_g, top_val=f"{top_val_g:.2f}",
-            top_let=top_let_g, at_par=at_par_str, table_label=table_label
-        )
-    elif any(x in param_name.lower() for x in ["ascorbic", "acid", "tss", "sugar", "nutrient", "antioxidant", "leaves", "height"]):
-        template = ACADEMIC_TEMPLATES_1Y["temp_19_biochemical_nutrient"]
-        return template.format(
-            parameter=param_name, top_g=top_g, top_val=f"{top_val_g:.2f}", top_let=top_let_g,
-            at_par=at_par_str, table_label=table_label
-        )
-    elif len(at_par_list) >= 3:
-        template = ACADEMIC_TEMPLATES_1Y["temp_7_broad_parity"]
-        return template.format(
-            parameter=param_name, p_val_notation=get_p_val_notation(p_val), top_g=top_g, top_val=f"{top_val_g:.2f}",
-            top_let=top_let_g, at_par=at_par_str, table_label=table_label
-        )
-    else:
-        template = ACADEMIC_TEMPLATES_1Y["temp_2_sig_quality"]
-        return template.format(
-            parameter=param_name, p_val_notation=get_p_val_notation(p_val), top_g=top_g, top_val=f"{top_val_g:.2f}",
-            top_let=top_let_g, at_par=at_par_str, table_label=table_label
-        )
-
-# --- Statistical Calculation Engine ---
-def get_signif_code_val(p):
-    if is_nan_val(p): return "ns"
-    if p < 0.001: return "***"
-    elif p < 0.01: return "**"
-    elif p < 0.05: return "*"
-    elif p < 0.1: return "."
-    else: return "ns"
-
-def is_nan_val(val):
-    try: return np.isnan(float(val))
-    except: return False
-
+# --- Compact Letter Displays (CLD) letter-grouping logic ---
 def get_cld_letters(means_dict, lsd):
     sorted_means = sorted(means_dict.items(), key=lambda x: x[1], reverse=True)
     n = len(sorted_means)
@@ -441,6 +301,7 @@ def parse_dmrt_value(val):
         return num, letters
     return val_str, ""
 
+# --- Statistical Calculation Engine ---
 def run_anova_1factor(df, block_col, genotype_col, param):
     df_temp = pd.DataFrame({
         'rep': df[block_col].astype(str),
@@ -572,6 +433,81 @@ def build_single_year_excel(genotype_col, params, genotypes, results_data):
         
     return wb
 
+def add_single_table_to_docx(doc, params, genotypes, results_data):
+    """
+    Appends a standardized academic table into the Word report document.
+    """
+    num_cols = len(params) + 1
+    table = doc.add_table(rows=1, cols=num_cols)
+    set_table_borders(table)
+    
+    # Establish uniform margins and column spacing
+    col_widths = [Inches(1.5)] + [Inches(1.2)] * len(params)
+    
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = "Genotype"
+    set_cell_margins(hdr_cells[0])
+    hdr_cells[0].paragraphs[0].runs[0].font.bold = True
+    hdr_cells[0].paragraphs[0].runs[0].font.name = 'Arial'
+    hdr_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+    
+    for c_idx, p in enumerate(params):
+        hdr_cells[c_idx + 1].text = p.upper()
+        set_cell_margins(hdr_cells[c_idx + 1])
+        hdr_cells[c_idx + 1].paragraphs[0].alignment = 1
+        hdr_cells[c_idx + 1].paragraphs[0].runs[0].font.bold = True
+        hdr_cells[c_idx + 1].paragraphs[0].runs[0].font.name = 'Arial'
+        hdr_cells[c_idx + 1].paragraphs[0].runs[0].font.size = Pt(10)
+        
+    set_header_bottom_border(table.rows[0])
+    
+    for g in sorted(genotypes):
+        row_cells = table.add_row().cells
+        row_cells[0].text = str(g)
+        set_cell_margins(row_cells[0])
+        row_cells[0].paragraphs[0].runs[0].font.name = 'Arial'
+        row_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        for c_idx, p in enumerate(params):
+            row_cells[c_idx + 1].text = str(results_data[p]["means_str"].get(g, ""))
+            set_cell_margins(row_cells[c_idx + 1])
+            p_val = row_cells[c_idx + 1].paragraphs[0]
+            p_val.alignment = 1
+            if p_val.runs:
+                p_val.runs[0].font.name = 'Arial'
+                p_val.runs[0].font.size = Pt(10)
+                
+    set_header_bottom_border(table.rows[-1])
+    
+    stats_labels = ["Sem", "p-value", "LSD(0.05)", "CV(%)", "Grand Mean"]
+    stats_keys = ["sem", "p_text", "lsd", "cv", "gm"]
+    
+    for s_idx, (label, key) in enumerate(zip(stats_labels, stats_keys)):
+        row_cells = table.add_row().cells
+        row_cells[0].text = label
+        set_cell_margins(row_cells[0])
+        row_cells[0].paragraphs[0].runs[0].font.bold = True
+        row_cells[0].paragraphs[0].runs[0].font.name = 'Arial'
+        row_cells[0].paragraphs[0].runs[0].font.size = Pt(10)
+        
+        for c_idx, p in enumerate(params):
+            row_cells[c_idx + 1].text = str(results_data[p][key])
+            set_cell_margins(row_cells[c_idx + 1])
+            p_val = row_cells[c_idx + 1].paragraphs[0]
+            p_val.alignment = 1
+            if p_val.runs:
+                p_val.runs[0].font.name = 'Arial'
+                p_val.runs[0].font.size = Pt(10)
+                
+        if s_idx == len(stats_keys) - 1:
+            set_header_bottom_border(row_cells)
+            
+    set_table_borders(table)
+    # Apply width adjustments dynamically
+    for row in table.rows:
+        for idx, width in enumerate([1.5] + [1.1] * len(params)):
+            row.cells[idx].width = Pt(width * 72)
+
 # --- Web Interface and Multi-Year controller ---
 def show_module():
     st.markdown("### Single-Year Single-Factor RCBD Analyzer")
@@ -599,10 +535,16 @@ def run_raw_mode():
             response_cols = st.multiselect("Select Response Parameters to Analyze:", cols, default=cols[2:], key="response_1f_sy")
             
             if response_cols:
-                group_1_name = st.text_input("First Table Title", "Physiological and Crop Growth Parameters", key="1f_sy_t1_title")
-                group_1_cols = st.multiselect("Select parameters for Table 1", response_cols, default=response_cols[:len(response_cols)//2], key="1f_sy_t1_cols")
-                group_2_name = st.text_input("Second Table Title", "Crop Quality and Yield Parameters", key="1f_sy_t2_title")
-                group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in response_cols if c not in group_1_cols], default=[c for c in response_cols if c not in group_1_cols], key="1f_sy_t2_cols")
+                # Classify parameters into Vegetative vs Reproductive/Quality properties
+                classified_cols = {"Vegetative Properties": [], "Reproductive, Biochemical, and Quality Properties": []}
+                for c in response_cols:
+                    cat = classify_parameter(c)
+                    classified_cols[cat].append(c)
+                
+                st.write("#### Automatically Categorized Parameter Divisions:")
+                for k, v in classified_cols.items():
+                    if v:
+                        st.write(f"**{k}:** {', '.join(v)}")
                 
                 if st.button("Execute Statistical Calculations", key="run_1f_sy_engine"):
                     genotypes = sorted(df1_raw[genotype_col].dropna().unique().tolist())
@@ -611,7 +553,7 @@ def run_raw_mode():
                     for param in response_cols:
                         results_data[param] = run_anova_1factor(df1_raw, block_col, genotype_col, param)
                         
-                    # Build Excel Results
+                    # Build master Excel file containing all calculations
                     excel_bio = io.BytesIO()
                     styled_wb = build_single_year_excel(genotype_col, response_cols, genotypes, results_data)
                     styled_wb.save(excel_bio)
@@ -627,49 +569,81 @@ def run_raw_mode():
                     )
                     st.write("---")
                     
-                    # Generate dynamic report
+                    # Generate dynamic report partitioned strictly by vegetative and reproductive rules
                     st.markdown("### 📝 Dynamic Analysis Results & Discussions")
                     doc = Document()
                     doc.add_heading("Single-Factor RCBD Comprehensive Trial Report", 0)
                     
-                    tables_layouts = [
-                        (group_1_name, group_1_cols, 1),
-                        (group_2_name, group_2_cols, 2)
-                    ]
-                    
-                    for g_title, g_cols, table_num in tables_layouts:
-                        if not g_cols: continue
-                        table_label = f"Table {table_num}"
+                    table_counter = 1
+                    for cat_name, cat_params in classified_cols.items():
+                        if not cat_params:
+                            continue
                         
-                        st.write(f"### {table_label}: {g_title}")
-                        doc.add_heading(f"{table_label}: {g_title}", level=2)
+                        doc.add_heading(cat_name, level=1)
+                        st.write(f"### {cat_name}")
                         
-                        grouped = group_parameters(g_cols)
+                        grouped = group_parameters(cat_params)
                         
+                        # Step 1: Render and group static parameters
+                        static_items = []
                         for base_name, items in sorted(grouped.items()):
-                            st.write(f"#### {base_name}")
-                            doc.add_heading(base_name, level=3)
-                            
-                            if len(items) > 1:
-                                p_text = generate_single_trend_explanation(base_name, items, results_data, table_label)
-                            else:
-                                p_text = generate_single_explanation(items[0][0], results_data[items[0][0]], table_label)
+                            if len(items) == 1:
+                                static_items.append(items[0][0])
                                 
-                            st.write(p_text)
-                            
-                            p_docx = doc.add_paragraph()
-                            parts = re.split(r'(\*\*.*?\*\*)', p_text)
-                            for part in parts:
-                                if part.startswith('**') and part.endswith('**'):
-                                    p_docx.add_run(part[2:-2]).bold = True
-                                else:
-                                    p_docx.add_run(part)
-                                    
-                        st.write("##### Corresponding Table Visualization:")
-                        add_single_table_to_docx(doc, g_cols, genotypes, results_data)
-                        st.write("*(Table data formatted precisely as per standard journal specifications)*")
-                        doc.add_page_break()
+                        # Chunk single static variables into bundles of up to 4
+                        static_chunks = [static_items[i:i + 4] for i in range(0, len(static_items), 4)]
                         
+                        for chunk in static_chunks:
+                            chunk_lbl = f"Table {table_counter}"
+                            table_counter += 1
+                            
+                            st.write(f"##### {chunk_lbl}: Integrated Properties")
+                            doc.add_heading(f"{chunk_lbl}: Properties Evaluation", level=2)
+                            
+                            # Display explanations first
+                            for p in chunk:
+                                p_text = generate_single_explanation(p, results_data[p], chunk_lbl)
+                                st.write(p_text)
+                                
+                                p_docx = doc.add_paragraph()
+                                parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                                for part in parts:
+                                    if part.startswith('**') and part.endswith('**'):
+                                        p_docx.add_run(part[2:-2]).bold = True
+                                    else:
+                                        p_docx.add_run(part)
+                                        
+                            # Append integrated table directly below paragraphs
+                            add_single_table_to_docx(doc, chunk, genotypes, results_data)
+                            st.write("*(Consolidated table placed directly below paragraph)*")
+                            doc.add_page_break()
+                            
+                        # Step 2: Render and isolate trend lines
+                        for base_name, items in sorted(grouped.items()):
+                            if len(items) > 1:
+                                trend_lbl = f"Table {table_counter}"
+                                table_counter += 1
+                                
+                                st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
+                                doc.add_heading(f"{trend_lbl}: Progressive Trend of {base_name}", level=2)
+                                
+                                p_text = generate_single_trend_explanation(base_name, items, results_data, trend_lbl)
+                                st.write(p_text)
+                                
+                                p_docx = doc.add_paragraph()
+                                parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                                for part in parts:
+                                    if part.startswith('**') and part.endswith('**'):
+                                        p_docx.add_run(part[2:-2]).bold = True
+                                    else:
+                                        p_docx.add_run(part)
+                                        
+                                # Append isolated trend-line table directly below paragraph
+                                trend_params = [it[0] for it in items]
+                                add_single_table_to_docx(doc, trend_params, genotypes, results_data)
+                                st.write("*(Time-series table placed directly below trend paragraph)*")
+                                doc.add_page_break()
+                                
                     bio_doc = io.BytesIO()
                     doc.save(bio_doc)
                     bio_doc.seek(0)
@@ -715,10 +689,16 @@ def run_summary_mode_processing(uploaded_file):
         st.success(f"Detected Genotypes: {', '.join(genotypes)}")
         st.success(f"Detected Parameters: {', '.join(parameters)}")
         
-        group_1_name = st.text_input("First Table Title", "Physiological and Crop Growth Parameters", key="1f_sy_sum_t1_title")
-        group_1_cols = st.multiselect("Select parameters for Table 1", parameters, default=parameters[:len(parameters)//2], key="1f_sy_sum_t1_cols")
-        group_2_name = st.text_input("Second Table Title", "Crop Quality and Yield Parameters", key="1f_sy_sum_t2_title")
-        group_2_cols = st.multiselect("Select parameters for Table 2", [c for c in parameters if c not in group_1_cols], default=[c for c in parameters if c not in group_1_cols], key="1f_sy_sum_t2_cols")
+        # Partition parameters into Vegetative vs Reproductive/Quality properties automatically
+        classified_cols = {"Vegetative Properties": [], "Reproductive, Biochemical, and Quality Properties": []}
+        for c in parameters:
+            cat = classify_parameter(c)
+            classified_cols[cat].append(c)
+            
+        st.write("#### Automatically Categorized Parameter Divisions:")
+        for k, v in classified_cols.items():
+            if v:
+                st.write(f"**{k}:** {', '.join(v)}")
         
         if st.button("Generate Word Document Draft", key="btn_1f_sum_gen_sy"):
             results_data = parse_summarized_table_to_results_1y(
@@ -728,46 +708,72 @@ def run_summary_mode_processing(uploaded_file):
             doc = Document()
             doc.add_heading("Single-Factor RCBD Comprehensive Trial Report", 0)
             
-            tables_layouts = [
-                (group_1_name, group_1_cols, 1),
-                (group_2_name, group_2_cols, 2)
-            ]
-            
-            st.markdown("### 📝 Dynamic Analysis Results & Discussions")
-            
-            for g_title, g_cols, table_num in tables_layouts:
-                if not g_cols: continue
-                table_label = f"Table {table_num}"
+            table_counter = 1
+            for cat_name, cat_params in classified_cols.items():
+                if not cat_params:
+                    continue
                 
-                st.write(f"### {table_label}: {g_title}")
-                doc.add_heading(f"{table_label}: {g_title}", level=2)
+                doc.add_heading(cat_name, level=1)
+                st.write(f"### {cat_name}")
                 
-                grouped = group_parameters(g_cols)
+                grouped = group_parameters(cat_params)
                 
+                # Step 1: Render and group static parameters
+                static_items = []
                 for base_name, items in sorted(grouped.items()):
-                    st.write(f"#### {base_name}")
-                    doc.add_heading(base_name, level=3)
-                    
-                    if len(items) > 1:
-                        p_text = generate_single_trend_explanation(base_name, items, results_data, table_label)
-                    else:
-                        p_text = generate_single_explanation(items[0][0], results_data[items[0][0]], table_label)
+                    if len(items) == 1:
+                        static_items.append(items[0][0])
                         
-                    st.write(p_text)
-                    
-                    p_docx = doc.add_paragraph()
-                    parts = re.split(r'(\*\*.*?\*\*)', p_text)
-                    for part in parts:
-                        if part.startswith('**') and part.endswith('**'):
-                            p_docx.add_run(part[2:-2]).bold = True
-                        else:
-                            p_docx.add_run(part)
-                            
-                st.write("##### Corresponding Table Visualization:")
-                add_single_table_to_docx(doc, g_cols, genotypes, results_data)
-                st.write("*(Table data formatted precisely as per standard journal specifications)*")
-                doc.add_page_break()
+                static_chunks = [static_items[i:i + 4] for i in range(0, len(static_items), 4)]
                 
+                for chunk in static_chunks:
+                    chunk_lbl = f"Table {table_counter}"
+                    table_counter += 1
+                    
+                    st.write(f"##### {chunk_lbl}: Integrated Properties")
+                    doc.add_heading(f"{chunk_lbl}: Properties Evaluation", level=2)
+                    
+                    for p in chunk:
+                        p_text = generate_single_explanation(p, results_data[p], chunk_lbl)
+                        st.write(p_text)
+                        
+                        p_docx = doc.add_paragraph()
+                        parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                        for part in parts:
+                            if part.startswith('**') and part.endswith('**'):
+                                p_docx.add_run(part[2:-2]).bold = True
+                            else:
+                                p_docx.add_run(part)
+                                
+                    add_single_table_to_docx(doc, chunk, genotypes, results_data)
+                    st.write("*(Consolidated table placed directly below paragraph)*")
+                    doc.add_page_break()
+                    
+                # Step 2: Render and isolate trend lines
+                for base_name, items in sorted(grouped.items()):
+                    if len(items) > 1:
+                        trend_lbl = f"Table {table_counter}"
+                        table_counter += 1
+                        
+                        st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
+                        doc.add_heading(f"{trend_lbl}: Progressive Trend of {base_name}", level=2)
+                        
+                        p_text = generate_single_trend_explanation(base_name, items, results_data, trend_lbl)
+                        st.write(p_text)
+                        
+                        p_docx = doc.add_paragraph()
+                        parts = re.split(r'(\*\*.*?\*\*)', p_text)
+                        for part in parts:
+                            if part.startswith('**') and part.endswith('**'):
+                                p_docx.add_run(part[2:-2]).bold = True
+                            else:
+                                p_docx.add_run(part)
+                                
+                        trend_params = [it[0] for it in items]
+                        add_single_table_to_docx(doc, trend_params, genotypes, results_data)
+                        st.write("*(Time-series table placed directly below trend paragraph)*")
+                        doc.add_page_break()
+                        
             bio_doc = io.BytesIO()
             doc.save(bio_doc)
             bio_doc.seek(0)
