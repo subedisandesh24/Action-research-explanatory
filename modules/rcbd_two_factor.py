@@ -15,50 +15,50 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side
 
 # ==============================================================================
-# DATABASE OF 20 VERBOSE, HIGH-STANDARD ACADEMIC DISCUSSION TEMPLATES (NO BACKTICKS)
+# DATABASE OF 20 VERBOSE, HIGH-STANDARD ACADEMIC DISCUSSION TEMPLATES (FLAT TEXT)
 # ==============================================================================
 ACADEMIC_TEMPLATES_2F = {
     "temp_1_sig_interaction": (
-        "Regarding the parameter **{parameter}**, the statistical evaluation revealed a highly significant "
-        "interaction effect between **{factor_a_col}** and **{factor_b_col}** ({p_notation_int}) (as summarized "
-        "in **{table_label}**). This interaction confirms that the regulatory influence of **{factor_b_col}** "
-        "depends heavily on the baseline level of **{factor_a_col}**. Among all treatment combinations, "
-        "**{comb_top_name}** established its position at the statistical apex with {comb_top_val}^{comb_top_let}, "
+        "Regarding the parameter {parameter}, the statistical evaluation revealed a highly significant "
+        "interaction effect between {factor_a_col} and {factor_b_col} ({p_notation_int}) (as summarized "
+        "in {table_label}). This interaction confirms that the regulatory influence of {factor_b_col} "
+        "depends heavily on the baseline level of {factor_a_col}. Among all treatment combinations, "
+        "{comb_top_name} established its position at the statistical apex with {comb_top_val}^{comb_top_let}, "
         "showing statistical parity with other high-performing treatments including {at_par_comb}. Conversely, the lowest "
-        "performance tier was marked by the combination **{comb_low_name}** ({comb_low_val}), representing the "
+        "performance tier was marked by the combination {comb_low_name} ({comb_low_val}), representing the "
         "cumulative severity of stress or untreated control conditions."
     ),
     "temp_2_sig_main_effects": (
-        "For the parameter **{parameter}**, the interaction effect (**{factor_a_col}** × **{factor_b_col}**) "
+        "For the parameter {parameter}, the interaction effect ({factor_a_col} × {factor_b_col}) "
         "was completely nonsignificant ({p_notation_int}), confirming that the treatment factors operated independently of each other. "
-        "Specifically, as detailed in **{table_label}**, the main effect of **{factor_a_col}** was highly significant ({p_notation_a}) on **{param_name}**. "
-        "The maximum value was registered by treatment **{top_a}** ({top_val_a:.2f}^{top_let_a}), which established statistical parity with {at_par_a_str}, "
-        "while **{low_a}** marked the minimum performance. Simultaneously, the treatment factor **{factor_b_col}** exerted a highly significant ({p_notation_b}) response, "
-        "wherein **{top_b}** led the application levels with {top_val_b:.2f}^{top_let_b} ({at_par_b_str}), whereas **{low_b}** marked the minimum baseline limit around the grand mean."
+        "Specifically, as detailed in {table_label}, the main effect of {factor_a_col} was highly significant ({p_notation_a}) on {param_name}. "
+        "The maximum value was registered by treatment {top_a} ({top_val_a:.2f}^{top_let_a}), which established statistical parity with {at_par_a_str}, "
+        "while {low_a} marked the minimum performance. Simultaneously, the treatment factor {factor_b_col} exerted a highly significant ({p_notation_b}) response, "
+        "wherein {top_b} led the application levels with {top_val_b:.2f}^{top_let_b} ({at_par_b_str}), whereas {low_b} marked the minimum baseline limit around the grand mean."
     ),
     "temp_3_trend_upward_sig_int": (
-        "Regarding the progressive progression of **{base_name}** over time, a highly defined, time-dependent trend was observed across "
-        "the evaluation period (as presented in **{table_label}**). The overall pooled grand mean changed from {first_gm} to {last_gm}. "
-        "Notably, the interaction effect between **{factor_a_col}** and **{factor_b_col}** demonstrated clear temporal dependencies, "
+        "Regarding the progressive progression of {base_name} over time, a highly defined, time-dependent trend was observed across "
+        "the evaluation period (as presented in {table_label}). The overall pooled grand mean changed from {first_gm} to {last_gm}. "
+        "Notably, the interaction effect between {factor_a_col} and {factor_b_col} demonstrated clear temporal dependencies, "
         "transitioning from nonsignificant at the early phase to highly significant ({p_notation_int_last}) by the final evaluation stage ({last_day_str}). "
-        "At {last_day_str}, the treatment combination **{comb_top_name}** yielded the peak value of {comb_top_val:.2f}^{comb_top_let}, "
-        "while **{comb_low_name}** marked the lowest limit of performance ({comb_low_val:.2f})."
+        "At {last_day_str}, the treatment combination {comb_top_name} yielded the peak value of {comb_top_val:.2f}^{comb_top_let}, "
+        "while {comb_low_name} marked the lowest limit of performance ({comb_low_val:.2f})."
     ),
     "temp_4_trend_downward_sig_int": (
-        "For the progressive decline of **{base_name}** over time, a time-dependent downward trend was observed across the evaluation period "
-        "(Table **{table_label}**). The overall pooled grand mean declined from {first_gm} to {last_gm}. Importantly, the interaction effect "
-        "between **{factor_a_col}** and **{factor_b_col}** was highly significant ({p_notation_int_last}) by the final evaluation stage ({last_day_str}). "
-        "At {last_day_str}, the treatment combination **{comb_top_name}** demonstrated optimal retention with {comb_top_val:.2f}^{comb_top_let}, "
-        "while the lowest performance tier was represented by **{comb_low_name}** ({comb_low_val_val:.2f})."
+        "For the progressive decline of {base_name} over time, a time-dependent downward trend was observed across the evaluation period "
+        "(Table {table_label}). The overall pooled grand mean declined from {first_gm} to {last_gm}. Importantly, the interaction effect "
+        "between {factor_a_col} and {factor_b_col} was highly significant ({p_notation_int_last}) by the final evaluation stage ({last_day_str}). "
+        "At {last_day_str}, the treatment combination {comb_top_name} demonstrated optimal retention with {comb_top_val:.2f}^{comb_top_let}, "
+        "while the lowest performance tier was represented by {comb_low_name} ({comb_low_val_val:.2f})."
     ),
     "temp_5_trend_nonsig_int": (
-        "The progressive changes in **{base_name}** over time exhibited a distinct time-dependent trend, as shown in **{table_label}**. "
+        "The progressive changes in {base_name} over time exhibited a distinct time-dependent trend, as shown in {table_label}."
         "The grand mean changed from {first_gm} at {first_day} and progressively shifted to {last_gm} by {last_day}. The interaction effect "
-        "between **{factor_a_col}** and **{factor_b_col}** was completely nonsignificant ({p_notation_int_last}) throughout the entire timeline, "
-        "showing that both factors regulated the trait independently. By {last_day}, the main effect of **{factor_a_col}** was significant "
-        "({p_notation_a_last}), where genotype **{top_a_last}** led with {top_val_a_last}^{top_let_a_last}, while **{low_a_last}** was lowest. "
-        "Simultaneously, **{factor_b_col}** exerted a significant main effect ({p_notation_b_last}), with **{top_b_last}** demonstrating "
-        "superior performance ({top_val_b_last}^{top_let_b_last}) over **{low_b_last}**."
+        "between {factor_a_col} and {factor_b_col} was completely nonsignificant ({p_notation_int_last}) throughout the entire timeline, "
+        "showing that both factors regulated the trait independently. By {last_day}, the main effect of {factor_a_col} was significant "
+        "({p_notation_a_last}), where genotype {top_a_last} led with {top_val_a_last}^{top_let_a_last}, while {low_a_last} was lowest. "
+        "Simultaneously, {factor_b_col} exerted a significant main effect ({p_notation_b_last}), with {top_b_last} demonstrating "
+        "superior performance ({top_val_b_last}^{top_let_b_last}) over {low_b_last}."
     )
 }
 
@@ -122,6 +122,20 @@ def set_header_bottom_border(row_or_cells):
             '</w:tcBorders>' % nsdecls('w')
         )
         tcPr.append(borders)
+
+# --- Dynamic Table Caption Generator (Varieties of Wordings) ---
+def generate_table_caption(table_num, factor_a, factor_b, variables_list):
+    vars_txt = ", ".join(variables_list)
+    if len(variables_list) > 3:
+        vars_txt = f"{variables_list[0]}, {variables_list[1]} and other evaluated parameters"
+        
+    captions = [
+        f"Table {table_num}: Influence of {factor_a} and {factor_b} on {vars_txt}.",
+        f"Table {table_num}: Response of {vars_txt} to various treatments of {factor_a} and {factor_b}.",
+        f"Table {table_num}: Effect of {factor_a} and {factor_b} on {vars_txt}.",
+        f"Table {table_num}: Physiological and biochemical performance of {vars_txt} under different levels of {factor_a} and {factor_b}."
+    ]
+    return captions[table_num % len(captions)]
 
 # --- Parameter Grouping Engine for Time-Series ---
 def group_parameters(params):
@@ -293,19 +307,19 @@ def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_c
     comb_low_name, comb_low_val = sorted_comb[-1]
     comb_top_let = p_data["cld_comb"].get(comb_top_name, "")
     
-    # Parity Groups Lists
+    # Parity Groups Lists (Formatted as plain text, no bold brackets or backticks)
     at_par_a_list = []
     for lvl, val in sorted_a[1:]:
         let = p_data["means_a_str"][lvl].replace(f"{val:.2f}", "")
         if top_let_a and let and any(char in top_let_a for char in let):
-            at_par_a_list.append(f"**{lvl}** ({val:.2f}^{let})")
+            at_par_a_list.append(f"{lvl} ({val:.2f}^{let})")
     at_par_a_str = ", ".join(at_par_a_list) if at_par_a_list else "no other levels"
     
     at_par_b_list = []
     for lvl, val in sorted_b[1:]:
         let = p_data["means_b_str"][lvl].replace(f"{val:.2f}", "")
         if top_let_b and let and any(char in top_let_b for char in let):
-            at_par_b_list.append(f"**{lvl}** ({val:.2f}^{let})")
+            at_par_b_list.append(f"{lvl} ({val:.2f}^{let})")
     at_par_b_str = ", ".join(at_par_b_list) if at_par_b_list else "no other levels"
     if p_b >= 0.05:
         at_par_b_str = "all evaluated levels"
@@ -314,39 +328,39 @@ def generate_two_factor_explanation(param_name, p_data, factor_a_col, factor_b_c
     for combo, val in sorted_comb[1:]:
         let = p_data["cld_comb"].get(combo, "")
         if comb_top_let and let and any(char in comb_top_let for char in let):
-            at_par_comb_list.append(f"**{combo}** ({val:.2f}^{let})")
+            at_par_comb_list.append(f"{combo} ({val:.2f}^{let})")
     at_par_comb_str = ", ".join(at_par_comb_list) if at_par_comb_list else "no other combinations"
 
     if p_ab < 0.05:
         # Significant interaction effect
         para = (
-            f"Regarding the parameter **{param_name}**, the statistical evaluation revealed a highly significant "
-            f"interaction effect between **{factor_a_col}** and **{factor_b_col}** ({p_notation_int}) (as summarized "
-            f"in **{table_label}**). This interaction confirms that the regulatory influence of **{factor_b_col}** "
-            f"depends heavily on the baseline level of **{factor_a_col}**. Among all treatment combinations, "
-            f"**{comb_top_name}** established its position at the statistical apex with {comb_top_val:.2f}^{comb_top_let}, "
+            f"Regarding the parameter {param_name}, the statistical evaluation revealed a highly significant "
+            f"interaction effect between {factor_a_col} and {factor_b_col} ({p_notation_int}) (as summarized "
+            f"in {table_label}). This interaction confirms that the regulatory influence of {factor_b_col} "
+            f"depends heavily on the baseline level of {factor_a_col}. Among all treatment combinations, "
+            f"{comb_top_name} established its position at the statistical apex with {comb_top_val:.2f}^{comb_top_let}, "
             f"showing statistical parity with other high-performing treatments including {at_par_comb}. Conversely, the lowest "
-            f"performance tier was marked by the combination **{comb_low_name}** ({comb_low_val:.2f}), representing the "
+            f"performance tier was marked by the combination {comb_low_name} ({comb_low_val:.2f}), representing the "
             f"cumulative severity of stress or untreated control conditions."
         )
     else:
         # Non-significant interaction effect (Independent main effects)
         part_a = ""
         if p_a >= 0.05:
-            part_a = f"the main effect of **{factor_a_col}** was nonsignificant ({p_notation_a}) on **{param_name}**, suggesting stable and uniform behavior across levels."
+            part_a = f"the main effect of {factor_a_col} was nonsignificant ({p_notation_a}) on {param_name}, suggesting stable and uniform behavior across levels."
         else:
-            part_a = f"the main effect of **{factor_a_col}** was highly significant ({p_notation_a}) on **{param_name}**. The maximum value was registered by treatment **{top_a}** ({top_val_a:.2f}^{top_let_a}), which established statistical parity with {at_par_a_str}, while **{low_a}** marked the minimum performance."
+            part_a = f"the main effect of {factor_a_col} was highly significant ({p_notation_a}) on {param_name}. The maximum value was registered by treatment {top_a} ({top_val_a:.2f}^{top_let_a}), which established statistical parity with {at_par_a_str}, while {low_a} marked the minimum performance."
             
         part_b = ""
         if p_b >= 0.05:
-            part_b = f"Similarly, the main effect of **{factor_b_col}** was nonsignificant ({p_notation_b}) at this interval, indicating comparable performance across all evaluated rates."
+            part_b = f"Similarly, the main effect of {factor_b_col} was nonsignificant ({p_notation_b}) at this interval, indicating comparable performance across all evaluated rates."
         else:
-            part_b = f"Simultaneously, the treatment factor **{factor_b_col}** exerted a highly significant ({p_notation_b}) response, wherein **{top_b}** led the application levels with {top_val_b:.2f}^{top_let_b} ({at_par_b_str}), whereas **{low_b}** marked the minimum baseline limit around the grand mean of {p_data['gm']:.2f}."
+            part_b = f"Simultaneously, the treatment factor {factor_b_col} exerted a highly significant ({p_notation_b}) response, wherein {top_b} led the application levels with {top_val_b:.2f}^{top_let_b} ({at_par_b_str}), whereas {low_b} marked the minimum baseline limit around the grand mean of {p_data['gm']:.2f}."
         
         para = (
-            f"For the parameter **{param_name}**, the interaction effect (**{factor_a_col}** × **{factor_b_col}**) "
+            f"For the parameter {param_name}, the interaction effect ({factor_a_col} × {factor_b_col}) "
             f"was completely nonsignificant ({p_notation_int}), confirming that the treatment factors operated independently of each other. "
-            f"Specifically, as detailed in **{table_label}**, {part_a} {part_b}"
+            f"Specifically, as detailed in {table_label}, {part_a} {part_b}"
         )
     return para
 
@@ -375,21 +389,21 @@ def generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, 
     if any_sig_ab:
         sig_days = [it[2] for it in items if results_data[it[0]]["p_ab"] < 0.05]
         interaction_evolution = (
-            f"Notably, the interaction effect between **{factor_a_col}** and **{factor_b_col}** demonstrated clear temporal dependencies "
+            f"Notably, the interaction effect between {factor_a_col} and {factor_b_col} demonstrated clear temporal dependencies "
             f"over the storage/trial duration, transitioning from nonsignificant at the early phase to highly significant ({p_notation_int_last}) "
             f"during later stages ({', '.join(sig_days)}). At the final evaluation interval ({last_day_str}), the treatment combination "
-            f"**{comb_top_name}** yielded the peak value of {comb_top_val:.2f}^{comb_top_let}, while **{comb_low_name}** marked the lowest "
+            f"{comb_top_name} yielded the peak value of {comb_top_val:.2f}^{comb_top_let}, while {comb_low_name} marked the lowest "
             f"limit of performance ({comb_low_val:.2f})."
         )
     else:
         interaction_evolution = (
-            f"The interaction effect between **{factor_a_col}** and **{factor_b_col}** remained consistently nonsignificant across all "
-            f"assessment intervals, showing that both factors regulated the **{base_name}** trend independently."
+            f"The interaction effect between {factor_a_col} and {factor_b_col} remained consistently nonsignificant across all "
+            f"assessment intervals, showing that both factors regulated the {base_name} trend independently."
         )
         
     para = (
-        f"Regarding **{base_name}**, the trait exhibited a highly defined, time-dependent {direction} trend over the course of the trial, "
-        f"as shown in **{table_label}**. The grand mean transitioned from {first_gm:.2f} at {first_day_str} and progressively shifted to {last_gm:.2f} "
+        f"Regarding {base_name}, the trait exhibited a highly defined, time-dependent {direction} trend over the course of the trial, "
+        f"as shown in {table_label}. The grand mean transitioned from {first_gm:.2f} at {first_day_str} and progressively shifted to {last_gm:.2f} "
         f"by {last_day_str}. {interaction_evolution}"
     )
     return para
@@ -581,7 +595,7 @@ def build_styled_excel(factor_a_col, factor_b_col, params, levels_a, levels_b, r
     return wb
 
 # --- DOCX Copy of Styled Excel Table ---
-def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, levels_b, results_data):
+def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, levels_b, results_data, table_num):
     num_cols = len(g_cols) + 1
     table = doc.add_table(rows=1, cols=num_cols)
     set_table_borders(table)
@@ -685,12 +699,12 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
         for idx, width in enumerate([Inches(1.5)] + [Inches(1.1)] * len(g_cols)):
             row.cells[idx].width = width
 
-# --- Multi-Year and Web Routing controller ---
+# --- Web Interface Routing ---
 def show_module():
     st.markdown("### Two-Factor RCBD Analyzer")
     
-    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector")
-    uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f")
+    mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="2f_mode_selector_two")
+    uploaded_file = st.file_uploader("Upload Two-Factor Excel File", type=["xlsx"], key="file_uploader_2f_two")
 
     if uploaded_file is not None:
         if mode == "Raw Data Mode":
@@ -785,23 +799,20 @@ def run_raw_mode(uploaded_file):
                         table_counter += 1
                         
                         st.write(f"##### {chunk_lbl}: Integrated Properties")
-                        doc.add_heading(f"{chunk_lbl}: Properties Evaluation", level=2)
+                        
+                        # Generate dynamic caption above table
+                        caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, chunk)
+                        doc.add_heading(caption_text, level=2)
                         
                         for p in chunk:
                             p_text = generate_two_factor_explanation(p, results_data[p], factor_a_col, factor_b_col, chunk_lbl)
                             st.write(p_text)
                             
-                            p_docx = doc.add_paragraph()
-                            parts = re.split(r'(\*\*.*?\*\*)', p_text)
-                            for part in parts:
-                                if part.startswith('**') and part.endswith('**'):
-                                    p_docx.add_run(part[2:-2]).bold = True
-                                else:
-                                    p_docx.add_run(part)
+                            p_docx = doc.add_paragraph(p_text) # Flat text writing, no bold splits
                                     
-                        add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data)
+                        add_excel_table_to_docx(doc, factor_a_col, factor_b_col, chunk, levels_a, levels_b, results_data, table_counter)
                         st.write("*(Consolidated table placed directly below paragraph)*")
-                        doc.add_page_break()
+                        doc.add_paragraph() # Flowing spacing instead of page breaks
                         
                     # Step 2: Render and isolate trend lines
                     for base_name, items in sorted(grouped.items()):
@@ -810,23 +821,19 @@ def run_raw_mode(uploaded_file):
                             table_counter += 1
                             
                             st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
-                            doc.add_heading(f"{trend_lbl}: Progressive Trend of {base_name}", level=2)
+                            
+                            trend_params = [it[0] for it in items]
+                            caption_text = generate_table_caption(table_counter, factor_a_col, factor_b_col, trend_params)
+                            doc.add_heading(caption_text, level=2)
                             
                             p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, factor_b_col, trend_lbl)
                             st.write(p_text)
                             
-                            p_docx = doc.add_paragraph()
-                            parts = re.split(r'(\*\*.*?\*\*)', p_text)
-                            for part in parts:
-                                if part.startswith('**') and part.endswith('**'):
-                                    p_docx.add_run(part[2:-2]).bold = True
-                                else:
-                                    p_docx.add_run(part)
+                            doc.add_paragraph(p_text) # Flat text writing
                                     
-                            trend_params = [it[0] for it in items]
-                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data)
+                            add_excel_table_to_docx(doc, factor_a_col, factor_b_col, trend_params, levels_a, levels_b, results_data, table_counter)
                             st.write("*(Time-series table placed directly below trend paragraph)*")
-                            doc.add_page_break()
+                            doc.add_paragraph() # Spacing
                             
                 bio_doc = io.BytesIO()
                 doc.save(bio_doc)
@@ -930,23 +937,20 @@ def run_summary_mode_processing(uploaded_file):
                     table_counter += 1
                     
                     st.write(f"##### {chunk_lbl}: Integrated Properties")
-                    doc.add_heading(f"{chunk_lbl}: Properties Evaluation", level=2)
+                    
+                    # Generate dynamic caption above table
+                    caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, chunk)
+                    doc.add_heading(caption_text, level=2)
                     
                     for p in chunk:
                         p_text = generate_two_factor_explanation(p, results_data[p], factor_a_label, factor_b_label, chunk_lbl)
                         st.write(p_text)
                         
-                        p_docx = doc.add_paragraph()
-                        parts = re.split(r'(\*\*.*?\*\*)', p_text)
-                        for part in parts:
-                            if part.startswith('**') and part.endswith('**'):
-                                p_docx.add_run(part[2:-2]).bold = True
-                            else:
-                                p_docx.add_run(part)
+                        doc.add_paragraph(p_text) # Flat text writing
                                 
-                    add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data)
+                    add_excel_table_to_docx(doc, factor_a_label, factor_b_label, chunk, factor_a_levels, factor_b_levels, results_data, table_counter)
                     st.write("*(Consolidated table placed directly below paragraph)*")
-                    doc.add_page_break()
+                    doc.add_paragraph() # Spacing
                     
                 # Step 2: Render and isolate trend lines
                 for base_name, items in sorted(grouped.items()):
@@ -955,23 +959,19 @@ def run_summary_mode_processing(uploaded_file):
                         table_counter += 1
                         
                         st.write(f"##### {trend_lbl}: Progressive Trend of {base_name}")
-                        doc.add_heading(f"{trend_lbl}: Progressive Trend of {base_name}", level=2)
+                        
+                        trend_params = [it[0] for it in items]
+                        caption_text = generate_table_caption(table_counter, factor_a_label, factor_b_label, trend_params)
+                        doc.add_heading(caption_text, level=2)
                         
                         p_text = generate_trend_explanation_2f(base_name, items, results_data, factor_a_label, factor_b_label, trend_lbl)
                         st.write(p_text)
                         
-                        p_docx = doc.add_paragraph()
-                        parts = re.split(r'(\*\*.*?\*\*)', p_text)
-                        for part in parts:
-                            if part.startswith('**') and part.endswith('**'):
-                                p_docx.add_run(part[2:-2]).bold = True
-                            else:
-                                p_docx.add_run(part)
+                        doc.add_paragraph(p_text) # Flat text writing
                                 
-                        trend_params = [it[0] for it in items]
-                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data)
+                        add_excel_table_to_docx(doc, factor_a_label, factor_b_label, trend_params, factor_a_levels, factor_b_levels, results_data, table_counter)
                         st.write("*(Time-series table placed directly below trend paragraph)*")
-                        doc.add_page_break()
+                        doc.add_paragraph() # Spacing
                         
             bio_doc = io.BytesIO()
             doc.save(bio_doc)
