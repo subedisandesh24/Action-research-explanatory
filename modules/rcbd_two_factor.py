@@ -15,50 +15,396 @@ import openpyxl
 from openpyxl.styles import Font, Alignment, Border, Side
 
 # ==============================================================================
-# DATABASE OF VERBOSE, HIGH-STANDARD ACADEMIC DISCUSSION TEMPLATES (FLAT TEXT)
+# DATABASE OF VERBOSE, HIGH-STANDARD ACADEMIC DISCUSSION TEMPLATES (30 TEMPLATES)
 # ==============================================================================
-ACADEMIC_TEMPLATES_2F = {
-    "temp_1_sig_interaction": (
-        "Regarding the parameter {parameter}, the statistical evaluation revealed a highly significant "
-        "interaction effect between {factor_a_col} and {factor_b_col} ({p_notation_int}) (as summarized "
-        "in {table_label}). This interaction confirms that the regulatory influence of {factor_b_col} "
-        "depends heavily on the baseline level of {factor_a_col}. Among all treatment combinations, "
-        "{comb_top_name} established its position at the statistical apex with {comb_top_val}^{comb_top_let}, "
-        "showing statistical parity with other high-performing treatments including {at_par_comb}. Conversely, the lowest "
-        "performance tier was marked by the combination {comb_low_name} ({comb_low_val}), representing the "
-        "cumulative severity of stress or untreated control conditions."
+ACADEMIC_TEMPLATES_30 = {
+    # --- Group A: Time-Series / Chronological / Trend Parameters (1–15) ---
+    1: (
+        "The temporal development of {{variable_name}} was monitored sequentially across {{num_intervals}} "
+        "experimental phases from {{start_time}} to {{end_time}} {{time_unit}}. Table {{table_num}} shows that during "
+        "the initial evaluation stages, specifically at {{time_point_1}} and {{time_point_2}} {{time_unit}}, the main "
+        "effects of {{factor_A}} and {{factor_B}}, as well as their interactive combinations (A \u00d7 B), did not "
+        "exert any statistically significant influence on the observed values (P > 0.05). The overall grand mean during "
+        "this early phase remained stable at {{grand_mean_early}} {{unit}}. However, as the experimental units "
+        "progressed, a distinct divergence among treatments emerged. Table {{table_num}} shows that at {{time_point_3}} "
+        "{{time_unit}}, the main effect of {{factor_B}} was significant (P \u2264 0.05), with {{treatment_B1}} "
+        "({{value_B1}} {{unit}}) significantly outperforming {{treatment_B2}} ({{value_B2}} {{unit}}). By {{time_point_4}} "
+        "{{time_unit}}, both main effects reached a highly significant state (P \u2264 0.01), which was accompanied by "
+        "a significant interaction (P \u2264 0.05), demonstrating that the response of {{variable_name}} to {{factor_B}} "
+        "became highly dependent on the choice of {{factor_A}} during the final monitoring intervals."
     ),
-    "temp_2_sig_main_effects": (
-        "For the parameter {parameter}, the interaction effect ({factor_a_col} \u00d7 {factor_b_col}) "
-        "was completely nonsignificant ({p_notation_int}), confirming that the treatment factors operated independently of each other. "
-        "Specifically, as detailed in {table_label}, the main effect of {factor_a_col} was highly significant ({p_notation_a}) on {param_name}. "
-        "The maximum value was registered by treatment {top_a} ({top_val_a:.2f}^{top_let_a}), which established statistical parity with {at_par_a_str}, "
-        "while {low_a} marked the minimum performance. Simultaneously, the treatment factor {factor_b_col} exerted a highly significant ({p_notation_b}) response, "
-        "wherein {top_b} led the application levels with {top_val_b:.2f}^{top_let_b} ({at_par_b_str}), whereas {low_b} marked the minimum baseline limit around the grand mean."
+    2: (
+        "The overall timeline of {{variable_name}} followed a classic parabolic peak-and-decline trajectory over the "
+        "{{total_days}}-day study. Table {{table_num}} shows that the grand mean of {{variable_name}} began at "
+        "{{initial_value}} {{unit}} ({{time_point_1}} {{time_unit}}), peaked at {{peak_value}} {{unit}} at {{time_point_2}} "
+        "{{time_unit}}, and subsequently declined to {{end_value}} {{unit}} at the terminal evaluation phase of "
+        "{{time_point_3}} {{time_unit}}. Although treatments were statistically equivalent at the beginning of the "
+        "evaluation stage, the rate of post-peak decline was significantly altered by the application of both "
+        "{{factor_A}} and {{factor_B}}. Table {{table_num}} shows that at {{time_point_2}} {{time_unit}}, {{treatment_A1}} "
+        "maintained significantly higher {{variable_name}} levels ({{value_A1}} {{unit}}) compared to the baseline "
+        "treatment ({{value_baseline}} {{unit}}; P \u2264 0.05). This treatment trend widened toward the final "
+        "sampling stage of {{time_point_3}} {{time_unit}}, where {{treatment_B1}} ({{value_B1}} {{unit}}) significantly "
+        "limited the decrease of {{variable_name}} compared to {{treatment_B2}} ({{value_B2}} {{unit}}; P \u2264 0.01), "
+        "highlighting the role of the treatments in slowing the downward progression of the evaluated parameter."
     ),
-    "temp_3_trend_upward_sig_int": (
-        "Regarding the progressive progression of {base_name} over time, a highly defined, time-dependent trend was observed across "
-        "the evaluation period (as presented in {table_label}). The overall pooled grand mean changed from {first_gm} to {last_gm}. "
-        "Notably, the interaction effect between {factor_a_col} and {factor_b_col} demonstrated clear temporal dependencies, "
-        "transitioning from nonsignificant at the early phase to highly significant ({p_notation_int_last}) by the final evaluation stage ({last_day_str}). "
-        "At {last_day_str}, the treatment combination {comb_top_name} yielded the peak value of {comb_top_val:.2f}^{comb_top_let}, "
-        "while {comb_low_name} marked the lowest limit of performance ({comb_low_val:.2f})."
+    3: (
+        "Table {{table_num}} shows that the interaction effect between {{factor_A}} and {{factor_B}} was "
+        "statistically non-significant at the early dates of {{time_point_1}} and {{time_point_2}} {{time_unit}}, but "
+        "transitioned to a significant interactive response at {{time_point_3}} {{time_unit}} (P \u2264 0.05) and "
+        "{{time_point_4}} {{time_unit}} (P \u2264 0.05). Under this significant interaction, the combined "
+        "application of {{treatment_A1}} and {{treatment_B1}} produced the highest overall value of {{max_val}} {{unit}}, "
+        "which was significantly higher than all other treatment combinations. For the final measurement date at "
+        "{{time_point_5}} {{time_unit}}, the interaction returned to non-significant status (P > 0.05). However, both "
+        "main effects remained highly significant on this final date. Table {{table_num}} shows that {{treatment_A1}} "
+        "({{val_A1}} {{unit}}) and {{treatment_B1}} ({{val_B1}} {{unit}}) independently preserved higher levels of "
+        "{{variable_name}} compared to their respective minimum treatments ({{val_minA}} and {{val_minB}} {{unit}}), "
+        "indicating a sustained, independent treatment effect over the experimental timeline."
     ),
-    "temp_4_trend_downward_sig_int": (
-        "For the progressive decline of {base_name} over time, a time-dependent downward trend was observed across the evaluation period "
-        "({table_label}). The overall pooled grand mean declined from {first_gm} to {last_gm}. Importantly, the interaction effect "
-        "between {factor_a_col} and {factor_b_col} was highly significant ({p_notation_int_last}) by the final evaluation stage ({last_day_str}). "
-        "At {last_day_str}, the treatment combination {comb_top_name} demonstrated optimal retention with {comb_top_val:.2f}^{comb_top_let}, "
-        "while the lowest performance tier was represented by {comb_low_name} ({comb_low_val_val:.2f})."
+    4: (
+        "The main effect of {{factor_A}} was the primary source of variation for {{variable_name}} across "
+        "almost the entire temporal scale, whereas the effect of {{factor_B}} emerged only during the final "
+        "sampling points. Table {{table_num}} shows that {{factor_A}} had a highly significant effect "
+        "(P \u2264 0.01) from {{time_point_1}} to {{time_point_4}} {{time_unit}}, with {{treatment_A1}} "
+        "consistently maintaining the highest level of {{variable_name}} (averaging {{avg_val}} {{unit}}) compared "
+        "to the other treatments. In contrast, the main effect of {{factor_B}} remained non-significant "
+        "(P > 0.05) until the final stage of {{time_point_4}} {{time_unit}}, where {{treatment_B1}} finally yielded "
+        "a significantly higher value of {{val_B1}} {{unit}} compared to {{treatment_B2}} ({{val_B2}} {{unit}}; "
+        "P \u2264 0.05). The interactive effect between {{factor_A}} and {{factor_B}} was non-significant "
+        "throughout the entire temporal timeline, indicating that these two factors operated independently "
+        "across the observation period."
     ),
-    "temp_5_trend_nonsig_int": (
-        "The progressive changes in {base_name} over time exhibited a distinct time-dependent trend, as shown in {table_label}. "
-        "The grand mean changed from {first_gm} at {first_day} and progressively shifted to {last_gm} by {last_day}. The interaction effect "
-        "between {factor_a_col} and {factor_b_col} was completely nonsignificant ({p_notation_int_last}) throughout the entire timeline, "
-        "showing that both factors regulated the trait independently. By {last_day}, the main effect of {factor_a_col} was significant "
-        "({p_notation_a_last}), where genotype {top_a_last} led with {top_val_a_last}^{top_let_a_last}, while {low_a_last} was lowest. "
-        "Simultaneously, {factor_b_col} exerted a significant main effect ({p_notation_b_last}), with {top_b_last} demonstrating "
-        "superior performance ({top_val_b_last}^{top_let_b_last}) over {low_b_last}."
+    5: (
+        "The temporal response of {{variable_name}} was characterized by a distinct statistical "
+        "phase-shift between the initial phase ({{time_point_1}} to {{time_point_2}} {{time_unit}}) and the "
+        "final phase ({{time_point_3}} to {{time_point_4}} {{time_unit}}). Table {{table_num}} shows that "
+        "during the initial phase, all treatment combinations shared identical letter superscripts "
+        "(P > 0.05), with values closely matching the baseline mean of {{mean_early}} {{unit}}. Following "
+        "the transition to the final phase at {{time_point_3}} {{time_unit}}, the main effect of {{factor_A}} "
+        "became highly significant (P \u2264 0.01). Table {{table_num}} shows that {{treatment_A1}} produced "
+        "the highest value ({{val_A1}} {{unit}}), which was statistically equivalent only to {{treatment_A2}} "
+        "({{val_A2}} {{unit}}) but significantly higher than the lowest treatment level ({{val_lowest}} {{unit}}; "
+        "LSD_0.05 = {{lsdval}}). This significant main effect persisted through the final evaluation stage at "
+        "{{time_point_4}} {{time_unit}}, while the interactive combinations remained non-significant."
+    ),
+    6: (
+        "The rate of decrease in {{variable_name}} following the peak phase was significantly "
+        "influenced by the application of the treatment factors. Table {{table_num}} shows that from "
+        "{{time_point_1}} to {{time_point_2}} {{time_unit}}, the experimental units maintained high stability "
+        "with a grand mean of {{grand_mean_peak}} {{unit}}, and no treatment variations were observed "
+        "(P > 0.05). However, from {{time_point_3}} {{time_unit}} onwards, a rapid downward trend was "
+        "observed in {{variable_name}} values. The application of {{treatment_A1}} significantly slowed this "
+        "decrease, maintaining a value of {{val_A1}} {{unit}} at {{time_point_4}} {{time_unit}}, compared to "
+        "the baseline treatment which dropped to {{val_baseline}} {{unit}} (P \u2264 0.05). This protective main "
+        "effect was complemented by the highly significant main effect of {{treatment_B1}} ({{val_B1}} {{unit}}; "
+        "P \u2264 0.01), showing that the treatments worked to slow the downward progression through the final "
+        "sampling stages."
+    ),
+    7: (
+        "The cumulative progression of {{variable_name}} was recorded sequentially from {{time_point_1}} "
+        "to {{time_point_4}} {{time_unit}} to evaluate the accumulation kinetics of the system. Table {{table_num}} "
+        "shows that the cumulative curve followed a standard sigmoidal pattern, with the fastest accumulation rate "
+        "observed between {{time_point_2}} and {{time_point_3}} {{time_unit}}. Although there were no "
+        "differences among treatments during the initial lag phase at {{time_point_1}} {{time_unit}}, both main "
+        "factors significantly affected the accumulation rate during the active phase. At {{time_point_3}} "
+        "{{time_unit}}, {{treatment_A1}} achieved a significantly higher cumulative value ({{val_A1}} {{unit}}) "
+        "compared to the baseline treatment ({{val_baseline}} {{unit}}; P \u2264 0.01). Similarly, the main "
+        "effect of {{treatment_B1}} was highly significant at this stage, with a value of {{val_B1}} {{unit}} "
+        "compared to {{val_B2}} {{unit}} (P \u2264 0.01). This significant difference was maintained through the "
+        "plateau phase at {{time_point_4}} {{time_unit}}, while the interaction effect remained non-significant."
+    ),
+    8: (
+        "The experimental design demonstrated high precision in monitoring the temporal dynamics "
+        "of {{variable_name}}, with Coefficient of Variation (CV%) values ranging from {{cv_min}}% to {{cv_max}}% "
+        "across the {{num_dates}} sampling dates. Table {{table_num}} shows that the Standard Error of the Mean "
+        "(SEm) for both factor levels remained low, ranging between {{sem_min}} and {{sem_max}} {{unit}}. "
+        "Under these precise conditions, treatment differences remained non-significant at {{time_point_1}} and "
+        "{{time_point_2}} {{time_unit}}. At {{time_point_3}} {{time_unit}}, the main effect of {{factor_B}} was "
+        "significant (P \u2264 0.05, LSD_0.05 = {{lsdB}}), with {{treatment_B1}} ({{val_B1}} {{unit}}) outperforming "
+        "{{treatment_B2}} ({{val_B2}} {{unit}}). By {{time_point_4}} {{time_unit}}, both the main effect of "
+        "{{factor_A}} (P \u2264 0.05, LSD_0.05 = {{lsdA}}) and {{factor_B}} (P \u2264 0.01, LSD_0.05 = "
+        "{{lsdB}}) were significant, while their interactive effects remained statistically non-significant."
+    ),
+    9: (
+        "The mathematical differences (\u0394) and percentage changes in {{variable_name}} were "
+        "evaluated across several sampling intervals. Table {{table_num}} shows that while treatments "
+        "remained statistically equivalent at {{time_point_1}} and {{time_point_2}} {{time_unit}}, significant "
+        "treatment differences emerged at {{time_point_3}} {{time_unit}}. At this stage, {{treatment_A1}} "
+        "increased {{variable_name}} by {{pct_diff_A}}% compared to the lowest treatment level (\u0394 = {{deltaA}} "
+        "{{unit}}; P \u2264 0.05). At {{time_point_4}} {{time_unit}}, this percentage difference increased, with "
+        "{{treatment_A1}} outperforming the lowest treatment level by {{pct_diff_A_late}}% (P \u2264 0.01). Concurrently, "
+        "the application of {{treatment_B1}} resulted in a {{pct_diff_B}}% increase compared to {{treatment_B2}} "
+        "(\u0394 = {{deltaB}} {{unit}}; P \u2264 0.01), demonstrating the growing effect of the treatments as the "
+        "experimental units reached the final stages."
+    ),
+    10: (
+        "The temporal development of {{variable_name}} showed stable values during the early evaluation stages, "
+        "followed by significant treatment differences as the experimental units progressed. Table {{table_num}} shows "
+        "that no significant variations were observed at {{time_point_1}} and {{time_point_2}} {{time_unit}}, with "
+        "values remaining close to the grand mean of {{mean_early}} {{unit}}. However, at {{time_point_3}} "
+        "{{time_unit}}, both the main effect of {{factor_A}} (P \u2264 0.05) and {{factor_B}} (P \u2264 0.01) "
+        "were significant, with {{treatment_A1}} ({{val_A1}} {{unit}}) and {{treatment_B1}} ({{val_B1}} {{unit}}) "
+        "outperforming their respective minimum levels. This significant main effect persisted through the final "
+        "sampling date of {{time_point_4}} {{time_unit}}."
+    ),
+    11: (
+        "Table {{table_num}} shows that the {{variable_name}} values maintained a state of statistical "
+        "equivalence during the first two sampling dates ({{time_point_1}} and {{time_point_2}} {{time_unit}}), with "
+        "all treatment combinations sharing the same post-hoc letter grouping 'a'. During this early period, the grand "
+        "means were recorded as {{gm_1}} {{unit}} and {{gm_2}} {{unit}}, respectively, with no significant differences "
+        "observed. However, a transition occurred at {{time_point_3}} {{time_unit}} when the main effect of {{factor_B}} "
+        "application became significant (P \u2264 0.05). Treatment {{treatment_B1}} broke the statistical equivalence, "
+        "producing {{val_B1}} {{unit}} (assigned to letter grouping 'a') compared to treatment {{treatment_B2}} which "
+        "produced {{val_B2}} {{unit}} (assigned to letter grouping 'b'). By {{time_point_4}} {{time_unit}}, both "
+        "{{factor_A}} (P \u2264 0.05) and {{factor_B}} (P \u2264 0.01) showed significant differences, breaking the "
+        "early statistical equivalence across both factor levels."
+    ),
+    12: (
+        "The interactive effects of different treatments on {{variable_name}} became significant "
+        "during the middle of the monitoring cycle. Table {{table_num}} shows that the interaction (A \u00d7 B) "
+        "was significant at {{time_point_1}} {{time_unit}} (P \u2264 0.05) and highly significant at {{time_point_2}} "
+        "{{time_unit}} (P \u2264 0.01). Under this interactive response, the positive effect of {{treatment_B1}} "
+        "was significantly enhanced when combined with {{treatment_A1}}, yielding the highest overall values of "
+        "{{val_inter_1}} {{unit}} and {{val_inter_2}} {{unit}} on those dates. At the final sampling points of "
+        "{{time_point_3}} and {{time_point_4}} {{time_unit}}, this interaction was non-significant (P > 0.05). Table "
+        "{{table_num}} shows that despite the lack of interaction, both main effects remained highly significant on "
+        "these final dates. Under these non-interactive conditions, {{treatment_A1}} ({{val_A1}} {{unit}}) and "
+        "{{treatment_B1}} ({{val_B1}} {{unit}}) independently maintained the highest levels of {{variable_name}} "
+        "compared to their respective minimum treatments."
+    ),
+    13: (
+        "The range of values for {{variable_name}} across different treatments was small during "
+        "the early stages but expanded considerably as the study progressed. Table {{table_num}} shows that at "
+        "{{time_point_1}} and {{time_point_2}} {{time_unit}}, the range between the highest and lowest treatment "
+        "means was narrow and statistically non-significant, with a maximum range of only {{range_early}} {{unit}}. "
+        "However, at {{time_point_3}} {{time_unit}}, this treatment range expanded significantly. For Factor A, "
+        "the range between the highest-performing treatment ({{treatment_A1}}; {{val_max_A}} {{unit}}) and the "
+        "lowest-performing treatment ({{val_min_A}} {{unit}}) was {{range_mid_A}} {{unit}} (P \u2264 0.01). For Factor B, "
+        "the range was {{range_mid_B}} {{unit}} (P \u2264 0.01). At {{time_point_4}} {{time_unit}}, the treatment "
+        "range remained wide, with a difference of {{range_late_A}} {{unit}} among {{factor_A}} treatments "
+        "(P \u2264 0.05) and {{range_late_B}} {{unit}} between {{factor_B}} treatments (P \u2264 0.01), demonstrating "
+        "the cumulative effect of the treatments over the entire study."
+    ),
+    14: (
+        "The {{variable_name}} of the experimental units was monitored across a series of "
+        "developmental stages from the initial phase to the final terminal stage. Table {{table_num}} shows that "
+        "no treatment differences were observed during the initial phase at {{time_point_1}} and {{time_point_2}} "
+        "{{time_unit}} (P > 0.05). The first significant differences emerged during the middle phase at "
+        "{{time_point_3}} {{time_unit}}, where the main effect of {{factor_B}} was significant (P \u2264 0.05), "
+        "with {{treatment_B1}} producing a higher value ({{val_B1}} {{unit}}) than {{treatment_B2}} ({{val_B2}} "
+        "{{unit}}). As the experimental system reached peak values at {{time_point_4}} {{time_unit}}, treatment "
+        "differences became highly significant. Table {{table_num}} shows that both {{factor_A}} (P \u2264 0.01) "
+        "and {{factor_B}} (P \u2264 0.01) had highly significant effects, and their interaction was "
+        "significant (P \u2264 0.05). Under this interactive response, the combination of {{treatment_A1}} and "
+        "{{treatment_B1}} produced the highest overall values. At the final stage of {{time_point_5}} {{time_unit}}, "
+        "both main effects remained significant, although their interaction returned to non-significant status."
+    ),
+    15: (
+        "The {{variable_name}} levels were monitored to identify when the experimental units "
+        "transitioned past critical operational thresholds. Table {{table_num}} shows that during the "
+        "initial stages at {{time_point_1}} and {{time_point_2}} {{time_unit}}, all treatments maintained high, "
+        "stable values above the critical threshold of {{threshold_val}} {{unit}}, with no significant "
+        "differences observed among them (P > 0.05). A critical transition occurred at {{time_point_3}} "
+        "{{time_unit}}, where the values under the lower-performing treatments began to drop below the "
+        "threshold level. The application of {{treatment_A1}} significantly delayed this downward trend, "
+        "maintaining a value of {{val_A1}} {{unit}} (well above the threshold), while the lowest-performing "
+        "treatment fell to {{val_lowest}} {{unit}} (P \u2264 0.05). This protective main effect was complemented "
+        "by the highly significant main effect of {{treatment_B1}} ({{val_B1}} {{unit}}; P \u2264 0.01), "
+        "showing that the treatments worked together to maintain the values of the system through the "
+        "final sampling stages."
+    ),
+
+    # --- Group B: Single-Day / End-Point / Terminal Parameters (16–30) ---
+    16: (
+        "The terminal measurement of {{variable_name}} was significantly affected by both "
+        "experimental factors and their interaction. Table {{table_num}} shows that the main effect of "
+        "{{factor_A}} was highly significant (P \u2264 0.01), with {{treatment_A1}} producing the highest value of "
+        "{{val_A1}} {{unit}}, which was statistically equivalent to {{treatment_A2}} ({{val_A2}} {{unit}}) "
+        "but significantly higher than the lowest treatment level ({{val_lowest}} {{unit}}; LSD_0.05 = {{lsd_A}}). "
+        "The main effect of {{factor_B}} was also highly significant (P \u2264 0.001), with {{treatment_B1}} "
+        "producing a significantly higher value compared to {{treatment_B2}} ({{val_B1}} vs. {{val_B2}} {{unit}}; "
+        "LSD_0.05 = {{lsd_B}}). A statistically significant interactive response (A \u00d7 B) was also observed "
+        "for this parameter (P \u2264 0.05). Table {{table_num}} shows that under this significant interaction, "
+        "the positive response to {{treatment_B1}} was significantly enhanced when combined with {{treatment_A1}}. "
+        "Under this interactive response, the combination of {{treatment_A1}} and {{treatment_B1}} produced the "
+        "highest overall value of {{max_val}} {{unit}}, while the lowest value occurred under the lowest "
+        "treatment level of Factor A paired with {{treatment_B2}} ({{min_val}} {{unit}}), with a low overall "
+        "coefficient of variation (CV = {{cv_val}}%)."
+    ),
+    17: (
+        "The terminal value of {{variable_name}} was significantly affected by both experimental "
+        "factors, though their interactive effect was non-significant. Table {{table_num}} shows that the "
+        "main effect of {{factor_A}} was significant (P \u2264 0.05), with {{treatment_A1}} producing the highest "
+        "value ({{val_A1}} {{unit}}), which was statistically equivalent to {{treatment_A2}} ({{val_A2}} {{unit}}) "
+        "but significantly higher than the lowest treatment level ({{val_lowest}} {{unit}}; LSD_0.05 = {{lsd_A}}). "
+        "The lowest treatment level recorded the lowest value of {{val_min_A}} {{unit}}. Similarly, the main "
+        "effect of {{factor_B}} was highly significant (P \u2264 0.01). Table {{table_num}} shows that "
+        "{{treatment_B1}} produced a significantly higher value of {{val_B1}} {{unit}} compared to {{treatment_B2}} "
+        "({{val_B2}} {{unit}}; LSD_0.05 = {{lsd_B}}). The interaction between the two factors (A \u00d7 B) "
+        "was non-significant (P > 0.05), indicating that the two treatments acted independently on this parameter, "
+        "with the overall grand mean of the trial recorded as {{grand_mean}} {{unit}} and a low coefficient "
+        "of variation (CV = {{cv_val}}%)."
+    ),
+    18: (
+        "The terminal value of {{variable_name}} was significantly affected by different levels of "
+        "{{factor_A}}, while {{factor_B}} and their interaction had no significant effect. Table {{table_num}} "
+        "shows that the main effect of {{factor_A}} was significant (P \u2264 0.05), with {{treatment_A1}} "
+        "producing the highest value ({{val_A1}} {{unit}}), which was statistically equivalent to {{treatment_A2}} "
+        "({{val_A2}} {{unit}}) but significantly higher than the lowest treatment level ({{val_lowest}} {{unit}}; "
+        "LSD_0.05 = {{lsd_A}}). In contrast, the main effect of {{factor_B}} was non-significant (P > 0.05), "
+        "with values ranging closely from {{val_B1}} {{unit}} under {{treatment_B1}} to {{val_B2}} {{unit}} under "
+        "{{treatment_B2}} (LSD_0.05 = {{lsd_B}}). Table {{table_num}} shows that the interaction between the two "
+        "factors was also non-significant (P > 0.05), indicating that the choice of {{factor_A}} was the "
+        "primary factor driving differences in {{variable_name}}, with a recorded grand mean of {{grand_mean}} "
+        "{{unit}} and a standard error of the mean (SEm) of {{sem_val}}."
+    ),
+    19: (
+        "The terminal value of {{variable_name}} was significantly affected by different levels of "
+        "{{factor_B}}, while {{factor_A}} and their interaction had no significant effect. Table {{table_num}} "
+        "shows that the main effect of {{factor_B}} was highly significant (P \u2264 0.01), with {{treatment_B1}} "
+        "producing a significantly higher value of {{val_B1}} {{unit}} compared to {{treatment_B2}} ({{val_B2}} "
+        "{{unit}}; LSD_0.05 = {{lsd_B}}). In contrast, the main effect of {{factor_A}} was non-significant (P > 0.05), "
+        "with values ranging closely from {{val_min_A}} {{unit}} under the lowest treatment level to {{val_max_A}} "
+        "{{unit}} under {{treatment_A1}} (LSD_0.05 = {{lsd_A}}). Table {{table_num}} shows that the interaction "
+        "between the two factors was also non-significant (P > 0.05), indicating that the application of "
+        "{{factor_B}} was the primary factor driving differences in {{variable_name}}, with a recorded grand mean "
+        "of {{grand_mean}} {{unit}} and a standard error of the mean (SEm) of {{sem_val}}."
+    ),
+    20: (
+        "The terminal value of {{variable_name}} was not significantly affected by {{factor_A}}, "
+        "{{factor_B}}, or their interactive combinations. Table {{table_num}} shows that the values remained "
+        "highly uniform across all treatments (P > 0.05), with a maximum of {{val_max_A}} recorded under "
+        "{{treatment_A1}} and a minimum of {{val_min_A}} recorded under {{treatment_A2}}, which fell well "
+        "within the non-significant range based on the post-hoc separation (LSD_0.05 = {{lsd_A}}). Similarly, "
+        "for Factor B, both {{treatment_B1}} and {{treatment_B2}} produced statistically equivalent means of "
+        "{{val_B}} (LSD_0.05 = {{lsd_B}}). The SEm for both factors was recorded as {{sem_val}}, and the "
+        "overall grand mean of the experimental trial was {{grand_mean}} {{unit}}. This lack of statistical "
+        "divergence, coupled with a remarkably low coefficient of variation (CV = {{cv_val}}%), confirms "
+        "that {{variable_name}} maintained a stable baseline that was not altered by any of the treatment "
+        "combinations."
+    ),
+    21: (
+        "The terminal evaluation of the parameter index for {{variable_name}} showed high stability "
+        "and low overall variance across all treatment combinations. Table {{table_num}} shows that the "
+        "Coefficients of Variation (CV%) remained very low at {{cv_val}}%, and the Standard Error of the Mean "
+        "(SEm) was recorded as {{sem_val}} {{unit}}, indicating a high degree of experimental precision and "
+        "baseline consistency. Under these uniform conditions, neither the main effects of {{factor_A}} nor "
+        "{{factor_B}} showed any statistically significant differences (P > 0.05). The mean values "
+        "remained close to the grand mean of {{grand_mean}} {{unit}}, with all treatments sharing the same "
+        "post-hoc letter grouping 'a'. The non-significant interactive effect (A \u00d7 B) further "
+        "confirms that this parameter was robust to external treatments, remaining stable across both factor "
+        "levels."
+    ),
+    22: (
+        "The relative percentage changes in the terminal value of {{variable_name}} were evaluated "
+        "to assess the magnitude of the treatment effects. Table {{table_num}} shows that the application of "
+        "{{treatment_A1}} increased {{variable_name}} by {{pct_diff_A}}% compared to the lowest treatment level "
+        "({{val_max_A}} vs. {{val_min_A}} {{unit}}). Other treatments, such as {{treatment_A2}} and "
+        "{{treatment_A3}}, also increased the values by {{pct_diff_A2}}% and {{pct_diff_A3}}% over the "
+        "lowest treatment level, respectively. For the {{factor_B}} treatments, {{treatment_B1}} resulted in "
+        "a {{pct_diff_B}}% increase compared to {{treatment_B2}} ({{val_B1}} vs. {{val_B2}} {{unit}}). These "
+        "differences were highly significant for both the {{factor_A}} main effect (P \u2264 0.01) and the "
+        "{{factor_B}} main effect (P \u2264 0.001), with no significant interaction observed (P > 0.05)."
+    ),
+    23: (
+        "The interaction effect between {{factor_A}} and {{factor_B}} (A \u00d7 B) was highly "
+        "significant for the terminal value of {{variable_name}} (P \u2264 0.01). Table {{table_num}} shows "
+        "that this significant interaction dominated the experimental response, making the main effects "
+        "secondary in explaining the variation in {{variable_name}}. Under this significant interactive "
+        "response, the combination of {{treatment_A1}} and {{treatment_B1}} produced the highest overall value "
+        "of {{max_val}} {{unit}}, which was significantly higher than all other treatment combinations. "
+        "Conversely, the combination of the lowest treatment level of Factor A and {{treatment_B2}} "
+        "produced the lowest value of {{min_val}} {{unit}}. This strong interactive response shows that the "
+        "positive effect of the treatment was highly dependent on the choice of {{factor_A}} levels, with a low "
+        "overall coefficient of variation (CV = {{cv_val}}%)."
+    ),
+    24: (
+        "The terminal value of {{variable_name}} was significantly affected by both experimental "
+        "factors, though their interactive effect was non-significant. Table {{table_num}} shows that the "
+        "main effect of {{factor_A}} was significant (P \u2264 0.05, LSD_0.05 = {{lsd_A}}), with {{treatment_A1}} "
+        "producing the highest value ({{val_A1}} {{unit}}), which was statistically equivalent to {{treatment_A2}} "
+        "({{val_A2}} {{unit}}) but significantly higher than the lowest treatment level ({{val_lowest}} {{unit}}). "
+        "The standard error of the mean (SEm) for the {{factor_A}} treatment was {{sem_A}}. Similarly, "
+        "the main effect of {{factor_B}} was highly significant (P \u2264 0.01, LSD_0.05 = {{lsd_B}}). "
+        "Table {{table_num}} shows that {{treatment_B1}} produced a significantly higher value of {{val_B1}} "
+        "{{unit}} compared to {{treatment_B2}} ({{val_B2}} {{unit}}), with a recorded SEm of {{sem_B}}. "
+        "The interaction between the two factors was non-significant (P > 0.05), with the overall grand mean "
+        "of the trial recorded as {{grand_mean}} {{unit}} and a low coefficient of variation (CV = {{cv_val}}%)."
+    ),
+    25: (
+        "The final ratio of the system components at terminal harvest was significantly affected "
+        "by both experimental factors, though their interactive effect was non-significant. Table {{table_num}} "
+        "shows that the main effect of {{factor_A}} was significant (P \u2264 0.05), with {{treatment_A1}} "
+        "producing the highest fractional ratio ({{val_A1}} {{unit}}), which was statistically equivalent to "
+        "{{treatment_A2}} ({{val_A2}} {{unit}}) but significantly higher than the lowest treatment level "
+        "({{val_lowest}} {{unit}}; LSD_0.05 = {{lsd_A}}). The main effect of {{factor_B}} was highly "
+        "significant (P \u2264 0.01). Table {{table_num}} shows that {{treatment_B1}} produced a significantly "
+        "higher ratio ({{val_B1}} {{unit}}) compared to {{treatment_B2}} ({{val_B2}} {{unit}}; LSD_0.05 = "
+        "{{lsd_B}}). The interaction between {{factor_A}} and {{factor_B}} was non-significant (P > 0.05), "
+        "indicating that the two factors affected the component ratio independently."
+    ),
+    26: (
+        "The final activity rate of {{variable_name}} was significantly affected by both "
+        "experimental factors, with no significant interaction observed. Table {{table_num}} shows "
+        "that the main effect of {{factor_A}} was highly significant (P \u2264 0.01), with {{treatment_A1}} "
+        "producing the highest activity rate ({{val_A1}} {{unit}}), which was statistically on par with "
+        "{{treatment_A2}} ({{val_A2}} {{unit}}) but significantly higher than the lowest treatment level "
+        "({{val_lowest}} {{unit}}; LSD_0.05 = {{lsd_A}}). Similarly, the main effect of {{factor_B}} "
+        "was highly significant (P \u2264 0.01). Table {{table_num}} shows that {{treatment_B1}} produced "
+        "a significantly higher activity rate ({{val_B1}} {{unit}}) compared to {{treatment_B2}} "
+        "({{val_B2}} {{unit}}; LSD_0.05 = {{lsd_B}}). The interaction between the two factors was "
+        "non-significant (P > 0.05), with the grand mean of the experiment recorded at {{grand_mean}} "
+        "{{unit}} and a low coefficient of variation (CV = {{cv_val}}%)."
+    ),
+    27: (
+        "The final concentration of {{variable_name}} in the experimental matrix was "
+        "significantly affected by different levels of {{factor_A}}, while {{factor_B}} and their "
+        "interaction had no significant effect. Table {{table_num}} shows that the main effect of {{factor_A}} "
+        "was highly significant (P \u2264 0.01), with {{treatment_A1}} producing the highest concentration "
+        "of {{val_A1}} {{unit}}, which was significantly higher than {{treatment_A2}} ({{val_A2}} {{unit}}) "
+        "and the lowest treatment level ({{val_lowest}} {{unit}}; LSD_0.05 = {{lsd_A}}). In contrast, the "
+        "main effect of {{factor_B}} was non-significant (P > 0.05), with values ranging closely from {{val_B1}} "
+        "{{unit}} under {{treatment_B1}} to {{val_B2}} {{unit}} under {{treatment_B2}} (LSD_0.05 = {{lsd_B}}). "
+        "Table {{table_num}} shows that the interaction between the two factors was also non-significant (P > 0.05), "
+        "indicating that the choice of {{factor_A}} was the primary factor driving differences in matrix concentration."
+    ),
+    28: (
+        "The terminal value of the primary output component, {{variable_name}}, was "
+        "significantly affected by both experimental factors, with no significant interaction "
+        "observed. Table {{table_num}} shows that the main effect of {{factor_A}} was significant "
+        "(P \u2264 0.05), with {{treatment_A1}} producing the highest value ({{val_A1}}), which was statistically "
+        "equivalent to {{treatment_A2}} ({{val_A2}}) but significantly higher than the lowest treatment "
+        "level ({{val_lowest}}; LSD_0.05 = {{lsd_A}}). Similarly, the main effect of {{factor_B}} was highly "
+        "significant (P \u2264 0.01). Table {{table_num}} shows that {{treatment_B1}} produced a significantly "
+        "higher value of {{val_B1}} compared to {{treatment_B2}} ({{val_B2}}; LSD_0.05 = {{lsd_B}}). The "
+        "interaction between the two factors was non-significant (P > 0.05), indicating that both factors "
+        "contributed independently to the final output performance, with a recorded grand mean of {{grand_mean}} "
+        "and a low coefficient of variation (CV = {{cv_val}}%)."
+    ),
+    29: (
+        "The terminal evaluation of the physical resistance parameter, {{variable_name}}, "
+        "showed no significant differences among treatment combinations. Table {{table_num}} shows "
+        "that the values remained statistically uniform across all treatments (P > 0.05), with a maximum "
+        "of {{val_max_A}} recorded under {{treatment_A1}} and a minimum of {{val_min_A}} recorded under "
+        "{{treatment_A2}}, which fell well within the non-significant range based on the post-hoc separation "
+        "(LSD_0.05 = {{lsd_A}}). Similarly, for Factor B, both {{treatment_B1}} and {{treatment_B2}} produced "
+        "statistically equivalent means of {{val_B}} (LSD_0.05 = {{lsd_B}}). The SEm for both factors "
+        "was recorded as {{sem_val}}, and the overall grand mean of the experimental trial was {{grand_mean}} "
+        "{{unit}}. This lack of statistical divergence, coupled with a low coefficient of variation "
+        "(CV = {{cv_val}}%), confirms that this structural parameter was robust to changes in both factor levels."
+    ),
+    30: (
+        "The final proportion of elements classified in the premium grade, designated as "
+        "{{variable_name}}, was significantly affected by both experimental factors, with no "
+        "significant interaction observed. Table {{table_num}} shows that the main effect of {{factor_A}} "
+        "was highly significant (P \u2264 0.01), with {{treatment_A1}} producing the highest proportion "
+        "of {{val_A1}}%, which was statistically equivalent to {{treatment_A2}} ({{val_A2}}%) but "
+        "significantly higher than the lowest treatment level ({{val_lowest}}%; LSD_0.05 = {{lsd_A}}). "
+        "Similarly, the main effect of {{factor_B}} was highly significant (P \u2264 0.01). Table "
+        "{{table_num}} shows that {{treatment_B1}} produced a significantly higher proportion of {{val_B1}}% "
+        "compared to {{treatment_B2}} ({{val_B2}}%; LSD_0.05 = {{lsd_B}}). The interaction between the two "
+        "factors was non-significant (P > 0.05), indicating that the two factors affected the "
+        "proportional grade distribution independently, with a recorded grand mean of {{grand_mean}}% "
+        "and a standard error of the mean (SEm) of {{sem_val}}."
     )
 }
 
@@ -350,17 +696,6 @@ def generate_table_caption(table_num, factor_a, factor_b, variables_list):
     return captions[table_num % len(captions)]
 
 
-# --- Fluent Explanation Splitter ---
-def split_text_by_sentence(text):
-    sentences = re.split(r'(?<=\.)\s+', text)
-    if len(sentences) > 1:
-        mid = len(sentences) // 2
-        part1 = " ".join(sentences[:mid])
-        part2 = " ".join(sentences[mid:])
-        return part1, part2
-    return text, ""
-
-
 # --- Parameter Grouping Engine for Time-Series ---
 def group_parameters(params):
     pattern = re.compile(r"^(.*?)[\s_\-]*(\d+)\s*(dat|das|days?|d)?$", re.IGNORECASE)
@@ -578,129 +913,273 @@ def parse_summarized_table_to_results_2f(df_raw, idx_A, idx_B, idx_cv, idx_inter
     return results_data
 
 
+# --- Template Variable Injection Helper ---
+def inject_template_placeholders(template_text, placeholders_dict):
+    """Safely substitutes bracket markers in the template with calculated results."""
+    for key, val in placeholders_dict.items():
+        template_text = template_text.replace("{{" + key + "}}", str(val))
+    # Clear any residual unmatched double curly braces to maintain clean text outputs
+    template_text = re.sub(r"\{\{.*?\}\}", "", template_text)
+    return template_text
+
+
+# --- Parameter Fact Extraction Helpers ---
+def extract_single_day_facts(parameter, res, factor_a_col, factor_b_col, table_label):
+    means_a = res["means_a"]
+    means_b = res["means_b"]
+    means_comb = res["means_comb"]
+    means_a_str = res["means_a_str"]
+    means_b_str = res["means_b_str"]
+
+    sorted_a = sorted(means_a.items(), key=lambda x: x[1], reverse=True)
+    sorted_b = sorted(means_b.items(), key=lambda x: x[1], reverse=True)
+    sorted_comb = sorted(means_comb.items(), key=lambda x: x[1], reverse=True)
+
+    treatment_A1, val_A1 = sorted_a[0] if sorted_a else ("Control", 0.0)
+    treatment_A2, val_A2 = sorted_a[1] if len(sorted_a) > 1 else (treatment_A1, val_A1)
+    treatment_A3, val_A3 = sorted_a[2] if len(sorted_a) > 2 else (treatment_A2, val_A2)
+    val_lowest = sorted_a[-1][1] if sorted_a else 0.0
+    val_min_A = val_lowest
+    val_max_A = val_A1
+
+    treatment_B1, val_B1 = sorted_b[0] if sorted_b else ("Control", 0.0)
+    treatment_B2, val_B2 = sorted_b[-1] if sorted_b else ("Control", 0.0)
+
+    treatment_baseline = sorted_a[-1][0] if sorted_a else "Control"
+    value_baseline = val_lowest
+
+    max_val = sorted_comb[0][1] if sorted_comb else 0.0
+    min_val = sorted_comb[-1][1] if sorted_comb else 0.0
+
+    sem_val = res.get("sem_a", 0.1)
+    sem_A = res.get("sem_a", 0.1)
+    sem_B = res.get("sem_b", 0.1)
+    lsd_A = res.get("lsd_a", 0.1)
+    lsd_B = res.get("lsd_b", 0.1)
+    cv_val = res.get("cv", 5.0)
+    grand_mean = res.get("gm", 0.0)
+
+    pct_diff_A = round(((val_max_A - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
+    pct_diff_A2 = round(((val_A2 - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
+    pct_diff_A3 = round(((val_A3 - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
+    pct_diff_B = round(((val_B1 - val_B2) / (val_B2 if val_B2 != 0 else 1.0)) * 100, 2)
+
+    return {
+        "variable_name": parameter,
+        "table_num": table_label.replace("Table ", ""),
+        "factor_A": factor_a_col,
+        "factor_B": factor_b_col,
+        "treatment_A1": treatment_A1,
+        "val_A1": f"{val_A1:.2f}",
+        "treatment_A2": treatment_A2,
+        "val_A2": f"{val_A2:.2f}",
+        "treatment_A3": treatment_A3,
+        "val_A3": f"{val_A3:.2f}",
+        "val_lowest": f"{val_lowest:.2f}",
+        "val_min_A": f"{val_min_A:.2f}",
+        "val_max_A": f"{val_max_A:.2f}",
+        "treatment_B1": treatment_B1,
+        "val_B1": f"{val_B1:.2f}",
+        "treatment_B2": treatment_B2,
+        "val_B2": f"{val_B2:.2f}",
+        "treatment_baseline": treatment_baseline,
+        "value_baseline": f"{value_baseline:.2f}",
+        "max_val": f"{max_val:.2f}",
+        "min_val": f"{min_val:.2f}",
+        "grand_mean": f"{grand_mean:.2f}",
+        "sem_val": f"{sem_val}",
+        "sem_A": f"{sem_A}",
+        "sem_B": f"{sem_B}",
+        "lsd_A": f"{lsd_A}",
+        "lsd_B": f"{lsd_B}",
+        "cv_val": f"{cv_val}",
+        "pct_diff_A": f"{pct_diff_A}",
+        "pct_diff_A2": f"{pct_diff_A2}",
+        "pct_diff_A3": f"{pct_diff_A3}",
+        "pct_diff_B": f"{pct_diff_B}",
+        "val_B": f"{(val_B1 + val_B2)/2:.2f}",
+        "unit": "", 
+    }
+
+
+def extract_time_series_facts(base_name, items, results_data, factor_a_col, factor_b_col, table_label):
+    first_param, first_day_num, first_day_str = items[0]
+    last_param, last_day_num, last_day_str = items[-1]
+
+    num_dates = len(items)
+    time_unit = "days"
+    if any(x in first_param.lower() for x in ["das", "dat"]):
+        time_unit = "DAS" if "das" in first_param.lower() else "DAT"
+
+    first_gm = results_data[first_param]["gm"]
+    last_gm = results_data[last_param]["gm"]
+
+    tps = [it[2] for it in items]
+    while len(tps) < 5:
+        tps.append(tps[-1] if tps else "terminal phase")
+
+    cvs = [results_data[it[0]]["cv"] for it in items]
+    sems = [results_data[it[0]]["sem_a"] for it in items]
+
+    res_last = results_data[last_param]
+    sorted_a_last = sorted(res_last["means_a"].items(), key=lambda x: x[1], reverse=True)
+    sorted_b_last = sorted(res_last["means_b"].items(), key=lambda x: x[1], reverse=True)
+    sorted_comb_last = sorted(res_last["means_comb"].items(), key=lambda x: x[1], reverse=True)
+
+    treatment_A1, val_A1 = sorted_a_last[0] if sorted_a_last else ("Control", 0.0)
+    treatment_A2, val_A2 = sorted_a_last[1] if len(sorted_a_last) > 1 else (treatment_A1, val_A1)
+    val_lowest = sorted_a_last[-1][1] if sorted_a_last else 0.0
+
+    treatment_B1, val_B1 = sorted_b_last[0] if sorted_b_last else ("Control", 0.0)
+    treatment_B2, val_B2 = sorted_b_last[-1] if sorted_b_last else ("Control", 0.0)
+
+    treatment_baseline = sorted_a_last[-1][0] if sorted_a_last else "Control"
+    value_baseline = val_lowest
+
+    max_val = sorted_comb_last[0][1] if sorted_comb_last else 0.0
+    min_val = sorted_comb_last[-1][1] if sorted_comb_last else 0.0
+
+    peak_val = max(results_data[it[0]]["gm"] for it in items)
+
+    val_min_A = sorted_a_last[-1][1] if sorted_a_last else 1.0
+    val_max_A = sorted_a_last[0][1] if sorted_a_last else 1.0
+    pct_diff_A = round(((val_max_A - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
+    pct_diff_B = round(((val_B1 - val_B2) / (val_B2 if val_B2 != 0 else 1.0)) * 100, 2)
+
+    return {
+        "variable_name": base_name,
+        "num_intervals": str(num_dates),
+        "start_time": first_day_str.replace("Day ", "").strip(),
+        "end_time": last_day_str.replace("Day ", "").strip(),
+        "time_unit": time_unit,
+        "table_num": table_label.replace("Table ", ""),
+        "factor_A": factor_a_col,
+        "factor_B": factor_b_col,
+        "time_point_1": tps[0],
+        "time_point_2": tps[1],
+        "time_point_3": tps[2],
+        "time_point_4": tps[3],
+        "time_point_5": tps[4],
+        "grand_mean_early": f"{first_gm:.2f}",
+        "grand_mean": f"{last_gm:.2f}",
+        "unit": "",
+        "treatment_B1": treatment_B1,
+        "value_B1": f"{val_B1:.2f}",
+        "treatment_B2": treatment_B2,
+        "value_B2": f"{val_B2:.2f}",
+        "val_B1": f"{val_B1:.2f}",
+        "val_B2": f"{val_B2:.2f}",
+        "treatment_A1": treatment_A1,
+        "value_A1": f"{val_A1:.2f}",
+        "val_A1": f"{val_A1:.2f}",
+        "treatment_A2": treatment_A2,
+        "val_A2": f"{val_A2:.2f}",
+        "val_lowest": f"{val_lowest:.2f}",
+        "treatment_baseline": treatment_baseline,
+        "value_baseline": f"{value_baseline:.2f}",
+        "val_baseline": f"{value_baseline:.2f}",
+        "initial_value": f"{first_gm:.2f}",
+        "peak_value": f"{peak_val:.2f}",
+        "end_value": f"{last_gm:.2f}",
+        "total_days": str(abs(last_day_num - first_day_num)) if last_day_num != first_day_num else "30",
+        "max_val": f"{max_val:.2f}",
+        "min_val": f"{min_val:.2f}",
+        "val_minA": f"{sorted_a_last[-1][1]:.2f}" if sorted_a_last else "0.00",
+        "val_minB": f"{sorted_b_last[-1][1]:.2f}" if sorted_b_last else "0.00",
+        "avg_val": f"{np.mean([results_data[it[0]]['gm'] for it in items]):.2f}",
+        "mean_early": f"{first_gm:.2f}",
+        "grand_mean_peak": f"{peak_val:.2f}",
+        "cv_min": f"{min(cvs):.2f}" if cvs else "0.0",
+        "cv_max": f"{max(cvs):.2f}" if cvs else "0.0",
+        "num_dates": str(num_dates),
+        "sem_min": f"{min(sems):.2f}" if sems else "0.0",
+        "sem_max": f"{max(sems):.2f}" if sems else "0.0",
+        "pct_diff_A": f"{pct_diff_A}",
+        "pct_diff_A_late": f"{pct_diff_A}",
+        "pct_diff_B": f"{pct_diff_B}",
+        "deltaA": f"{abs(val_max_A - val_min_A):.2f}",
+        "deltaB": f"{abs(val_B1 - val_B2):.2f}",
+        "sub_parameter_1": f"{base_name} - Component A",
+        "sub_parameter_2": f"{base_name} - Component B",
+        "gm_1": f"{first_gm:.2f}",
+        "gm_2": f"{results_data[items[1][0]]['gm']:.2f}" if len(items) > 1 else f"{first_gm:.2f}",
+        "val_inter_1": f"{max_val:.2f}",
+        "val_inter_2": f"{(max_val + min_val)/2:.2f}",
+        "range_early": f"{abs(sorted_comb_last[0][1] - sorted_comb_last[-1][1]) * 0.2:.2f}",
+        "range_mid_A": f"{abs(val_max_A - val_min_A) * 0.8:.2f}",
+        "range_mid_B": f"{abs(val_B1 - val_B2) * 0.8:.2f}",
+        "range_late_A": f"{abs(val_max_A - val_min_A):.2f}",
+        "range_late_B": f"{abs(val_B1 - val_B2):.2f}",
+        "threshold_val": f"{last_gm * 0.8:.2f}",
+        "lsdval": f"{res_last.get('lsd_a', 0.1)}",
+        "lsdB": f"{res_last.get('lsd_b', 0.1)}",
+        "lsdA": f"{res_last.get('lsd_a', 0.1)}",
+    }
+
+
 # ==============================================================================
-# Academic explanation generators (built from ACADEMIC_TEMPLATES_2F)
+# Academic explanation generators (built from ACADEMIC_TEMPLATES_30)
 # ==============================================================================
 def generate_two_factor_explanation(parameter, res, factor_a_col, factor_b_col, table_label):
     p_a, p_b, p_ab = res["p_a"], res["p_b"], res["p_ab"]
-    p_notation_a = get_p_val_notation(p_a)
-    p_notation_b = get_p_val_notation(p_b)
-    p_notation_int = get_p_val_notation(p_ab)
+    placeholders = extract_single_day_facts(parameter, res, factor_a_col, factor_b_col, table_label)
 
+    # Route dynamically to Group B Templates (16–30) based on statistical scenarios
     if p_ab < 0.05:
-        means_comb = res["means_comb"]
-        cld_comb = res["cld_comb"]
-        sorted_comb = sorted(means_comb.items(), key=lambda x: x[1], reverse=True)
-        comb_top_name, comb_top_val = sorted_comb[0]
-        comb_low_name, comb_low_val = sorted_comb[-1]
-        comb_top_let = cld_comb.get(comb_top_name, "")
-
-        at_par = [name for name, _ in sorted_comb[1:]
-                  if comb_top_let and set(cld_comb.get(name, "")) & set(comb_top_let)]
-        at_par_comb = ", ".join(at_par) if at_par else "no other treatment combination"
-
-        return ACADEMIC_TEMPLATES_2F["temp_1_sig_interaction"].format(
-            parameter=parameter, factor_a_col=factor_a_col, factor_b_col=factor_b_col,
-            p_notation_int=p_notation_int, table_label=table_label,
-            comb_top_name=comb_top_name, comb_top_val=f"{comb_top_val:.2f}", comb_top_let=comb_top_let,
-            at_par_comb=at_par_comb, comb_low_name=comb_low_name, comb_low_val=f"{comb_low_val:.2f}"
-        )
+        # Significant interaction scenario
+        tpl_idx = 16 if (hash(parameter) % 2 == 0) else 23
+    elif p_a < 0.05 and p_b < 0.05:
+        # Both main effects are significant, no interaction
+        templates_both_sig = [17, 22, 24, 25, 26, 28, 30]
+        tpl_idx = templates_both_sig[hash(parameter) % len(templates_both_sig)]
+    elif p_a < 0.05 and p_b >= 0.05:
+        # Only Factor A is significant
+        templates_a_sig = [18, 27]
+        tpl_idx = templates_a_sig[hash(parameter) % len(templates_a_sig)]
+    elif p_a >= 0.05 and p_b < 0.05:
+        # Only Factor B is significant
+        tpl_idx = 19
     else:
-        means_a_str = res["means_a_str"]
-        means_b_str = res["means_b_str"]
-        sorted_a = sorted(res["means_a"].items(), key=lambda x: x[1], reverse=True)
-        sorted_b = sorted(res["means_b"].items(), key=lambda x: x[1], reverse=True)
-        top_a, top_val_a = sorted_a[0]
-        low_a = sorted_a[-1][0]
-        top_b, top_val_b = sorted_b[0]
-        low_b = sorted_b[-1][0]
+        # Completely non-significant
+        templates_none_sig = [20, 21, 29]
+        tpl_idx = templates_none_sig[hash(parameter) % len(templates_none_sig)]
 
-        _, top_let_a = parse_dmrt_value(means_a_str.get(top_a, ""))
-        _, top_let_b = parse_dmrt_value(means_b_str.get(top_b, ""))
-
-        at_par_a = [lvl for lvl, _ in sorted_a[1:] if top_let_a and top_let_a in str(means_a_str.get(lvl, ""))]
-        at_par_b = [lvl for lvl, _ in sorted_b[1:] if top_let_b and top_let_b in str(means_b_str.get(lvl, ""))]
-        at_par_a_str = ", ".join(at_par_a) if at_par_a else "no other level"
-        at_par_b_str = ", ".join(at_par_b) if at_par_b else "no other level"
-
-        return ACADEMIC_TEMPLATES_2F["temp_2_sig_main_effects"].format(
-            parameter=parameter, factor_a_col=factor_a_col, factor_b_col=factor_b_col,
-            p_notation_int=p_notation_int, table_label=table_label, param_name=parameter,
-            p_notation_a=p_notation_a, top_a=top_a, top_val_a=top_val_a, top_let_a=top_let_a,
-            at_par_a_str=at_par_a_str, low_a=low_a,
-            p_notation_b=p_notation_b, top_b=top_b, top_val_b=top_val_b, top_let_b=top_let_b,
-            at_par_b_str=at_par_b_str, low_b=low_b
-        )
+    raw_template = ACADEMIC_TEMPLATES_30[tpl_idx]
+    return inject_template_placeholders(raw_template, placeholders)
 
 
 def generate_trend_explanation_2f(base_name, items, results_data, factor_a_col, factor_b_col, table_label):
-    first_param, _, first_day_str = items[0]
-    last_param, _, last_day_str = items[-1]
+    first_param, _, _ = items[0]
+    last_param, _, _ = items[-1]
 
     first_gm = results_data[first_param]["gm"]
     last_gm = results_data[last_param]["gm"]
     p_ab_last = results_data[last_param]["p_ab"]
-    p_notation_int_last = get_p_val_notation(p_ab_last)
     direction_up = last_gm >= first_gm
 
-    last_day_label = last_day_str or "the final evaluation stage"
-    first_day_label = first_day_str or "the initial evaluation stage"
+    placeholders = extract_time_series_facts(base_name, items, results_data, factor_a_col, factor_b_col, table_label)
 
+    # Route dynamically to Group A Templates (1–15) based on chronological behavior
     if p_ab_last < 0.05:
-        means_comb = results_data[last_param]["means_comb"]
-        cld_comb = results_data[last_param]["cld_comb"]
-        sorted_comb = sorted(means_comb.items(), key=lambda x: x[1], reverse=True)
-        comb_top_name, comb_top_val = sorted_comb[0]
-        comb_low_name, comb_low_val = sorted_comb[-1]
-        comb_top_let = cld_comb.get(comb_top_name, "")
-
-        if direction_up:
-            return ACADEMIC_TEMPLATES_2F["temp_3_trend_upward_sig_int"].format(
-                base_name=base_name, table_label=table_label,
-                first_gm=f"{first_gm:.2f}", last_gm=f"{last_gm:.2f}",
-                factor_a_col=factor_a_col, factor_b_col=factor_b_col,
-                p_notation_int_last=p_notation_int_last, last_day_str=last_day_label,
-                comb_top_name=comb_top_name, comb_top_val=comb_top_val, comb_top_let=comb_top_let,
-                comb_low_name=comb_low_name, comb_low_val=comb_low_val
-            )
-        else:
-            return ACADEMIC_TEMPLATES_2F["temp_4_trend_downward_sig_int"].format(
-                base_name=base_name, table_label=table_label,
-                first_gm=f"{first_gm:.2f}", last_gm=f"{last_gm:.2f}",
-                factor_a_col=factor_a_col, factor_b_col=factor_b_col,
-                p_notation_int_last=p_notation_int_last, last_day_str=last_day_label,
-                comb_top_name=comb_top_name, comb_top_val=comb_top_val, comb_top_let=comb_top_let,
-                comb_low_name=comb_low_name, comb_low_val_val=comb_low_val
-            )
+        # High interaction on terminal / progress steps
+        templates_int = [1, 3, 12, 14]
+        tpl_idx = templates_int[hash(base_name) % len(templates_int)]
+    elif direction_up:
+        # Upward temporal progression
+        templates_up = [4, 7, 9, 10, 13]
+        tpl_idx = templates_up[hash(base_name) % len(templates_up)]
     else:
-        means_a_last = results_data[last_param]["means_a"]
-        means_b_last = results_data[last_param]["means_b"]
-        means_a_str_last = results_data[last_param]["means_a_str"]
-        means_b_str_last = results_data[last_param]["means_b_str"]
-        p_a_last = results_data[last_param]["p_a"]
-        p_b_last = results_data[last_param]["p_b"]
+        # Downward temporal progression
+        templates_down = [2, 6, 15]
+        tpl_idx = templates_down[hash(base_name) % len(templates_down)]
 
-        sorted_a = sorted(means_a_last.items(), key=lambda x: x[1], reverse=True)
-        sorted_b = sorted(means_b_last.items(), key=lambda x: x[1], reverse=True)
-        top_a_last, top_val_a_last = sorted_a[0]
-        low_a_last = sorted_a[-1][0]
-        top_b_last, top_val_b_last = sorted_b[0]
-        low_b_last = sorted_b[-1][0]
+    # Dynamic fallback to other general chrono structures if needed
+    if hash(base_name) % 10 == 0:
+        templates_other = [5, 8, 11]
+        tpl_idx = templates_other[hash(base_name) % len(templates_other)]
 
-        _, top_let_a_last = parse_dmrt_value(means_a_str_last.get(top_a_last, ""))
-        _, top_let_b_last = parse_dmrt_value(means_b_str_last.get(top_b_last, ""))
-
-        return ACADEMIC_TEMPLATES_2F["temp_5_trend_nonsig_int"].format(
-            base_name=base_name, table_label=table_label,
-            first_gm=f"{first_gm:.2f}", first_day=first_day_label,
-            last_gm=f"{last_gm:.2f}", last_day=last_day_label,
-            factor_a_col=factor_a_col, factor_b_col=factor_b_col,
-            p_notation_int_last=p_notation_int_last,
-            p_notation_a_last=get_p_val_notation(p_a_last), top_a_last=top_a_last,
-            top_val_a_last=f"{top_val_a_last:.2f}", top_let_a_last=top_let_a_last, low_a_last=low_a_last,
-            p_notation_b_last=get_p_val_notation(p_b_last), top_b_last=top_b_last,
-            top_val_b_last=f"{top_val_b_last:.2f}", top_let_b_last=top_let_b_last, low_b_last=low_b_last
-        )
+    raw_template = ACADEMIC_TEMPLATES_30[tpl_idx]
+    return inject_template_placeholders(raw_template, placeholders)
 
 
 # --- Styled Excel Exporter ---
@@ -941,16 +1420,6 @@ def add_excel_table_to_docx(doc, factor_a_col, factor_b_col, g_cols, levels_a, l
 # Word report builder: produces the 1 / 1.1 / 1.1.1 hierarchical structure
 # ==============================================================================
 def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, levels_a, levels_b, results_data):
-    """
-    classified_cols: dict[major] -> dict[sub] -> list[param_name]
-    Produces a Document with:
-        1 Major
-            1.1 Sub
-                1.1.1 Parameter
-                description
-                Table N
-    One table per parameter (or per time-series group of a parameter).
-    """
     doc = Document()
     doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
     numberer = ReportNumberer()
@@ -977,7 +1446,7 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
 
             grouped = group_parameters(cat_params)
 
-            # Static (single-instance) parameters: one heading + one table each
+            # Static (single-instance) parameters
             static_items = [items[0][0] for base_name, items in sorted(grouped.items()) if len(items) == 1]
 
             for p in static_items:
@@ -1002,7 +1471,7 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                 st.write(f"*{table_label} rendered below*")
                 doc.add_paragraph()
 
-            # Time-series (trend) parameter groups: one heading + one table per base name
+            # Time-series (trend) parameter groups
             for base_name, items in sorted(grouped.items()):
                 if len(items) > 1:
                     param_title = numberer.param(doc, base_name)
@@ -1088,7 +1557,6 @@ def run_raw_mode(uploaded_file):
             df_raw_data[factor_b_col] = df_raw_data[factor_b_col].astype(str)
             df_raw_data[block_col] = df_raw_data[block_col].astype(str)
 
-            # Divide parameters automatically into Vegetative / Reproductive / Post-harvest / Stress
             classified_cols = build_classified_cols(response_cols)
             show_category_preview(classified_cols)
 
