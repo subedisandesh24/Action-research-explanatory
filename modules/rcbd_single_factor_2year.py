@@ -142,39 +142,35 @@ ACADEMIC_TEMPLATES_2Y_30 = {
         "environmental conditions in the second year enhanced treatment divergence."
     ),
     11: (
-        "The temporal response of {{variable_name}} was evaluated over two consecutive seasons ({{year_1}} and {{year_2}}). "
-        "Table {{table_num}} shows that the combined ANOVA indicated a non-significant treatment \u00d7 year interaction "
-        "(P > 0.05), confirming that the pattern of treatment differentiation was highly stable. During the first two "
-        "sampling dates ({{time_point_1}} and {{time_point_2}} {{time_unit}}), pooled values maintained a state of statistical "
-        "equivalence, with all levels of {{factor_A}} sharing the same post-hoc letter grouping 'a'. However, a transition "
-        "occurred at {{time_point_3}} {{time_unit}} when the pooled main effect of {{factor_A}} became significant "
-        "(P \u2264 0.05). Pooled treatment {{treatment_A1}} broke the statistical equivalence, producing {{val_A1}} {{unit}} "
-        "(assigned to letter grouping 'a') compared to treatment {{treatment_A2}} which produced {{val_A2}} {{unit}} "
-        "(assigned to letter grouping 'b'). By {{time_point_4}} {{time_unit}}, the pooled treatment effect became highly "
-        "significant (P \u2264 0.01, LSD_0.05 = {{lsdval}}), breaking the early statistical equivalence across all treatment levels."
+        "Table {{table_num}} shows that the {{variable_name}} values maintained a state of statistical equivalence during the "
+        "first two sampling dates ({{time_point_1}} and {{time_point_2}} {{time_unit}}), with all levels of {{factor_A}} "
+        "sharing the same post-hoc letter grouping 'a'. During this early period, the grand means were recorded as {{gm_1}} "
+        "{{unit}} and {{gm_2}} {{unit}}, respectively, with no significant differences observed. However, a transition occurred "
+        "at {{time_point_3}} {{time_unit}} when the main effect of {{factor_A}} became significant (P \u2264 0.05). Treatment "
+        "{{treatment_A1}} broke the statistical equivalence, producing {{val_A1}} {{unit}} (assigned to letter grouping 'a') "
+        "compared to treatment {{treatment_A2}} which produced {{val_A2}} {{unit}} (assigned to letter grouping 'b'). By "
+        "{{time_point_4}} {{time_unit}}, the treatment effect became highly significant (P \u2264 0.01, LSD_0.05 = {{lsdval}}), "
+        "breaking the early statistical equivalence across all treatment levels."
     ),
     12: (
-        "The combined analysis of {{variable_name}} over two consecutive years ({{year_1}} and {{year_2}}) was conducted to "
-        "evaluate inter-seasonal treatment interactions. Table {{table_num}} shows that the main effect of Year was highly "
-        "significant (P \u2264 0.01), with {{year_1}} showing a higher overall grand mean compared to {{year_2}} across all "
-        "sampling dates. However, the treatment \u00d7 year interaction was non-significant (P > 0.05), indicating that the "
-        "treatments performed consistently despite the significant inter-annual environmental variations. At {{time_point_2}} "
-        "{{time_unit}}, the pooled treatment effect of {{factor_A}} became highly significant (P \u2264 0.01), where "
-        "{{treatment_A1}} achieved the maximum pooled value of {{val_max_2}} {{unit}}, which was significantly higher than "
-        "the baseline treatment {{treatment_A_lowest}} ({{val_lowest_2}} {{unit}}; LSD_0.05 = {{lsdval}}). This highly significant "
-        "pooled treatment effect was maintained through the final sampling points."
+        "The temporal development of {{variable_name}} was monitored across several sampling points under the direct influence "
+        "of the evaluated treatments. Table {{table_num}} shows that the treatment effect of {{factor_A}} was non-significant "
+        "at {{time_point_1}} {{time_unit}}, but became highly significant at {{time_point_2}} {{time_unit}} (P \u2264 0.01). "
+        "At this stage, {{treatment_A1}} achieved the maximum value of {{val_max_2}} {{unit}}, which was significantly higher "
+        "than the baseline treatment {{treatment_A_lowest}} ({{val_lowest_2}} {{unit}}; LSD_0.05 = {{lsdval}}). This highly "
+        "significant treatment effect was maintained through the late stages of {{time_point_3}} and {{time_point_4}} {{time_unit}}, "
+        "with a low overall standard error of the mean (SEm) of {{sem_val}} {{unit}} across the entire developmental sequence."
     ),
     13: (
-        "The range of pooled values for {{variable_name}} across different levels of {{factor_A}} was evaluated over two "
-        "consecutive years. Table {{table_num}} shows that the combined ANOVA indicated a non-significant treatment \u00d7 "
-        "year interaction (P > 0.05), allowing for a pooled analysis of the dynamic range. At {{time_point_1}} and "
-        "{{time_point_2}} {{time_unit}}, the pooled treatment range was narrow and statistically non-significant, with a "
-        "maximum range of only {{range_early}} {{unit}} among treatment means. However, at {{time_point_3}} {{time_unit}}, "
-        "this treatment range expanded significantly in the pooled data. The pooled range between the highest-performing "
-        "treatment ({{treatment_A1}}; {{val_max_A}} {{unit}}) and the lowest-performing treatment ({{val_min_A}} {{unit}}) "
-        "was {{range_mid_A}} {{unit}} (P \u2264 0.01). At {{time_point_4}} {{time_unit}}, the pooled treatment range remained "
-        "wide, with a difference of {{range_late_A}} {{unit}} among {{factor_A}} treatments (P \u2264 0.01, LSD_0.05 = {{lsdval}}), "
-        "demonstrating that the treatments had a cumulative effect over the study."
+        "The range of pooled values for {{variable_name}} across different levels of {{factor_A}} was small during the early stages "
+        "but expanded considerably as the study progressed. Table {{table_num}} shows that at {{time_point_1}} and {{time_point_2}} "
+        "{{time_unit}}, the pooled treatment range was narrow and statistically non-significant, with a maximum range of only "
+        "{{range_early}} {{unit}} among treatment means. However, at {{time_point_3}} {{time_unit}}, this treatment range expanded "
+        "significantly in the pooled data. The pooled range between the highest-performing treatment ({{treatment_A1}}; {{val_max_A}} "
+        "{{unit}}) and the lowest-performing treatment ({{val_min_A}} {{unit}}) was {{range_mid_A}} {{unit}} (P \u2264 0.01). At "
+        "{{time_point_4}} {{time_unit}}, the pooled treatment range remained wide, with a difference of {{range_late_A}} {{unit}} "
+        "among {{factor_A}} treatments (P \u2264 0.01, LSD_0.05 = {{lsdval}}), demonstrating that the treatments had a cumulative "
+        "effect over the study."
     ),
     14: (
         "The temporal development of {{variable_name}} was monitored across several developmental stages over two consecutive "
@@ -261,7 +257,7 @@ ACADEMIC_TEMPLATES_2Y_30 = {
         "{{treatment_A1}} increased {{variable_name}} by {{pct_diff_A}}% compared to the lowest treatment level ({{val_max_A}} "
         "vs. {{val_min_A}} {{unit}}). Other treatments, such as {{treatment_A2}} and {{treatment_A3}}, also increased the "
         "values by {{pct_diff_A2}}% and {{pct_diff_A3}}% over the lowest treatment level in the pooled data, respectively. "
-        "These differences were highly significant for the pooled {{factor_A}} main effect (P \u2264 0.01, LSD_0.05 = {{lsdval}}), "
+        "These differences were highly significant for the pooled {{factor_A}} main effect (P \u2261 0.01, LSD_0.05 = {{lsdval}}), "
         "demonstrating the strong effect of the treatment levels on the evaluated parameter."
     ),
     22: (
@@ -502,6 +498,22 @@ def get_signif_code_val(p):
 def classify_parameter(param):
     param_clean = param.strip().lower()
 
+    # Taro Specific Metric Maps
+    if any(x in param_clean for x in ["plht", "plant height"]):
+        return ("Vegetative Parameters", "Plant Morphology")
+    if any(x in param_clean for x in ["# of leaves", "leaves", "number of leaves"]):
+        return ("Vegetative Parameters", "Leaf Parameters")
+    if any(x in param_clean for x in ["# of suckers", "sucker"]):
+        return ("Vegetative Parameters", "Plant Morphology")
+    if any(x in param_clean for x in ["plant span", "span"]):
+        return ("Vegetative Parameters", "Plant Morphology")
+    if any(x in param_clean for x in ["petiole length", "petiole diameter", "petiole"]):
+        return ("Vegetative Parameters", "Plant Morphology")
+    if any(x in param_clean for x in ["corm diameter", "corm length", "corm"]):
+        return ("Vegetative Parameters", "Biomass Parameters")
+    if any(x in param_clean for x in ["yield"]):
+        return ("Reproductive Parameters", "Fruit Yield Parameters")
+
     abbrev_map = {
         "sl": ("Post-harvest Parameters", "Shelf-life Parameters"),
         "dl": ("Post-harvest Parameters", "Shelf-life Parameters"),
@@ -609,7 +621,103 @@ def classify_parameter(param):
     return ("Vegetative Parameters", "Plant Morphology")
 
 
-# --- Word Document Table Formatting Helpers ---
+# --- Dynamic Structural Columns Classifier ---
+def build_classified_cols(parameters):
+    classified_cols = {}
+    for c in parameters:
+        major, sub = classify_parameter(c)
+        classified_cols.setdefault(major, {}).setdefault(sub, []).append(c)
+    return classified_cols
+
+
+# --- Styled Excel Exporter (Matches Multi-Year Exactly) ---
+def build_multiyear_excel_output(genotype_col, params, genotypes, results_1, results_2, year1_lbl, year2_lbl):
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Result final"
+    ws.sheet_view.showGridLines = True
+    
+    font_bold = Font(name="Calibri", size=11, bold=True)
+    font_regular = Font(name="Calibri", size=11)
+    align_left = Alignment(horizontal="left", vertical="center")
+    align_center = Alignment(horizontal="center", vertical="center")
+    border_thin_bottom = Border(bottom=Side(style='thin', color='000000'))
+    border_medium_bottom = Border(bottom=Side(style='medium', color='000000'))
+    
+    ws.cell(row=3, column=1, value="Genotype").font = font_bold
+    ws.cell(row=3, column=1).alignment = align_left
+    
+    for i, p in enumerate(params):
+        start_col = i * 3 + 2 
+        
+        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=start_col+2)
+        cell_p = ws.cell(row=1, column=start_col, value=p)
+        cell_p.font = font_bold
+        cell_p.alignment = align_center
+        
+        ws.cell(row=2, column=start_col, value=year1_lbl).font = font_bold
+        ws.cell(row=2, column=start_col).alignment = align_center
+        ws.cell(row=2, column=start_col+1, value=year2_lbl).font = font_bold
+        ws.cell(row=2, column=start_col+1).alignment = align_center
+        ws.cell(row=2, column=start_col+2, value="Pooled").font = font_bold
+        ws.cell(row=2, column=start_col+2).alignment = align_center
+        
+    for r_idx, g in enumerate(genotypes, start=4):
+        ws.cell(row=r_idx, column=1, value=g).font = font_regular
+        ws.cell(row=r_idx, column=1).alignment = align_left
+        for i, p in enumerate(params):
+            start_col = i * 3 + 2
+            
+            val_1 = results_1[p]["means_str"].get(g, "")
+            val_2 = results_2[p]["means_str"].get(g, "")
+            pooled_val = (results_1[p]["means"].get(g, 0.0) + results_2[p]["means"].get(g, 0.0)) / 2
+            
+            cell1 = ws.cell(row=r_idx, column=start_col, value=val_1)
+            cell1.font = font_regular
+            cell1.alignment = align_center
+            
+            cell2 = ws.cell(row=r_idx, column=start_col+1, value=val_2)
+            cell2.font = font_regular
+            cell2.alignment = align_center
+            
+            cell3 = ws.cell(row=r_idx, column=start_col+2, value=f"{pooled_val:.2f}")
+            cell3.font = font_regular
+            cell3.alignment = align_center
+            
+    stats_labels = ["Sem", "p-value", "LSD(0.05)", "CV(%)", "Grand Mean"]
+    stats_keys = ["sem", "p_text", "lsd", "cv", "gm"]
+    
+    start_stats_row = len(genotypes) + 4
+    for s_idx, (label, key) in enumerate(zip(stats_labels, stats_keys)):
+        curr_row = start_stats_row + s_idx
+        ws.cell(row=curr_row, column=1, value=label).font = font_bold
+        ws.cell(row=curr_row, column=1).alignment = align_left
+        for i, p in enumerate(params):
+            start_col = i * 3 + 2
+            
+            cell1 = ws.cell(row=curr_row, column=start_col, value=results_1[p][key])
+            cell1.font = font_regular
+            cell1.alignment = align_center
+            
+            cell2 = ws.cell(row=curr_row, column=start_col+1, value=results_2[p][key])
+            cell2.font = font_regular
+            cell2.alignment = align_center
+            
+            cell3 = ws.cell(row=curr_row, column=start_col+2, value="")
+            cell3.font = font_regular
+            cell3.alignment = align_center
+            
+    total_cols = len(params) * 3 + 1
+    for col in range(1, total_cols + 1):
+        ws.cell(row=1, column=col).border = border_thin_bottom
+        ws.cell(row=3, column=col).border = border_thin_bottom
+        ws.cell(row=start_stats_row - 1, column=col).border = border_thin_bottom
+        ws.cell(row=start_stats_row + len(stats_keys) - 1, column=col).border = border_medium_bottom
+        
+    return wb
+
+
+# --- Word Table Formatting Helpers ---
 def set_cell_margins(cell, top=100, bottom=100, left=150, right=150):
     tcPr = cell._tc.get_or_add_tcPr()
     tcMar = OxmlElement('w:tcMar')
@@ -636,578 +744,7 @@ def set_table_borders(table):
     tblPr.append(borders)
 
 
-def set_header_bottom_border(row_or_cells):
-    if hasattr(row_or_cells, 'cells'):
-        cells = row_or_cells.cells
-    else:
-        cells = row_or_cells
-    for cell in cells:
-        tcPr = cell._tc.get_or_add_tcPr()
-        borders = parse_xml(
-            '<w:tcBorders %s>'
-            '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-            '</w:tcBorders>' % nsdecls('w')
-        )
-        tcPr.append(borders)
-
-
-# --- Dynamic Table Caption Generator ---
-def generate_table_caption(table_num, factor_name, variables_list):
-    vars_txt = ", ".join(variables_list)
-    if len(variables_list) > 2:
-        vars_txt = f"{', '.join(variables_list[:-1])} and {variables_list[-1]}"
-
-    captions = [
-        f"Table {table_num}. Influence of {factor_name} on {vars_txt}.",
-        f"Table {table_num}. Response of {vars_txt} to various treatments of {factor_name}.",
-        f"Table {table_num}. Effect of {factor_name} treatment levels on {vars_txt}.",
-        f"Table {table_num}. Performance metrics of {vars_txt} under varying levels of {factor_name}.",
-    ]
-    return captions[table_num % len(captions)]
-
-
-# --- Parameter Grouping Engine for Time-Series ---
-def group_parameters(params):
-    pattern = re.compile(r"^(.*?)[\s_\-]*(\d+)\s*(dat|das|days?|d)?$", re.IGNORECASE)
-    groups = {}
-    for p in params:
-        match = pattern.search(p.strip())
-        if match and match.group(1).strip():
-            base = match.group(1).strip()
-            base = re.sub(r"[\s\-_()]+$", "", base).strip().capitalize()
-            day_num = int(match.group(2))
-            day_str = f"Day {day_num}"
-            if not base:
-                base = "Parameter"
-            groups.setdefault(base, []).append((p, day_num, day_str))
-        else:
-            base = p.strip().capitalize()
-            groups.setdefault(base, []).append((p, 0, ""))
-
-    for base in groups:
-        groups[base].sort(key=lambda x: x[1])
-    return groups
-
-
-# --- Statistical Calculation Helpers ---
-def parse_dmrt_value(val):
-    if pd.isna(val):
-        return "", ""
-    val_str = str(val).strip()
-    match = re.match(r"^([\d.\-]+)\s*([a-zA-Z\s]+)?$", val_str)
-    if match:
-        num = match.group(1)
-        letters = match.group(2).strip() if match.group(2) else ""
-        return num, letters
-    return val_str, ""
-
-
-def get_cld_letters(means_dict, lsd):
-    sorted_means = sorted(means_dict.items(), key=lambda x: x[1], reverse=True)
-    n = len(sorted_means)
-    groups = []
-
-    for i in range(n):
-        for j in range(i, n):
-            is_group = True
-            for k1 in range(i, j + 1):
-                for k2 in range(k1, j + 1):
-                    if abs(sorted_means[k1][1] - sorted_means[k2][1]) > lsd:
-                        is_group = False
-                        break
-                if not is_group:
-                    break
-            if is_group:
-                groups.append(set(range(i, j + 1)))
-
-    maximal_groups = []
-    for g in groups:
-        is_subset = False
-        for other_g in groups:
-            if g != other_g and g.issubset(other_g):
-                is_subset = True
-                break
-        if not is_subset and g not in maximal_groups:
-            maximal_groups.append(g)
-
-    maximal_groups.sort(key=lambda g: min(g))
-
-    treatment_letters = {tname: "" for tname, _ in sorted_means}
-    alphabet = string.ascii_lowercase
-
-    for letter_idx, g in enumerate(maximal_groups):
-        letter = alphabet[letter_idx % len(alphabet)]
-        for idx in g:
-            t_name = sorted_means[idx][0]
-            treatment_letters[t_name] += letter
-
-    return treatment_letters
-
-
-def run_anova_1factor_raw(df, block_col, genotype_col, param):
-    df_temp = pd.DataFrame({
-        'rep': df[block_col].astype(str),
-        'genotype': df[genotype_col].astype(str),
-        'response': pd.to_numeric(df[param], errors='coerce')
-    }).dropna(subset=['response'])
-
-    formula = "response ~ C(rep) + C(genotype)"
-    model = ols(formula, data=df_temp).fit()
-    anova_table = sm.stats.anova_lm(model, typ=1)
-
-    df_err = anova_table.loc["Residual", "df"]
-    mse = anova_table.loc["Residual", "mean_sq"]
-
-    p_val = anova_table.loc["C(genotype)", "PR(>F)"]
-
-    grand_mean = df_temp['response'].mean()
-    cv = (np.sqrt(mse) / grand_mean) * 100
-    t_val = t.ppf(0.975, df_err)
-
-    r = df_temp['rep'].nunique()
-
-    means = df_temp.groupby('genotype')['response'].mean().to_dict()
-    sem = np.sqrt(mse / r)
-    lsd = t_val * np.sqrt((2 * mse) / r)
-    cld = get_cld_letters(means, lsd)
-
-    sig_code = get_signif_code_val(p_val)
-
-    means_str = {}
-    for g, val in means.items():
-        let = cld[g] if p_val < 0.05 else ""
-        means_str[g] = f"{val:.2f}{let}"
-
-    return {
-        "means": means, "means_str": means_str, "sem": round(sem, 2), "sig": sig_code,
-        "lsd": round(lsd, 2), "p_val": p_val, "cv": round(cv, 2), "gm": round(grand_mean, 2), "cld": cld
-    }
-
-
-# --- Summarized Table Parser Engine ---
-def parse_summarized_table_to_results_2y(df_raw, idx_sem, idx_pval, idx_lsd, idx_cv, idx_grand, param_cols, genotypes):
-    results_1 = {}
-    results_2 = {}
-    
-    for p, start_col in param_cols.items():
-        # Year 1
-        means_1 = {}
-        means_str_1 = {}
-        cld_1 = {}
-        for r_idx, g in enumerate(genotypes, start=3):
-            cell_val = df_raw.iloc[r_idx, start_col]
-            num, let = parse_dmrt_value(cell_val)
-            try:
-                val = float(num)
-                means_1[g] = val
-                means_str_1[g] = f"{val:.2f}{let}"
-            except ValueError:
-                means_1[g] = 0.0
-                means_str_1[g] = "0.00"
-            cld_1[g] = let
-                
-        p_val_1_raw = str(df_raw.iloc[idx_pval, start_col]).strip()
-        match_p1 = re.search(r"[\d\.\-]+e?[\-\d]*", p_val_1_raw)
-        try:
-            p_val_1 = float(match_p1.group(0)) if match_p1 else (0.01 if "*" in p_val_1_raw else 0.5)
-        except ValueError:
-            p_val_1 = 0.5
-            
-        results_1[p] = {
-            "means": means_1,
-            "means_str": means_str_1,
-            "sem": df_raw.iloc[idx_sem, start_col],
-            "p_val": p_val_1,
-            "p_text": p_val_1_raw,
-            "lsd": df_raw.iloc[idx_lsd, start_col],
-            "cv": df_raw.iloc[idx_cv, start_col],
-            "gm": float(re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_grand, start_col])).group(0)) if re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_grand, start_col])) else 0.0,
-            "cld": cld_1
-        }
-        
-        # Year 2
-        means_2 = {}
-        means_str_2 = {}
-        cld_2 = {}
-        for r_idx, g in enumerate(genotypes, start=3):
-            cell_val = df_raw.iloc[r_idx, start_col + 1]
-            num, let = parse_dmrt_value(cell_val)
-            try:
-                val = float(num)
-                means_2[g] = val
-                means_str_2[g] = f"{val:.2f}{let}"
-            except ValueError:
-                means_2[g] = 0.0
-                means_str_2[g] = "0.00"
-            cld_2[g] = let
-                
-        p_val_2_raw = str(df_raw.iloc[idx_pval, start_col + 1]).strip()
-        match_p2 = re.search(r"[\d\.\-]+e?[\-\d]*", p_val_2_raw)
-        try:
-            p_val_2 = float(match_p2.group(0)) if match_p2 else (0.01 if "*" in p_val_2_raw else 0.5)
-        except ValueError:
-            p_val_2 = 0.5
-            
-        results_2[p] = {
-            "means": means_2,
-            "means_str": means_str_2,
-            "sem": df_raw.iloc[idx_sem, start_col + 1],
-            "p_val": p_val_2,
-            "p_text": p_val_2_raw,
-            "lsd": df_raw.iloc[idx_lsd, start_col + 1],
-            "cv": df_raw.iloc[idx_cv, start_col + 1],
-            "gm": float(re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_grand, start_col + 1])).group(0)) if re.search(r"[\d\.\-]+", str(df_raw.iloc[idx_grand, start_col + 1])) else 0.0,
-            "cld": cld_2
-        }
-        
-    return results_1, results_2
-
-
-# --- Template Variable Injection Helper ---
-def inject_template_placeholders(template_text, placeholders_dict):
-    """Safely substitutes double-bracket markers with calculated results."""
-    for key, val in placeholders_dict.items():
-        template_text = template_text.replace("{{" + key + "}}", str(val))
-    template_text = re.sub(r"\{\{.*?\}\}", "", template_text)
-    return template_text
-
-
-# --- Parameter Fact Extraction Helpers ---
-def extract_single_day_facts_2y(parameter, res1, res2, genotype_col, table_label, year1_lbl, year2_lbl):
-    means1 = res1.get("means", {})
-    means2 = res2.get("means", {})
-    cld1 = res1.get("cld", {})
-    cld2 = res2.get("cld", {})
-
-    sorted1 = sorted(means1.items(), key=lambda x: x[1], reverse=True) if means1 else []
-    sorted2 = sorted(means2.items(), key=lambda x: x[1], reverse=True) if means2 else []
-
-    treatment_A1_y1, val_top_1 = sorted1[0] if sorted1 else ("Control", 0.0)
-    treatment_A_lowest_y1, val_lowest_1 = sorted1[-1] if sorted1 else ("Control", 0.0)
-
-    treatment_A1_y2, val_top_2 = sorted2[0] if sorted2 else ("Control", 0.0)
-    treatment_A_lowest_y2, val_lowest_2 = sorted2[-1] if sorted2 else ("Control", 0.0)
-
-    # Pooled stats calculation
-    pooled_means = {}
-    for g in means1:
-        pooled_means[g] = (means1[g] + means2.get(g, means1[g])) / 2
-    sorted_pooled = sorted(pooled_means.items(), key=lambda x: x[1], reverse=True)
-
-    treatment_A1, val_top_pooled = sorted_pooled[0] if sorted_pooled else ("Control", 0.0)
-    treatment_A2, val_second_pooled = sorted_pooled[1] if len(sorted_pooled) > 1 else (treatment_A1, val_top_pooled)
-    treatment_A3, val_third_pooled = sorted_pooled[2] if len(sorted_pooled) > 2 else (treatment_A2, val_second_pooled)
-    treatment_A_lowest, val_lowest_pooled = sorted_pooled[-1] if sorted_pooled else ("Control", 0.0)
-
-    # Extract par information
-    top_let = cld1.get(treatment_A1, "")
-    top_letters = set(top_let)
-    at_par_list = []
-    for g, _ in sorted_pooled[1:]:
-        g_letters = set(cld1.get(g, ""))
-        if g_letters & top_letters:
-            at_par_list.append(g)
-
-    if at_par_list:
-        if len(at_par_list) > 1:
-            at_par_str = ", ".join(at_par_list[:-1]) + f" and {at_par_list[-1]}"
-        else:
-            at_par_str = at_par_list[0]
-    else:
-        at_par_str = "none other"
-
-    grand_mean_1 = res1.get("gm", 0.0)
-    grand_mean_2 = res2.get("gm", 0.0)
-    pooled_gm = (grand_mean_1 + grand_mean_2) / 2
-
-    cv_1 = res1.get("cv", 5.0)
-    cv_2 = res2.get("cv", 5.0)
-    pooled_cv = (cv_1 + cv_2) / 2
-
-    sem_1 = res1.get("sem", 0.1)
-    sem_2 = res2.get("sem", 0.1)
-    pooled_sem = (sem_1 + sem_2) / 2
-
-    lsd_1 = res1.get("lsd", 0.1)
-    lsd_2 = res2.get("lsd", 0.1)
-    pooled_lsd = (lsd_1 + lsd_2) / 2
-
-    pct_diff_pooled = round(((val_top_pooled - val_lowest_pooled) / (val_lowest_pooled if val_lowest_pooled != 0 else 1.0)) * 100, 2)
-    pct_diff_pooled2 = round(((val_second_pooled - val_lowest_pooled) / (val_lowest_pooled if val_lowest_pooled != 0 else 1.0)) * 100, 2)
-    pct_diff_pooled3 = round(((val_third_pooled - val_lowest_pooled) / (val_lowest_pooled if val_lowest_pooled != 0 else 1.0)) * 100, 2)
-
-    return {
-        "variable_name": parameter,
-        "table_num": table_label.replace("Table ", ""),
-        "year_1": year1_lbl,
-        "year_2": year2_lbl,
-        "factor_A": genotype_col,
-        "treatment_A1": treatment_A1,
-        "val_A1": f"{val_top_pooled:.2f}",
-        "treatment_A2": treatment_A2,
-        "val_A2": f"{val_second_pooled:.2f}",
-        "treatment_A3": treatment_A3,
-        "val_A3": f"{val_third_pooled:.2f}",
-        "val_lowest": f"{val_lowest_pooled:.2f}",
-        "lsdval": f"{pooled_lsd:.2f}",
-        "val_min_A": f"{val_lowest_pooled:.2f}",
-        "val_max_A": f"{val_top_pooled:.2f}",
-        "grand_mean": f"{pooled_gm:.2f}",
-        "cvval": f"{pooled_cv:.2f}",
-        "cv_val": f"{pooled_cv:.2f}",
-        "sem_val": f"{pooled_sem:.2f}",
-        "pct_diff_A": f"{pct_diff_pooled}",
-        "pct_diff_A2": f"{pct_diff_pooled2}",
-        "pct_diff_A3": f"{pct_diff_pooled3}",
-        "val_A1_y1": f"{val_top_1:.2f}",
-        "val_lowest_y1": f"{val_lowest_1:.2f}",
-        "treatment_A_lowest": treatment_A_lowest,
-        "lsdy1": f"{lsd_1:.2f}",
-        "val_A1_y2": f"{val_top_2:.2f}",
-        "val_lowest_y2": f"{val_lowest_2:.2f}",
-        "lsdy2": f"{lsd_2:.2f}",
-        "at_par": at_par_str,
-        "unit": "",
-    }
-
-
-def extract_time_series_facts_2y(base_name, items, results_data_1, results_data_2, genotype_col, table_label, year1_lbl, year2_lbl):
-    first_param, first_day_num, first_day_str = items[0]
-    last_param, last_day_num, last_day_str = items[-1]
-
-    num_dates = len(items)
-    time_unit = "days"
-    if any(x in first_param.lower() for x in ["das", "dat"]):
-        time_unit = "DAS" if "das" in first_param.lower() else "DAT"
-
-    first_gm_y1 = results_data_1[first_param]["gm"]
-    first_gm_y2 = results_data_2[first_param]["gm"]
-    first_pooled_gm = (first_gm_y1 + first_gm_y2) / 2
-
-    last_gm_y1 = results_data_1[last_param]["gm"]
-    last_gm_y2 = results_data_2[last_param]["gm"]
-    last_pooled_gm = (last_gm_y1 + last_gm_y2) / 2
-
-    first_cv_y1 = results_data_1[first_param]["cv"]
-
-    tps = [it[2] for it in items]
-    while len(tps) < 5:
-        tps.append(tps[-1] if tps else "terminal phase")
-
-    cvs = [results_data_1[it[0]]["cv"] for it in items] + [results_data_2[it[0]]["cv"] for it in items]
-    sems = [results_data_1[it[0]]["sem"] for it in items] + [results_data_2[it[0]]["sem"] for it in items]
-
-    res_last_y1 = results_data_1[last_param]
-    res_last_y2 = results_data_2[last_param]
-
-    means_last_y1 = res_last_y1.get("means", {})
-    means_last_y2 = res_last_y2.get("means", {})
-
-    sorted_last_y1 = sorted(means_last_y1.items(), key=lambda x: x[1], reverse=True) if means_last_y1 else []
-    sorted_last_y2 = sorted(means_last_y2.items(), key=lambda x: x[1], reverse=True) if means_last_y2 else []
-
-    treatment_A1_y1, val_top_1 = sorted_last_y1[0] if sorted_last_y1 else ("Control", 0.0)
-    treatment_A_lowest_y1, val_lowest_1 = sorted_last_y1[-1] if sorted_last_y1 else ("Control", 0.0)
-
-    treatment_A1_y2, val_top_2 = sorted_last_y2[0] if sorted_last_y2 else ("Control", 0.0)
-    treatment_A_lowest_y2, val_lowest_2 = sorted_last_y2[-1] if sorted_last_y2 else ("Control", 0.0)
-
-    # Pooled analysis across seasons
-    pooled_means_last = {}
-    for g in means_last_y1:
-        pooled_means_last[g] = (means_last_y1[g] + means_last_y2.get(g, means_last_y1[g])) / 2
-    sorted_pooled_last = sorted(pooled_means_last.items(), key=lambda x: x[1], reverse=True)
-
-    treatment_A1, val_pooled_top = sorted_pooled_last[0] if sorted_pooled_last else ("Control", 0.0)
-    treatment_A2, val_pooled_second = sorted_pooled_last[1] if len(sorted_pooled_last) > 1 else (treatment_A1, val_pooled_top)
-    treatment_A_lowest, val_pooled_lowest = sorted_pooled_last[-1] if sorted_pooled_last else ("Control", 0.0)
-
-    pooled_lsd = (res_last_y1.get("lsd", 0.1) + res_last_y2.get("lsd", 0.1)) / 2
-    pooled_sem = (res_last_y1.get("sem", 0.1) + res_last_y2.get("sem", 0.1)) / 2
-
-    peak_val = max((results_data_1[it[0]]["gm"] + results_data_2[it[0]]["gm"])/2 for it in items)
-    pct_diff = round(((val_pooled_top - val_pooled_lowest) / (val_pooled_lowest if val_pooled_lowest != 0 else 1.0)) * 100, 2)
-
-    res_first_y1 = results_data_1[first_param]
-    res_first_y2 = results_data_2[first_param]
-    means_first_y1 = res_first_y1.get("means", {})
-    means_first_y2 = res_first_y2.get("means", {})
-    pooled_means_first = {}
-    for g in means_first_y1:
-        pooled_means_first[g] = (means_first_y1[g] + means_first_y2.get(g, means_first_y1[g])) / 2
-
-    # Transition rates
-    val_lowest_early = (means_first_y1.get(treatment_A_lowest, first_gm_y1) + means_first_y2.get(treatment_A_lowest, first_gm_y2)) / 2
-
-    return {
-        "variable_name": base_name,
-        "base_name": base_name,
-        "num_intervals": str(num_dates),
-        "start_time": first_day_str.replace("Day ", "").strip(),
-        "end_time": last_day_str.replace("Day ", "").strip(),
-        "time_unit": time_unit,
-        "year_1": year1_lbl,
-        "year_2": year2_lbl,
-        "table_num": table_label.replace("Table ", ""),
-        "time_point_1": tps[0],
-        "time_point_2": tps[1],
-        "time_point_3": tps[2],
-        "time_point_4": tps[3],
-        "time_point_5": tps[4],
-        "factor_A": genotype_col,
-        "grand_mean_early": f"{pooled_first_gm:.2f}",
-        "cv_early": f"{first_cv_y1:.2f}",
-        "treatment_A1": treatment_A1,
-        "value_1": f"{val_pooled_top:.2f}",
-        "treatment_A2": treatment_A2,
-        "value_2": f"{val_pooled_second:.2f}",
-        "treatment_A_lowest": treatment_A_lowest,
-        "value_lowest": f"{val_pooled_lowest:.2f}",
-        "lsdval": f"{pooled_lsd:.2f}",
-        "total_days": str(abs(last_day_num - first_day_num)) if last_day_num != first_day_num else "30",
-        "initial_value": f"{pooled_first_gm:.2f}",
-        "peak_value": f"{peak_val:.2f}",
-        "end_value": f"{pooled_last_gm:.2f}",
-        "value_y1": f"{val_top_1:.2f}",
-        "value_lowest_y1": f"{val_lowest_1:.2f}",
-        "value_y2": f"{val_top_2:.2f}",
-        "value_lowest_y2": f"{val_lowest_2:.2f}",
-        "pooled_grand_mean": f"{pooled_last_gm:.2f}",
-        "gm_y1": f"{first_gm_y1:.2f}",
-        "gm_y2": f"{first_gm_2:.2f}",
-        "val_pooled_A1": f"{val_pooled_top:.2f}",
-        "val_pooled_lowest": f"{val_pooled_lowest:.2f}",
-        "lsdpooled": f"{pooled_lsd:.2f}",
-        "lsd_pooled": f"{pooled_lsd:.2f}",
-        "val_max_early": f"{max(pooled_means_first.values()):.2f}" if pooled_means_first else f"{pooled_first_gm:.2f}",
-        "val_min_early": f"{min(pooled_means_first.values()):.2f}" if pooled_means_first else f"{pooled_first_gm:.2f}",
-        "val_max_late": f"{val_pooled_top:.2f}",
-        "mean_early": f"{pooled_first_gm:.2f}",
-        "cvval": f"{res_last_1_cv:.2f}" if 'res_last_1_cv' in locals() else f"{res_last_1.get('cv', 5.0):.2f}",
-        "cv_val": f"{res_last_1.get('cv', 5.0):.2f}",
-        "grand_mean_peak": f"{peak_val:.2f}",
-        "val_baseline": f"{val_lowest_early:.2f}",
-        "cv_min": f"{min(cvs):.2f}" if cvs else "0.0",
-        "cv_max": f"{max(cvs):.2f}" if cvs else "0.0",
-        "num_dates": str(num_dates),
-        "sem_min": f"{min(sems):.2f}" if sems else "0.0",
-        "sem_max": f"{max(sems):.2f}" if sems else "0.0",
-        "pct_diff_A": f"{pct_diff}",
-        "pct_diff_A_late": f"{pct_diff}",
-        "deltaA": f"{abs(val_pooled_top - val_pooled_lowest):.2f}",
-        "sub_parameter_1": f"{base_name} - Sub A",
-        "sub_parameter_2": f"{base_name} - Sub B",
-        "val_A1_p2": f"{val_pooled_second:.2f}",
-        "val_lowest_p2": f"{val_pooled_lowest:.2f}",
-        "lsdvalp2": f"{pooled_lsd:.2f}",
-        "pct_y1": f"{pct_diff * 0.9:.2f}",
-        "lsdy1": f"{res_last_1.get('lsd', 0.1):.2f}",
-        "pct_y2": f"{pct_diff * 1.1:.2f}",
-        "lsdy2": f"{res_last_2.get('lsd', 0.1):.2f}",
-        "gm_1": f"{pooled_first_gm:.2f}",
-        "gm_2": f"{(results_data_1[items[1][0]]['gm'] + results_data_2[items[1][0]]['gm'])/2:.2f}" if len(items) > 1 else f"{pooled_first_gm:.2f}",
-        "gm_early": f"{pooled_first_gm:.2f}",
-        "val_max_2": f"{val_pooled_top:.2f}",
-        "val_lowest_2": f"{val_pooled_lowest:.2f}",
-        "sem_val": f"{pooled_sem:.2f}",
-        "range_early": f"{abs(val_pooled_top - val_pooled_lowest)*0.1:.2f}",
-        "val_max_A": f"{val_pooled_top:.2f}",
-        "val_min_A": f"{val_pooled_lowest:.2f}",
-        "range_mid_A": f"{abs(val_pooled_top - val_pooled_lowest)*0.7:.2f}",
-        "range_late_A": f"{abs(val_pooled_top - val_pooled_lowest):.2f}",
-        "val_max_late": f"{val_pooled_top:.2f}",
-        "val_lowest_late": f"{val_pooled_lowest:.2f}",
-        "threshold_val": f"{pooled_last_gm * 0.8:.2f}",
-        "unit": "",
-    }
-
-
-# --- Academic Explanation Selector Hooks ---
-def generate_one_factor_explanation_shuffled_2y(parameter, res1, res2, genotype_col, table_label, year1_lbl, year2_lbl, pool):
-    placeholders = extract_single_day_facts_2y(parameter, res1, res2, genotype_col, table_label, year1_lbl, year2_lbl)
-    p_val_1 = res1.get("p_val", 0.5)
-    p_val_2 = res2.get("p_val", 0.5)
-    combined_pval = (p_val_1 + p_val_2) / 2
-
-    if combined_pval < 0.01:
-        category = "highly_significant"
-    elif combined_pval < 0.05:
-        category = "significant"
-    else:
-        category = "non_significant"
-
-    tpl_idx = pool.get_template_id(category)
-    raw_template = ACADEMIC_TEMPLATES_2Y_30[tpl_idx]
-    return inject_template_placeholders(raw_template, placeholders)
-
-
-def generate_trend_explanation_2y_shuffled(base_name, items, results_data_1, results_data_2, genotype_col, table_label, year1_lbl, year2_lbl, pool):
-    first_param, _, _ = items[0]
-    last_param, _, _ = items[-1]
-
-    last_gm_1 = results_data_1[last_param]["gm"]
-    last_gm_2 = results_data_2[last_param]["gm"]
-    pooled_last_gm = (last_gm_1 + last_gm_2) / 2
-
-    first_gm_1 = results_data_1[first_param]["gm"]
-    first_gm_2 = results_data_2[first_param]["gm"]
-    pooled_first_gm = (first_gm_1 + first_gm_2) / 2
-
-    p_val_last_1 = results_data_1[last_param]["p_val"]
-    p_val_last_2 = results_data_2[last_param]["p_val"]
-    combined_pval_last = (p_val_last_1 + p_val_last_2) / 2
-
-    direction_up = pooled_last_gm >= pooled_first_gm
-
-    placeholders = extract_time_series_facts_2y(base_name, items, results_data_1, results_data_2, genotype_col, table_label, year1_lbl, year2_lbl)
-
-    if combined_pval_last < 0.05:
-        category = "divergent"
-    elif direction_up:
-        category = "upward_trend"
-    else:
-        category = "downward_trend"
-
-    if random.random() < 0.25:
-        category = "general"
-
-    tpl_idx = pool.get_template_id(category)
-    raw_template = ACADEMIC_TEMPLATES_2Y_30[tpl_idx]
-    return inject_template_placeholders(raw_template, placeholders)
-
-
-# --- Word Document Table Formatting Helpers ---
-def set_header_bottom_border(row_or_cells):
-    if hasattr(row_or_cells, 'cells'):
-        cells = row_or_cells.cells
-    else:
-        cells = row_or_cells
-    for cell in cells:
-        tcPr = cell._tc.get_or_add_tcPr()
-        borders = parse_xml(
-            '<w:tcBorders %s>'
-            '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-            '</w:tcBorders>' % nsdecls('w')
-        )
-        tcPr.append(borders)
-
-
-def set_table_borders(table):
-    tblPr = table._tbl.tblPr
-    borders = parse_xml(
-        '<w:tblBorders %s>'
-        '<w:top w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-        '<w:bottom w:val="single" w:sz="6" w:space="0" w:color="000000"/>'
-        '<w:left w:val="none"/>'
-        '<w:right w:val="none"/>'
-        '<w:insideH w:val="none"/>'
-        '<w:insideV w:val="none"/>'
-        '</w:tblBorders>' % nsdecls('w')
-    )
-    tblPr.append(borders)
-
-
-# --- Word Document Table Generation Copy ---
+# --- Word Table Generation Copy ---
 def add_multiyear_table_to_docx(doc, params, genotypes, results_1, results_2, year1_lbl, year2_lbl):
     num_cols = len(params) * 3 + 1
     table = doc.add_table(rows=3, cols=num_cols)
@@ -1339,7 +876,6 @@ def build_hierarchical_report_2y(classified_cols, genotype_col, genotypes, resul
     doc.add_heading("Calculated Multi-Year Single-Factor RCBD Report", 0)
     numberer = ReportNumberer()
 
-    # Dynamic shuffling pools
     single_day_pool = TemplatePool(SINGLE_DAY_TEMPLATES_CATEGORIES)
     time_series_pool = TemplatePool(TIME_SERIES_TEMPLATES_CATEGORIES)
 
@@ -1385,7 +921,6 @@ def build_hierarchical_report_2y(classified_cols, genotype_col, genotypes, resul
                     st.write(p_text)
                     doc.add_paragraph(p_text)
 
-                # Render consolidated multi-column table for this chunk
                 add_multiyear_table_to_docx(doc, chunk, genotypes, results_data_1, results_data_2, year1_lbl, year2_lbl)
 
                 caption_text = generate_table_caption(table_n, genotype_col, chunk)
