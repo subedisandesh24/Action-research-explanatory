@@ -409,8 +409,31 @@ ACADEMIC_TEMPLATES_30 = {
     )
 }
 
-# --- Shuffling Categories Mapping ---
-SINGLE_DAY_TEMPLATES = {
+SINGLE_DAY_TEMPLATES = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+TIME_SERIES_TEMPLATES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+# ==============================================================================
+# Dynamic Shuffling Class
+# ==============================================================================
+class TemplatePool:
+    """Manages randomized selection of template structures by category."""
+    def __init__(self, categories_dict):
+        self.pools = {}
+        for category, indices in categories_dict.items():
+            shuffled = list(indices)
+            random.shuffle(shuffled)
+            self.pools[category] = shuffled
+            self.initial_pool = dict(categories_dict)
+
+    def get_template_id(self, category):
+        if category not in self.pools or not self.pools[category]:
+            shuffled = list(self.initial_pool[category])
+            random.shuffle(shuffled)
+            self.pools[category] = shuffled
+        return self.pools[category].pop(0)
+
+# Concrete category grouping for the Shuffling Pool
+SINGLE_DAY_TEMPLATES_CATEGORIES = {
     "interaction": [16, 23],
     "both_significant": [17, 22, 24, 25, 26, 28, 30],
     "factor_a_significant": [18, 27],
@@ -418,34 +441,15 @@ SINGLE_DAY_TEMPLATES = {
     "non_significant": [20, 21, 29]
 }
 
-TIME_SERIES_TEMPLATES = {
+TIME_SERIES_TEMPLATES_CATEGORIES = {
     "interaction": [1, 3, 12, 14],
-    "upward_trend": [7, 9, 10, 13],
+    "upward_trend": [4, 7, 9, 10, 13],
     "downward_trend": [2, 6, 15],
-    "general": [4, 5, 8, 11]
+    "general": [5, 8, 11]
 }
 
-
-class TemplatePool:
-    """Manages thread-safe dynamic draws of shuffled templates within structured categories."""
-    def __init__(self, templates_dict):
-        self.initial_pool = {k: list(v) for k, v in templates_dict.items()}
-        self.pool = {k: list(v) for k, v in templates_dict.items()}
-        self.shuffle_all()
-
-    def shuffle_all(self):
-        for k in self.pool:
-            random.shuffle(self.pool[k])
-
-    def get_template_id(self, category):
-        if category not in self.pool or not self.pool[category]:
-            self.pool[category] = list(self.initial_pool[category])
-            random.shuffle(self.pool[category])
-        return self.pool[category].pop(0)
-
-
 # ==============================================================================
-# Hierarchical numbering for the Word report (1 / 1.1 / 1.1.1) + table numbering
+# Hierarchical categorization layout setup
 # ==============================================================================
 MAJOR_CATEGORY_ORDER = [
     "Vegetative Parameters",
@@ -536,7 +540,6 @@ def get_p_val_notation(p_val):
 
 # --- Agronomic Classification Engine ---
 def classify_parameter(param):
-    """Classifies parameters dynamically based on standard agricultural taxonomy."""
     param_clean = param.strip().lower()
 
     abbrev_map = {
@@ -727,7 +730,7 @@ def group_parameters(params):
     return groups
 
 
-# --- Statistical Separation Engines ---
+# --- Statistical Calculation Helpers ---
 def get_signif_code_val(p):
     if pd.isna(p):
         return "ns"
@@ -875,6 +878,7 @@ def parse_summarized_table_to_results_2f(df_raw, idx_A, idx_B, idx_cv, idx_inter
         p_b = 0.01 if "**" in f_val_B else (0.04 if "*" in f_val_B else 0.5)
         p_ab = 0.01 if "**" in f_val_AB else (0.04 if "*" in f_val_AB else 0.5)
 
+        # Factor A
         means_a = {}
         means_a_str = {}
         for i, lvl in enumerate(factor_a_levels):
@@ -887,6 +891,7 @@ def parse_summarized_table_to_results_2f(df_raw, idx_A, idx_B, idx_cv, idx_inter
                 means_a[lvl] = 0.0
                 means_a_str[lvl] = "0.00"
 
+        # Factor B
         means_b = {}
         means_b_str = {}
         for i, lvl in enumerate(factor_b_levels):
@@ -919,12 +924,214 @@ def parse_summarized_table_to_results_2f(df_raw, idx_A, idx_B, idx_cv, idx_inter
     return results_data
 
 
-# --- Academic Explanation Generators with Shuffled Pools ---
+# --- Template Variable Injection Helper ---
+def inject_template_placeholders(template_text, placeholders_dict):
+    """Safely substitutes bracket markers in the template with calculated results."""
+    for key, val in placeholders_dict.items():
+        template_text = template_text.replace("{{" + key + "}}", str(val))
+    template_text = re.sub(r"\{\{.*?\}\}", "", template_text)
+    return template_text
+
+
+# --- Parameter Fact Extraction Helpers ---
+def extract_single_day_facts(parameter, res, factor_a_col, factor_b_col, table_label):
+    means_a = res.get("means_a", {})
+    means_b = res.get("means_b", {})
+    means_comb = res.get("means_comb", {})
+    means_a_str = res.get("means_a_str", {})
+    means_b_str = res.get("means_b_str", {})
+
+    sorted_a = sorted(means_a.items(), key=lambda x: x[1], reverse=True) if means_a else []
+    sorted_b = sorted(means_b.items(), key=lambda x: x[1], reverse=True) if means_b else []
+    sorted_comb = sorted(means_comb.items(), key=lambda x: x[1], reverse=True) if means_comb else []
+
+    treatment_A1, val_A1 = sorted_a[0] if sorted_a else ("Control", 0.0)
+    treatment_A2, val_A2 = sorted_a[1] if len(sorted_a) > 1 else (treatment_A1, val_A1)
+    treatment_A3, val_A3 = sorted_a[2] if len(sorted_a) > 2 else (treatment_A2, val_A2)
+    val_lowest = sorted_a[-1][1] if sorted_a else 0.0
+    val_min_A = val_lowest
+    val_max_A = val_A1
+
+    treatment_B1, val_B1 = sorted_b[0] if sorted_b else ("Control", 0.0)
+    treatment_B2, val_B2 = sorted_b[-1] if sorted_b else ("Control", 0.0)
+
+    treatment_baseline = sorted_a[-1][0] if sorted_a else "Control"
+    value_baseline = val_lowest
+
+    max_val = sorted_comb[0][1] if sorted_comb else 0.0
+    min_val = sorted_comb[-1][1] if sorted_comb else 0.0
+
+    sem_val = res.get("sem_a", 0.1)
+    sem_A = res.get("sem_a", 0.1)
+    sem_B = res.get("sem_b", 0.1)
+    lsd_A = res.get("lsd_a", 0.1)
+    lsd_B = res.get("lsd_b", 0.1)
+    cv_val = res.get("cv", 5.0)
+    grand_mean = res.get("gm", 0.0)
+
+    pct_diff_A = round(((val_max_A - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
+    pct_diff_A2 = round(((val_A2 - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
+    pct_diff_A3 = round(((val_A3 - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
+    pct_diff_B = round(((val_B1 - val_B2) / (val_B2 if val_B2 != 0 else 1.0)) * 100, 2)
+
+    return {
+        "variable_name": parameter,
+        "table_num": table_label.replace("Table ", ""),
+        "factor_A": factor_a_col,
+        "factor_B": factor_b_col,
+        "treatment_A1": treatment_A1,
+        "val_A1": f"{val_A1:.2f}",
+        "treatment_A2": treatment_A2,
+        "val_A2": f"{val_A2:.2f}",
+        "treatment_A3": treatment_A3,
+        "val_A3": f"{val_A3:.2f}",
+        "val_lowest": f"{val_lowest:.2f}",
+        "val_min_A": f"{val_min_A:.2f}",
+        "val_max_A": f"{val_max_A:.2f}",
+        "treatment_B1": treatment_B1,
+        "val_B1": f"{val_B1:.2f}",
+        "treatment_B2": treatment_B2,
+        "val_B2": f"{val_B2:.2f}",
+        "treatment_baseline": treatment_baseline,
+        "value_baseline": f"{value_baseline:.2f}",
+        "max_val": f"{max_val:.2f}",
+        "min_val": f"{min_val:.2f}",
+        "grand_mean": f"{grand_mean:.2f}",
+        "sem_val": f"{sem_val}",
+        "sem_A": f"{sem_A}",
+        "sem_B": f"{sem_B}",
+        "lsd_A": f"{lsd_A}",
+        "lsd_B": f"{lsd_B}",
+        "cv_val": f"{cv_val}",
+        "pct_diff_A": f"{pct_diff_A}",
+        "pct_diff_A2": f"{pct_diff_A2}",
+        "pct_diff_A3": f"{pct_diff_A3}",
+        "pct_diff_B": f"{pct_diff_B}",
+        "val_B": f"{(val_B1 + val_B2)/2:.2f}",
+        "unit": "",
+    }
+
+
+def extract_time_series_facts(base_name, items, results_data, factor_a_col, factor_b_col, table_label):
+    first_param, first_day_num, first_day_str = items[0]
+    last_param, last_day_num, last_day_str = items[-1]
+
+    num_dates = len(items)
+    time_unit = "days"
+    if any(x in first_param.lower() for x in ["das", "dat"]):
+        time_unit = "DAS" if "das" in first_param.lower() else "DAT"
+
+    first_gm = results_data[first_param]["gm"]
+    last_gm = results_data[last_param]["gm"]
+
+    tps = [it[2] for it in items]
+    while len(tps) < 5:
+        tps.append(tps[-1] if tps else "terminal phase")
+
+    cvs = [results_data[it[0]]["cv"] for it in items]
+    sems = [results_data[it[0]]["sem_a"] for it in items]
+
+    res_last = results_data[last_param]
+    sorted_a_last = sorted(res_last["means_a"].items(), key=lambda x: x[1], reverse=True) if res_last["means_a"] else []
+    sorted_b_last = sorted(res_last["means_b"].items(), key=lambda x: x[1], reverse=True) if res_last["means_b"] else []
+    sorted_comb_last = sorted(res_last["means_comb"].items(), key=lambda x: x[1], reverse=True) if res_last["means_comb"] else []
+
+    treatment_A1, val_A1 = sorted_a_last[0] if sorted_a_last else ("Control", 0.0)
+    treatment_A2, val_A2 = sorted_a_last[1] if len(sorted_a_last) > 1 else (treatment_A1, val_A1)
+    val_lowest = sorted_a_last[-1][1] if sorted_a_last else 0.0
+
+    treatment_B1, val_B1 = sorted_b_last[0] if sorted_b_last else ("Control", 0.0)
+    treatment_B2, val_B2 = sorted_b_last[-1] if sorted_b_last else ("Control", 0.0)
+
+    treatment_baseline = sorted_a_last[-1][0] if sorted_a_last else "Control"
+    value_baseline = val_lowest
+
+    max_val = sorted_comb_last[0][1] if sorted_comb_last else 0.0
+    min_val = sorted_comb_last[-1][1] if sorted_comb_last else 0.0
+
+    peak_val = max(results_data[it[0]]["gm"] for it in items)
+
+    val_min_A = sorted_a_last[-1][1] if sorted_a_last else 1.0
+    val_max_A = sorted_a_last[0][1] if sorted_a_last else 1.0
+    pct_diff_A = round(((val_max_A - val_min_A) / (val_min_A if val_min_A != 0 else 1.0)) * 100, 2)
+    pct_diff_B = round(((val_B1 - val_B2) / (val_B2 if val_B2 != 0 else 1.0)) * 100, 2)
+
+    return {
+        "variable_name": base_name,
+        "num_intervals": str(num_dates),
+        "start_time": first_day_str.replace("Day ", "").strip(),
+        "end_time": last_day_str.replace("Day ", "").strip(),
+        "time_unit": time_unit,
+        "table_num": table_label.replace("Table ", ""),
+        "factor_A": factor_a_col,
+        "factor_B": factor_b_col,
+        "time_point_1": tps[0],
+        "time_point_2": tps[1],
+        "time_point_3": tps[2],
+        "time_point_4": tps[3],
+        "time_point_5": tps[4],
+        "grand_mean_early": f"{first_gm:.2f}",
+        "grand_mean": f"{last_gm:.2f}",
+        "unit": "",
+        "treatment_B1": treatment_B1,
+        "value_B1": f"{val_B1:.2f}",
+        "treatment_B2": treatment_B2,
+        "value_B2": f"{val_B2:.2f}",
+        "val_B1": f"{val_B1:.2f}",
+        "val_B2": f"{val_B2:.2f}",
+        "treatment_A1": treatment_A1,
+        "value_A1": f"{val_A1:.2f}",
+        "val_A1": f"{val_A1:.2f}",
+        "treatment_A2": treatment_A2,
+        "val_A2": f"{val_A2:.2f}",
+        "val_lowest": f"{val_lowest:.2f}",
+        "treatment_baseline": treatment_baseline,
+        "value_baseline": f"{value_baseline:.2f}",
+        "val_baseline": f"{value_baseline:.2f}",
+        "initial_value": f"{first_gm:.2f}",
+        "peak_value": f"{peak_val:.2f}",
+        "end_value": f"{last_gm:.2f}",
+        "total_days": str(abs(last_day_num - first_day_num)) if last_day_num != first_day_num else "30",
+        "max_val": f"{max_val:.2f}",
+        "min_val": f"{min_val:.2f}",
+        "val_minA": f"{sorted_a_last[-1][1]:.2f}" if sorted_a_last else "0.00",
+        "val_minB": f"{sorted_b_last[-1][1]:.2f}" if sorted_b_last else "0.00",
+        "avg_val": f"{np.mean([results_data[it[0]]['gm'] for it in items]):.2f}",
+        "mean_early": f"{first_gm:.2f}",
+        "grand_mean_peak": f"{peak_val:.2f}",
+        "cv_min": f"{min(cvs):.2f}" if cvs else "0.0",
+        "cv_max": f"{max(cvs):.2f}" if cvs else "0.0",
+        "num_dates": str(num_dates),
+        "sem_min": f"{min(sems):.2f}" if sems else "0.0",
+        "sem_max": f"{max(sems):.2f}" if sems else "0.0",
+        "pct_diff_A": f"{pct_diff_A}",
+        "pct_diff_A_late": f"{pct_diff_A}",
+        "pct_diff_B": f"{pct_diff_B}",
+        "deltaA": f"{abs(val_max_A - val_min_A):.2f}",
+        "deltaB": f"{abs(val_B1 - val_B2):.2f}",
+        "sub_parameter_1": f"{base_name} - Part 1",
+        "sub_parameter_2": f"{base_name} - Part 2",
+        "gm_1": f"{first_gm:.2f}",
+        "gm_2": f"{results_data[items[1][0]]['gm']:.2f}" if len(items) > 1 else f"{first_gm:.2f}",
+        "val_inter_1": f"{max_val:.2f}",
+        "val_inter_2": f"{(max_val + min_val)/2:.2f}",
+        "range_early": f"{abs(sorted_comb_last[0][1] - sorted_comb_last[-1][1]) * 0.2:.2f}",
+        "range_mid_A": f"{abs(val_max_A - val_min_A) * 0.8:.2f}",
+        "range_mid_B": f"{abs(val_B1 - val_B2) * 0.8:.2f}",
+        "range_late_A": f"{abs(val_max_A - val_min_A):.2f}",
+        "range_late_B": f"{abs(val_B1 - val_B2):.2f}",
+        "threshold_val": f"{last_gm * 0.8:.2f}",
+        "lsdval": f"{res_last.get('lsd_a', 0.1)}",
+        "lsdB": f"{res_last.get('lsd_b', 0.1)}",
+        "lsdA": f"{res_last.get('lsd_a', 0.1)}",
+    }
+
+
+# --- Academic Explanation Selector Hooks ---
 def generate_two_factor_explanation_shuffled(parameter, res, factor_a_col, factor_b_col, table_label, pool):
     p_a, p_b, p_ab = res["p_a"], res["p_b"], res["p_ab"]
     placeholders = extract_single_day_facts(parameter, res, factor_a_col, factor_b_col, table_label)
 
-    # Route dynamically to shuffled category blocks
     if p_ab < 0.05:
         category = "interaction"
     elif p_a < 0.05 and p_b < 0.05:
@@ -959,7 +1166,6 @@ def generate_trend_explanation_2f_shuffled(base_name, items, results_data, facto
     else:
         category = "downward_trend"
 
-    # Occasionally pull a general trend to increase formatting diversity
     if random.random() < 0.25:
         category = "general"
 
@@ -1207,15 +1413,14 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
     Produces a Document with clustered parameters:
     Groups up to 4 static single parameters under the same category to produce
     cohesive narrative paragraphs and multi-column tables.
-    Includes active template shuffling to prevent layout fatigue.
     """
     doc = Document()
     doc.add_heading("Calculated Two-Factor Factorial RCBD Report", 0)
     numberer = ReportNumberer()
 
-    # Thread-safe fresh shuffling pools instantiated for this report build run
-    single_day_pool = TemplatePool(SINGLE_DAY_TEMPLATES)
-    time_series_pool = TemplatePool(TIME_SERIES_TEMPLATES)
+    # Dynamic thread-safe shuffling pools instantiated for this report build run
+    single_day_pool = TemplatePool(SINGLE_DAY_TEMPLATES_CATEGORIES)
+    time_series_pool = TemplatePool(TIME_SERIES_TEMPLATES_CATEGORIES)
 
     ordered_majors = [m for m in MAJOR_CATEGORY_ORDER if m in classified_cols]
     ordered_majors += [m for m in classified_cols if m not in ordered_majors]
@@ -1258,7 +1463,7 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                 table_n = numberer.next_table()
                 table_label = f"Table {table_n}"
 
-                # Dynamic, shuffled sentence transition array
+                # Shuffle transitions globally per chunk to prevent format fatigue
                 transitions = [
                     " Concurrently, regarding the performance of {param}: ",
                     " In terms of {param}, the statistical analysis indicated that: ",
@@ -1277,7 +1482,7 @@ def build_hierarchical_report(classified_cols, factor_a_col, factor_b_col, level
                     
                     if idx > 0:
                         transition = transitions[idx % len(transitions)].format(param=p)
-                        # Clean prefix repetitions gracefully
+                        # Clean duplicate prefixes gracefully
                         p_text = re.sub(
                             r"^(The terminal value of\s+|The terminal measurement of\s+|The final ratio of the system components at terminal harvest was\s+)", 
                             "", p_text, flags=re.IGNORECASE
