@@ -1299,7 +1299,11 @@ def show_module():
     st.markdown("### One-Factor RCBD Analyzer")
 
     mode = st.radio("Choose Input Mode", ["Raw Data Mode", "Summarized Table Mode"], key="1f_mode_selector")
-    uploaded_file = st.file_uploader("Upload One-Factor Excel File", type=["xlsx"], key="file_uploader_1f")
+   uploaded_file = st.file_uploader(
+    "Upload One-Factor Excel or CSV File", 
+    type=["xlsx", "csv"], 
+    key="file_uploader_1f"
+)
 
     if uploaded_file is not None:
         if mode == "Raw Data Mode":
